@@ -1,6 +1,7 @@
 import type { InterviewReport, Message } from "@/types/interview";
 import { cn } from "@/lib/utils";
-import { RotateCcw, Loader2 } from "lucide-react";
+import { RotateCcw, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 interface ReportViewProps {
   report: InterviewReport | null;
@@ -20,9 +21,62 @@ function ScoreBar({ score }: { score: number }) {
   return (
     <div className="h-2 w-full rounded-full bg-muted">
       <div
-        className={cn("h-2 rounded-full transition-all", color)}
+        className={cn("h-2 rounded-full transition-all duration-500", color)}
         style={{ width: `${score}%` }}
       />
+    </div>
+  );
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 80
+      ? "text-green-600 bg-green-50"
+      : score >= 60
+        ? "text-yellow-600 bg-yellow-50"
+        : "text-red-600 bg-red-50";
+  return (
+    <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", color)}>
+      {score}/100
+    </span>
+  );
+}
+
+function QuestionDetail({ qb, index }: { qb: InterviewReport["questionBreakdown"][0]; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-t pt-3 first:border-t-0 first:pt-0">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left space-y-2"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium flex items-center gap-2">
+            Q{index + 1}
+            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </span>
+          <ScoreBadge score={qb.score} />
+        </div>
+        <ScoreBar score={qb.score} />
+      </button>
+      {expanded && (
+        <div className="mt-3 space-y-2 text-sm">
+          <div className="rounded-lg bg-muted/50 p-3">
+            <div className="text-xs font-medium text-muted-foreground mb-1">Question</div>
+            <p className="text-foreground whitespace-pre-wrap">{qb.question}</p>
+          </div>
+          <div className="rounded-lg bg-primary/5 p-3">
+            <div className="text-xs font-medium text-muted-foreground mb-1">Your Answer</div>
+            <p className="text-foreground whitespace-pre-wrap">{qb.answer}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <div className="text-xs font-medium text-muted-foreground mb-1">Feedback</div>
+            <p className="text-foreground">{qb.feedback}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -38,27 +92,41 @@ export default function ReportView({
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Generating your interview report...</p>
+        <div className="text-center space-y-1">
+          <p className="font-medium">Generating your interview report...</p>
+          <p className="text-sm text-muted-foreground">Analyzing your responses</p>
+        </div>
       </div>
     );
   }
 
   if (!report) return null;
 
-  const totalMessages = messages.filter((m) => m.role === "user").length;
+  const totalAnswered = messages.filter((m) => m.role === "user").length;
 
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Interview Report</h1>
         <p className="text-muted-foreground">
-          {position} — {totalMessages} questions answered
+          {position} &mdash; {totalAnswered} question{totalAnswered !== 1 ? "s" : ""} answered
         </p>
       </div>
 
       {/* Overall Score */}
       <div className="rounded-xl border bg-card p-6 text-center space-y-3">
-        <div className="text-5xl font-bold">{report.overallScore}</div>
+        <div
+          className={cn(
+            "text-5xl font-bold",
+            report.overallScore >= 80
+              ? "text-green-600"
+              : report.overallScore >= 60
+                ? "text-yellow-600"
+                : "text-red-600"
+          )}
+        >
+          {report.overallScore}
+        </div>
         <div className="text-sm text-muted-foreground">Overall Score</div>
         <ScoreBar score={report.overallScore} />
       </div>
@@ -70,7 +138,7 @@ export default function ReportView({
           <ul className="space-y-1.5">
             {report.strengths.map((s, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="text-green-500 mt-0.5">+</span>
+                <span className="text-green-500 mt-0.5 shrink-0">+</span>
                 {s}
               </li>
             ))}
@@ -81,7 +149,7 @@ export default function ReportView({
           <ul className="space-y-1.5">
             {report.weaknesses.map((w, i) => (
               <li key={i} className="text-sm flex items-start gap-2">
-                <span className="text-red-400 mt-0.5">-</span>
+                <span className="text-red-400 mt-0.5 shrink-0">&minus;</span>
                 {w}
               </li>
             ))}
@@ -104,16 +172,11 @@ export default function ReportView({
       {/* Question Breakdown */}
       {report.questionBreakdown.length > 0 && (
         <div className="rounded-xl border bg-card p-5 space-y-4">
-          <h2 className="text-sm font-semibold">Question Breakdown</h2>
+          <h2 className="text-sm font-semibold">
+            Question Breakdown ({report.questionBreakdown.length})
+          </h2>
           {report.questionBreakdown.map((qb, i) => (
-            <div key={i} className="space-y-2 border-t pt-3 first:border-t-0 first:pt-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Q{i + 1}</span>
-                <span className="text-sm font-mono">{qb.score}/100</span>
-              </div>
-              <ScoreBar score={qb.score} />
-              <p className="text-xs text-muted-foreground">{qb.feedback}</p>
-            </div>
+            <QuestionDetail key={i} qb={qb} index={i} />
           ))}
         </div>
       )}

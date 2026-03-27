@@ -1,22 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type {
   InterviewConfig,
   InterviewPhase,
   InterviewReport,
   Message,
 } from "@/types/interview";
+import {
+  buildGreeting,
+  fetchNextQuestion,
+  fetchReport,
+  resetSession,
+} from "@/lib/api";
+import { saveRecord } from "@/lib/storage";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function makeAssistantMessage(content: string): Message {
-  return {
-    id: generateId(),
-    role: "assistant",
-    content,
-    timestamp: Date.now(),
-  };
+function makeMessage(role: Message["role"], content: string): Message {
+  return { id: generateId(), role, content, timestamp: Date.now() };
 }
 
 export function useInterview() {
@@ -30,107 +32,144 @@ export function useInterview() {
   const [questionCount, setQuestionCount] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
 
-  const startInterview = useCallback((interviewConfig: InterviewConfig) => {
-    setConfig(interviewConfig);
-    setPhase("interview");
-    setStartTime(Date.now());
-    setQuestionCount(1);
+  // Use refs for values accessed inside async callbacks to avoid stale closures
+  const questionCountRef = useRef(0);
+  const messagesRef = useRef<Message[]>([]);
+  const configRef = useRef<InterviewConfig | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const isEndedRef = useRef(false);
 
-    const greeting = makeAssistantMessage(
-      `Hello! I'll be conducting your interview for the ${interviewConfig.position} position today. ` +
-        `We'll cover ${interviewConfig.topics.join(", ")} at a ${interviewConfig.difficulty} level. ` +
-        `Let's get started!\n\nCan you tell me about your experience and what drew you to this role?`
-    );
+  const startInterview = useCallback((interviewConfig: InterviewConfig) => {
+    resetSession();
+    isEndedRef.current = false;
+
+    setConfig(interviewConfig);
+    configRef.current = interviewConfig;
+    setPhase("interview");
+
+    const now = Date.now();
+    setStartTime(now);
+    startTimeRef.current = now;
+
+    setQuestionCount(1);
+    questionCountRef.current = 1;
+
+    const greeting = makeMessage("assistant", buildGreeting(interviewConfig));
     setMessages([greeting]);
+    messagesRef.current = [greeting];
   }, []);
 
-  const sendMessage = useCallback(
-    (content: string) => {
-      const userMessage: Message = {
-        id: generateId(),
-        role: "user",
-        content,
-        timestamp: Date.now(),
-      };
+  const endInterview = useCallback(async () => {
+    if (isEndedRef.current) return;
+    isEndedRef.current = true;
 
-      setMessages((prev) => [...prev, userMessage]);
-      setIsAiThinking(true);
-
-      setTimeout(() => {
-        const nextQ = questionCount + 1;
-        setQuestionCount(nextQ);
-
-        const followUps = [
-          "That's a great point. Can you elaborate on how you handled the technical challenges in that project?",
-          "Interesting approach. How would you handle a situation where requirements change mid-sprint?",
-          "Good answer. Can you walk me through how you'd design a scalable system for this use case?",
-          "Thanks for sharing that. What testing strategies do you typically employ?",
-          "I see. How do you approach code reviews and collaboration with your team?",
-          "Great example. Can you describe a time when you had to debug a particularly difficult issue?",
-          "That's helpful context. How do you stay current with new technologies and best practices?",
-          "Noted. What's your approach to balancing technical debt with feature development?",
-          "Good insight. How would you mentor a junior developer on your team?",
-          "Thanks. Can you describe your ideal development workflow?",
-        ];
-
-        const response = makeAssistantMessage(
-          followUps[(nextQ - 2) % followUps.length]
-        );
-        setMessages((prev) => [...prev, response]);
-        setIsAiThinking(false);
-      }, 1500);
-    },
-    [questionCount]
-  );
-
-  const generateReport = useCallback(() => {
     setPhase("report");
     setIsGeneratingReport(true);
 
-    setTimeout(() => {
-      const mockReport: InterviewReport = {
-        overallScore: 78,
-        strengths: [
-          "Strong communication skills",
-          "Good understanding of core concepts",
-          "Demonstrates problem-solving ability",
-        ],
-        weaknesses: [
-          "Could provide more specific examples",
-          "System design answers could be more detailed",
-        ],
-        recommendations: [
-          "Practice explaining complex topics concisely",
-          "Study system design patterns more thoroughly",
-          "Prepare more STAR-format examples",
-        ],
-        questionBreakdown: messages
-          .filter((m) => m.role === "assistant")
-          .slice(0, -1)
-          .map((q, i) => ({
-            question: q.content,
-            answer:
-              messages.filter((m) => m.role === "user")[i]?.content ??
-              "No answer provided",
-            score: Math.floor(Math.random() * 30) + 60,
-            feedback: "Demonstrated understanding with room for improvement.",
-          })),
-      };
+    const cfg = configRef.current;
+    const msgs = messagesRef.current;
+    const start = startTimeRef.current;
+    const durationSeconds = start ? Math.floor((Date.now() - start) / 1000) : 0;
 
-      setReport(mockReport);
+    if (!cfg) {
+      setError("Interview configuration is missing.");
       setIsGeneratingReport(false);
-    }, 2000);
-  }, [messages]);
+      return;
+    }
+
+    try {
+      const result = await fetchReport(cfg, msgs, durationSeconds);
+      setReport(result);
+
+      // Auto-save to history
+      saveRecord({
+        id: generateId(),
+        date: Date.now(),
+        config: cfg,
+        messages: msgs,
+        report: result,
+        durationSeconds,
+      });
+    } catch {
+      setError("Failed to generate report. Please try again.");
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (content: string) => {
+    if (isEndedRef.current) return;
+
+    const userMessage = makeMessage("user", content);
+    setMessages((prev) => {
+      const next = [...prev, userMessage];
+      messagesRef.current = next;
+      return next;
+    });
+
+    setIsAiThinking(true);
+
+    const cfg = configRef.current;
+    if (!cfg) {
+      setError("Interview configuration is missing.");
+      setIsAiThinking(false);
+      return;
+    }
+
+    const currentQ = questionCountRef.current;
+    const nextQ = currentQ + 1;
+    setQuestionCount(nextQ);
+    questionCountRef.current = nextQ;
+
+    // Auto-end if max questions reached
+    if (nextQ > cfg.maxQuestions) {
+      setIsAiThinking(false);
+      await endInterview();
+      return;
+    }
+
+    try {
+      const updatedMessages = messagesRef.current;
+      const response = await fetchNextQuestion(cfg, updatedMessages, nextQ);
+
+      if (isEndedRef.current) return; // User may have ended while waiting
+
+      const assistantMsg = makeMessage("assistant", response);
+      setMessages((prev) => {
+        const next = [...prev, assistantMsg];
+        messagesRef.current = next;
+        return next;
+      });
+    } catch {
+      setError("Failed to get next question. Please try again.");
+    } finally {
+      setIsAiThinking(false);
+    }
+  }, [endInterview]);
 
   const reset = useCallback(() => {
+    resetSession();
+    isEndedRef.current = false;
     setPhase("setup");
     setConfig(null);
+    configRef.current = null;
     setMessages([]);
+    messagesRef.current = [];
     setReport(null);
     setIsGeneratingReport(false);
     setError(null);
     setQuestionCount(0);
+    questionCountRef.current = 0;
     setStartTime(null);
+    startTimeRef.current = null;
+  }, []);
+
+  const goToHistory = useCallback(() => {
+    setPhase("history");
+  }, []);
+
+  const goToSetup = useCallback(() => {
+    setPhase("setup");
   }, []);
 
   return {
@@ -144,9 +183,11 @@ export function useInterview() {
     setError,
     startInterview,
     sendMessage,
-    generateReport,
+    endInterview,
     reset,
     questionCount,
     startTime,
+    goToHistory,
+    goToSetup,
   };
 }

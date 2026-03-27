@@ -13,17 +13,28 @@ export interface Message {
   timestamp: number;
 }
 
-export type InterviewPhase = "setup" | "interview" | "report";
+export type InterviewPhase = "setup" | "interview" | "report" | "history";
+
+export interface QuestionBreakdown {
+  question: string;
+  answer: string;
+  score: number;
+  feedback: string;
+}
 
 export interface InterviewReport {
   overallScore: number;
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
-  questionBreakdown: {
-    question: string;
-    answer: string;
-    score: number;
-    feedback: string;
-  }[];
+  questionBreakdown: QuestionBreakdown[];
+}
+
+export interface InterviewRecord {
+  id: string;
+  date: number;
+  config: InterviewConfig;
+  messages: Message[];
+  report: InterviewReport;
+  durationSeconds: number;
 }

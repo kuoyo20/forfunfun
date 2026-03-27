@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { InterviewConfig } from "@/types/interview";
 import { cn } from "@/lib/utils";
+import { History } from "lucide-react";
 
 interface SetupFormProps {
   onStart: (config: InterviewConfig) => void;
+  onViewHistory: () => void;
 }
 
 const TOPIC_OPTIONS = [
@@ -25,12 +27,13 @@ const DIFFICULTY_OPTIONS = [
   { value: "senior" as const, label: "Senior", description: "5+ years experience" },
 ];
 
-export default function SetupForm({ onStart }: SetupFormProps) {
+export default function SetupForm({ onStart, onViewHistory }: SetupFormProps) {
   const [position, setPosition] = useState("");
   const [difficulty, setDifficulty] = useState<InterviewConfig["difficulty"]>("mid");
   const [maxQuestions, setMaxQuestions] = useState(10);
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(15);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [submitted, setSubmitted] = useState(false);
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -40,6 +43,7 @@ export default function SetupForm({ onStart }: SetupFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
     if (!position.trim() || selectedTopics.length === 0) return;
     onStart({
       position: position.trim(),
@@ -51,6 +55,8 @@ export default function SetupForm({ onStart }: SetupFormProps) {
   };
 
   const isValid = position.trim() !== "" && selectedTopics.length > 0;
+  const showPositionError = submitted && !position.trim();
+  const showTopicError = submitted && selectedTopics.length === 0;
 
   return (
     <div className="space-y-8">
@@ -74,8 +80,14 @@ export default function SetupForm({ onStart }: SetupFormProps) {
               placeholder="e.g. Senior Frontend Engineer"
               value={position}
               onChange={(e) => setPosition(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className={cn(
+                "w-full rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring",
+                showPositionError ? "border-destructive" : "border-input"
+              )}
             />
+            {showPositionError && (
+              <p className="text-xs text-destructive">Please enter a position title</p>
+            )}
           </div>
 
           {/* Difficulty */}
@@ -123,6 +135,9 @@ export default function SetupForm({ onStart }: SetupFormProps) {
                 </button>
               ))}
             </div>
+            {showTopicError && (
+              <p className="text-xs text-destructive">Please select at least one topic</p>
+            )}
           </div>
 
           {/* Settings row */}
@@ -164,18 +179,28 @@ export default function SetupForm({ onStart }: SetupFormProps) {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={!isValid}
-          className={cn(
-            "w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-            isValid
-              ? "bg-primary text-primary-foreground hover:bg-primary/90"
-              : "bg-muted text-muted-foreground cursor-not-allowed"
-          )}
-        >
-          Start Interview
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onViewHistory}
+            className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <History className="h-4 w-4" />
+            History
+          </button>
+          <button
+            type="submit"
+            disabled={submitted && !isValid}
+            className={cn(
+              "flex-1 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+              !submitted || isValid
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            )}
+          >
+            Start Interview
+          </button>
+        </div>
       </form>
     </div>
   );

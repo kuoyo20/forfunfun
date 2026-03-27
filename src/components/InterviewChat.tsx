@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { Message } from "@/types/interview";
 import { cn } from "@/lib/utils";
 import { Send, StopCircle, Loader2 } from "lucide-react";
@@ -32,12 +32,16 @@ export default function InterviewChat({
 }: InterviewChatProps) {
   const [input, setInput] = useState("");
   const [elapsed, setElapsed] = useState(0);
+  const [showConfirm, setShowConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hasAutoEnded = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isAiThinking]);
 
+  // Timer
   useEffect(() => {
     if (!startTime) return;
     const timer = setInterval(() => {
@@ -46,16 +50,55 @@ export default function InterviewChat({
     return () => clearInterval(timer);
   }, [startTime]);
 
+  // Auto-end when time runs out
+  const totalSeconds = timeLimitMinutes * 60;
+  const timeRemaining = Math.max(0, totalSeconds - elapsed);
+  const isLowTime = timeRemaining <= 60;
+  const isTimeUp = timeRemaining === 0;
+
+  useEffect(() => {
+    if (isTimeUp && !hasAutoEnded.current) {
+      hasAutoEnded.current = true;
+      onEndInterview();
+    }
+  }, [isTimeUp, onEndInterview]);
+
+  // Auto-resize textarea
+  const adjustTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 150) + "px";
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isAiThinking) return;
     onSend(input.trim());
     setInput("");
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
   };
 
-  const totalSeconds = timeLimitMinutes * 60;
-  const timeRemaining = Math.max(0, totalSeconds - elapsed);
-  const isLowTime = timeRemaining < 60;
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  const handleEndClick = () => {
+    setShowConfirm(true);
+  };
+
+  const confirmEnd = () => {
+    setShowConfirm(false);
+    onEndInterview();
+  };
+
+  const isAtMaxQuestions = questionCount >= maxQuestions;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -65,21 +108,21 @@ export default function InterviewChat({
           <span className="text-muted-foreground">
             Question{" "}
             <span className="font-medium text-foreground">
-              {questionCount}
+              {Math.min(questionCount, maxQuestions)}
             </span>{" "}
             / {maxQuestions}
           </span>
           <span
             className={cn(
               "font-mono text-sm",
-              isLowTime ? "text-destructive font-medium" : "text-muted-foreground"
+              isLowTime ? "text-destructive font-medium animate-pulse" : "text-muted-foreground"
             )}
           >
             {formatTime(timeRemaining)}
           </span>
         </div>
         <button
-          onClick={onEndInterview}
+          onClick={handleEndClick}
           className="flex items-center gap-1.5 rounded-lg border border-destructive/50 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
         >
           <StopCircle className="h-4 w-4" />
@@ -99,7 +142,7 @@ export default function InterviewChat({
           >
             <div
               className={cn(
-                "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
                 message.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-foreground"
@@ -123,22 +166,33 @@ export default function InterviewChat({
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-2 rounded-b-xl border bg-card px-4 py-3"
+        className="flex items-end gap-2 rounded-b-xl border bg-card px-4 py-3"
       >
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your answer..."
-          disabled={isAiThinking}
-          className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-        />
+        <div className="flex-1 relative">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              adjustTextarea();
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              isAtMaxQuestions
+                ? "Maximum questions reached — end the interview to see your report"
+                : "Type your answer... (Enter to send, Shift+Enter for new line)"
+            }
+            disabled={isAiThinking || isAtMaxQuestions}
+            rows={1}
+            className="w-full resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none leading-relaxed py-1"
+          />
+        </div>
         <button
           type="submit"
-          disabled={!input.trim() || isAiThinking}
+          disabled={!input.trim() || isAiThinking || isAtMaxQuestions}
           className={cn(
-            "rounded-lg p-2 transition-colors",
-            input.trim() && !isAiThinking
+            "rounded-lg p-2 transition-colors shrink-0",
+            input.trim() && !isAiThinking && !isAtMaxQuestions
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "text-muted-foreground"
           )}
@@ -146,6 +200,33 @@ export default function InterviewChat({
           <Send className="h-4 w-4" />
         </button>
       </form>
+
+      {/* Confirmation dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-xl border bg-card p-6 shadow-lg max-w-sm mx-4 space-y-4">
+            <h3 className="text-lg font-semibold">End Interview?</h3>
+            <p className="text-sm text-muted-foreground">
+              You've answered {questionCount - 1} question{questionCount - 1 !== 1 ? "s" : ""} so far.
+              Are you sure you want to end the interview and generate your report?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="rounded-lg border px-4 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                Continue Interview
+              </button>
+              <button
+                onClick={confirmEnd}
+                className="rounded-lg bg-destructive text-primary-foreground px-4 py-2 text-sm hover:bg-destructive/90 transition-colors"
+              >
+                End & Get Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
