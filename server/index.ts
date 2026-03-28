@@ -5,6 +5,7 @@ import path from "path";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { extractText } from "./parse.js";
 import { sendInterviewInvite } from "./email.js";
+import { askInterviewer, generateAIReport } from "./ai.js";
 
 const app = express();
 const prisma = new PrismaClient();
@@ -193,6 +194,82 @@ app.post("/api/email/send-invite", async (req, res) => {
   } else {
     // Even if email fails, return the link so HR can copy it
     res.json({ ok: false, link, message: "Email 發送失敗，但你可以手動複製連結" });
+  }
+});
+
+// ──────────────── AI: 產生下一個問題 ────────────────
+
+app.post("/api/ai/chat", async (req, res) => {
+  const { interviewId, messages } = req.body;
+
+  const interview = await prisma.interview.findUnique({ where: { id: interviewId } });
+  if (!interview) {
+    res.status(404).json({ error: "找不到面試" });
+    return;
+  }
+
+  try {
+    const reply = await askInterviewer({
+      config: {
+        position: interview.position,
+        difficulty: interview.difficulty,
+        topics: JSON.parse(interview.topics),
+        maxQuestions: interview.maxQuestions,
+        timeLimitMin: interview.timeLimitMin,
+      },
+      messages,
+      resumeText: interview.resumeText,
+      jdText: interview.jdText,
+    });
+    res.json({ reply });
+  } catch (err) {
+    console.error("AI chat error:", err);
+    res.status(500).json({ error: "AI 回應失敗" });
+  }
+});
+
+// ──────────────── AI: 產生面試報告 ────────────────
+
+app.post("/api/ai/report", async (req, res) => {
+  const { interviewId, messages, durationSec } = req.body;
+
+  const interview = await prisma.interview.findUnique({ where: { id: interviewId } });
+  if (!interview) {
+    res.status(404).json({ error: "找不到面試" });
+    return;
+  }
+
+  try {
+    const report = await generateAIReport({
+      config: {
+        position: interview.position,
+        difficulty: interview.difficulty,
+        topics: JSON.parse(interview.topics),
+        maxQuestions: interview.maxQuestions,
+        timeLimitMin: interview.timeLimitMin,
+      },
+      messages,
+      durationSec,
+      resumeText: interview.resumeText,
+      jdText: interview.jdText,
+    });
+
+    // Save report to DB
+    await prisma.interview.update({
+      where: { id: interviewId },
+      data: {
+        status: "completed",
+        messages: JSON.stringify(messages),
+        report: JSON.stringify(report),
+        durationSec,
+        completedAt: new Date(),
+      },
+    });
+
+    res.json(report);
+  } catch (err) {
+    console.error("AI report error:", err);
+    res.status(500).json({ error: "報告產生失敗" });
   }
 });
 

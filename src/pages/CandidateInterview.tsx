@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import InterviewChat from "@/components/InterviewChat";
 import ReportView from "@/components/ReportView";
-import { buildGreeting, fetchNextQuestion, fetchReport, resetSession } from "@/lib/api";
-import type { InterviewConfig, InterviewReport, Message } from "@/types/interview";
-import { useRef } from "react";
+import type { InterviewReport, Message } from "@/types/interview";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
@@ -42,33 +40,19 @@ export default function CandidateInterview() {
 
   const questionCountRef = useRef(0);
   const messagesRef = useRef<Message[]>([]);
-  const configRef = useRef<InterviewConfig | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const isEndedRef = useRef(false);
+  const interviewIdRef = useRef<string | null>(null);
 
-  // Fetch interview data
+  // Fetch interview data & get first AI greeting
   useEffect(() => {
-    fetch(`${API_URL}/api/interview/${token}`)
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
-      .then((data) => {
-        if (data.status === "completed") {
-          setError("此面試已經完成。");
-          return;
-        }
+    fetch(`${API}/api/interview/${token}`)
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(async (data) => {
+        if (data.status === "completed") { setError("此面試已經完成。"); return; }
+
         setInterviewData(data);
-        // Start the interview
-        resetSession();
-        const config: InterviewConfig = {
-          position: data.position,
-          difficulty: data.difficulty as InterviewConfig["difficulty"],
-          maxQuestions: data.maxQuestions,
-          timeLimitMinutes: data.timeLimitMin,
-          topics: data.topics,
-        };
-        configRef.current = config;
+        interviewIdRef.current = data.id;
         isEndedRef.current = false;
 
         const now = Date.now();
@@ -77,76 +61,118 @@ export default function CandidateInterview() {
         setQuestionCount(1);
         questionCountRef.current = 1;
 
-        const greeting = makeMessage("assistant", buildGreeting(config));
-        setMessages([greeting]);
-        messagesRef.current = [greeting];
-        setPhase("interview");
-
         // Mark as in_progress
-        fetch(`${API_URL}/api/interviews/${data.id}`, {
+        fetch(`${API}/api/interviews/${data.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "in_progress" }),
         });
+
+        // Get AI greeting
+        setIsAiThinking(true);
+        setPhase("interview");
+
+        try {
+          const res = await fetch(`${API}/api/ai/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              interviewId: data.id,
+              messages: [{ role: "user", content: "請開始面試，先打招呼並問第一個問題。" }],
+            }),
+          });
+          const { reply } = await res.json();
+          const greeting = makeMessage("assistant", reply);
+          setMessages([greeting]);
+          messagesRef.current = [greeting];
+        } catch {
+          const fallback = makeMessage("assistant",
+            `你好！我是今天的面試官，將針對 ${data.position} 職位進行面試。請先簡單自我介紹，並說說你對這個職位感興趣的原因？`
+          );
+          setMessages([fallback]);
+          messagesRef.current = [fallback];
+        } finally {
+          setIsAiThinking(false);
+        }
       })
       .catch(() => setError("無效的面試連結"))
       .finally(() => setLoading(false));
   }, [token]);
 
   const endInterview = useCallback(async () => {
-    if (isEndedRef.current || !interviewData) return;
+    if (isEndedRef.current || !interviewIdRef.current) return;
     isEndedRef.current = true;
     setPhase("report");
     setIsGeneratingReport(true);
 
-    const cfg = configRef.current!;
     const msgs = messagesRef.current;
     const start = startTimeRef.current;
     const durationSec = start ? Math.floor((Date.now() - start) / 1000) : 0;
 
-    const result = await fetchReport(cfg, msgs, durationSec);
-    setReport(result);
-    setIsGeneratingReport(false);
-
-    // Save to backend
-    await fetch(`${API_URL}/api/interviews/${interviewData.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "completed",
-        messages: msgs,
-        report: result,
-        durationSec,
-      }),
-    });
-  }, [interviewData]);
+    try {
+      const res = await fetch(`${API}/api/ai/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interviewId: interviewIdRef.current,
+          messages: msgs.map((m) => ({ role: m.role, content: m.content })),
+          durationSec,
+        }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setReport(result);
+      } else {
+        setError(result.error ?? "報告產生失敗");
+      }
+    } catch {
+      setError("報告產生失敗，請稍後再試");
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  }, []);
 
   const sendMessage = useCallback(async (content: string) => {
-    if (isEndedRef.current) return;
+    if (isEndedRef.current || !interviewIdRef.current) return;
 
     const userMsg = makeMessage("user", content);
     setMessages((prev) => { const next = [...prev, userMsg]; messagesRef.current = next; return next; });
     setIsAiThinking(true);
 
-    const cfg = configRef.current!;
     const currentQ = questionCountRef.current;
     const nextQ = currentQ + 1;
     setQuestionCount(nextQ);
     questionCountRef.current = nextQ;
 
-    if (nextQ > cfg.maxQuestions) {
+    const maxQ = interviewData?.maxQuestions ?? 10;
+    if (nextQ > maxQ) {
       setIsAiThinking(false);
       await endInterview();
       return;
     }
 
-    const response = await fetchNextQuestion(cfg, messagesRef.current, nextQ);
-    if (isEndedRef.current) return;
+    try {
+      const res = await fetch(`${API}/api/ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interviewId: interviewIdRef.current,
+          messages: messagesRef.current.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const { reply } = await res.json();
 
-    const assistantMsg = makeMessage("assistant", response);
-    setMessages((prev) => { const next = [...prev, assistantMsg]; messagesRef.current = next; return next; });
-    setIsAiThinking(false);
-  }, [endInterview]);
+      if (isEndedRef.current) return;
+      const assistantMsg = makeMessage("assistant", reply);
+      setMessages((prev) => { const next = [...prev, assistantMsg]; messagesRef.current = next; return next; });
+    } catch {
+      const errMsg = makeMessage("assistant", "抱歉，我暫時無法回應。請再試一次或結束面試。");
+      setMessages((prev) => { const next = [...prev, errMsg]; messagesRef.current = next; return next; });
+    } finally {
+      setIsAiThinking(false);
+    }
+  }, [endInterview, interviewData]);
 
   if (loading) {
     return (
@@ -173,7 +199,7 @@ export default function CandidateInterview() {
         <ReportView
           report={report}
           isGenerating={isGeneratingReport}
-          onReset={() => {}} // No reset for candidate
+          onReset={() => {}}
           messages={messages}
           position={interviewData.position}
         />
