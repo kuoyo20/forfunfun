@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Interview {
+  id             String   @id @default(cuid())
+  position       String
+  difficulty     String
+  maxQuestions   Int
+  timeLimitMin   Int
+  topics         String   // JSON array
+  resumeText     String?
+  jdText         String?
+  resumeFileName String?
+  jdFileName     String?
+  candidateName  String?
+  candidateEmail String?
+  token          String   @unique @default(cuid())
+  status         String   @default("pending") // pending, in_progress, completed
+  messages       String?  // JSON array
+  report         String?  // JSON object
+  durationSec    Int?
+  emailSent      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  completedAt    DateTime?
+}
