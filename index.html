@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>郭佑內容創作中心 v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#b8943f;--gold-d:#8a6a20;--gold-l:rgba(184,148,63,.10);--gold-b:rgba(184,148,63,.30);
+  --bg:#0c0b09;--bg2:#121108;--surface:#1e1b12;--surface2:#252115;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#f0ede4;--text2:#b5ad98;--text3:#7a7260;
+  --serif:'Noto Serif TC',serif;--sans:'Noto Sans TC',sans-serif;
+  --r:8px;--rl:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.6}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--gold-b);border-radius:4px}
+.app{display:grid;grid-template-columns:300px 1fr;min-height:100vh}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-hd{padding:22px 18px 16px;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:11px;margin-bottom:8px}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-d));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;font-family:var(--serif);flex-shrink:0}
+.bname{font-size:14px;font-weight:700;color:var(--text)}
+.bsub{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.06em}
+.vbadge{display:inline-flex;align-items:center;font-size:10px;padding:3px 9px;border-radius:20px;background:var(--gold-l);color:var(--gold-d);border:1px solid var(--gold-b);margin-top:6px}
+.sb-body{padding:16px 14px;flex:1}
+.sec{margin-bottom:16px}
+.slbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.slbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.mtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:16px}
+.mtab{padding:7px 4px;border:1px solid var(--border);border-radius:var(--r);background:transparent;cursor:pointer;text-align:center;transition:all .15s;color:var(--text3)}
+.mtab:hover{border-color:var(--border2);color:var(--text2)}
+.mtab.on{border-color:var(--gold);background:var(--gold-l);color:var(--gold)}
+.mtab .ti{font-size:15px;display:block;margin-bottom:3px}
+.mtab .tl{font-size:11px;font-weight:500}
+.mtab .ts{font-size:9px;color:var(--text3);margin-top:2px}
+.mtab.on .ts{color:var(--gold-d)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ob{padding:7px 6px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;text-align:left;transition:all .15s;width:100%}
+.ob:hover{border-color:var(--border2)}
+.ob.on{border-color:var(--gold);background:var(--gold-l)}
+.ob .ol{font-size:11px;font-weight:500;color:var(--text);display:block}
+.ob.on .ol{color:var(--gold)}
+.ob .od{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.3}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.tag{padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:10px;color:var(--text3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tag:hover{border-color:var(--border2);color:var(--text2)}
+.tag.on{border-color:var(--gold);color:var(--gold-d);background:var(--gold-l)}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:12px;font-family:var(--sans);outline:none;transition:border .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+.togrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.tog{width:32px;height:17px;border-radius:9px;background:var(--border2);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+.tog.on{background:var(--gold)}
+.tth{position:absolute;top:3px;left:3px;width:11px;height:11px;border-radius:50%;background:#fff;transition:left .2s}
+.tog.on .tth{left:18px}
+.tlb{font-size:11px;color:var(--text2);line-height:1.4}
+.genbtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold-d));border:none;border-radius:var(--rl);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;font-family:var(--sans);letter-spacing:.04em;margin-top:6px}
+.genbtn:hover{opacity:.88}
+.genbtn:disabled{opacity:.35;cursor:not-allowed}
+.main{background:var(--bg);padding:26px 32px 60px;display:flex;flex-direction:column;gap:18px}
+.mh{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.mh h1{font-size:18px;font-weight:700;color:var(--text);font-family:var(--serif)}
+.mh p{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5}
+.badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.bdg{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border2);color:var(--text2)}
+.bdg.g{background:var(--gold-l);border-color:var(--gold-b);color:var(--gold-d)}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 40px;gap:16px;min-height:50vh}
+.wi{font-size:40px;opacity:.2;margin-bottom:2px}
+.welcome h2{font-size:20px;font-family:var(--serif);color:var(--text2);font-weight:400}
+.welcome p{font-size:13px;color:var(--text3);max-width:340px;line-height:1.8}
+.qblock{border-left:2px solid var(--gold);padding:11px 15px;background:var(--gold-l);border-radius:0 var(--r) var(--r) 0;text-align:left}
+.qblock p{font-size:12px;color:var(--gold-d);font-style:italic;line-height:1.7;font-family:var(--serif)}
+.ocard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ocard-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.ocard-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.oacts{display:flex;gap:5px;flex-wrap:wrap}
+.abtn{padding:5px 10px;border:1px solid var(--border2);border-radius:var(--r);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--sans)}
+.abtn:hover{background:var(--surface2);color:var(--text)}
+.abtn.p{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500}
+.abtn.p:hover{opacity:.88}
+.ocard-body{padding:20px}
+.mta{width:100%;min-height:360px;background:transparent;border:none;color:var(--text);font-size:14px;line-height:1.9;font-family:var(--serif);resize:vertical;outline:none;white-space:pre-wrap}
+.sind{display:none;align-items:center;gap:7px;font-size:11px;color:#5a9e5a;margin-bottom:12px}
+.sind.show{display:flex}
+.pulse{width:6px;height:6px;border-radius:50%;background:#5a9e5a;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.pcard-hd{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.pname{font-size:11px;font-weight:700;color:var(--text)}
+.psub{font-size:9px;color:var(--text3);margin-top:1px}
+.pbody{padding:12px;font-size:11px;color:var(--text2);line-height:1.75;min-height:110px;font-family:var(--serif);white-space:pre-wrap}
+.csm{font-size:10px;padding:3px 7px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;font-family:var(--sans)}
+.csm:hover{background:var(--surface2);color:var(--text2)}
+.pinfo-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.pinfo{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px}
+.pinfo-name{font-size:10px;font-weight:700;color:var(--gold-d);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.pinfo-desc{font-size:10px;color:var(--text3);line-height:1.5}
+.bchap{border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;background:var(--surface);overflow:hidden}
+.bhead{display:flex;align-items:center;gap:10px;padding:11px 14px}
+.bnum{width:22px;height:22px;border-radius:50%;background:var(--gold-l);color:var(--gold-d);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btitle{font-size:13px;font-weight:500;color:var(--text)}
+.bbody{padding:9px 14px 12px 46px;border-top:1px solid var(--border)}
+.mitem{margin-bottom:7px}
+.mlbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.mval{font-size:11px;color:var(--text2);line-height:1.5}
+.errbox{background:rgba(180,40,40,.12);border:1px solid rgba(200,60,60,.3);border-radius:var(--r);padding:14px 16px;font-size:12px;color:#e88;line-height:1.7;white-space:pre-wrap}
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:22px;max-width:520px;width:100%}
+.modal h3{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px}
+.sb-ft{padding:12px 14px;border-top:1px solid var(--border)}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-hd">
+      <div class="logo">
+        <div class="av">郭</div>
+        <div>
+          <div class="bname">郭佑內容創作中心</div>
+          <div class="bsub">Content Creation Studio</div>
+        </div>
+      </div>
+      <div class="vbadge">v5.0 — Claude Opus</div>
+    </div>
+    <div class="sb-body">
+      <!-- Mode Selection -->
+      <div class="sec">
+        <div class="slbl">創作模式</div>
+        <div class="mtabs" id="modeTabs">
+          <button class="mtab on" data-mode="personal">
+            <span class="ti">&#128221;</span>
+            <span class="tl">個人文章</span>
+            <span class="ts">部落格/社群</span>
+          </button>
+          <button class="mtab" data-mode="column">
+            <span class="ti">&#128240;</span>
+            <span class="tl">專欄</span>
+            <span class="ts">深度分析</span>
+          </button>
+          <button class="mtab" data-mode="book">
+            <span class="ti">&#128218;</span>
+            <span class="tl">書籍大綱</span>
+            <span class="ts">章節規劃</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Topic -->
+      <div class="sec">
+        <div class="slbl">主題</div>
+        <input type="text" id="topicInput" placeholder="輸入你的創作主題...">
+      </div>
+
+      <!-- Tone -->
+      <div class="sec" id="toneSection">
+        <div class="slbl">語調風格</div>
+        <div class="tags" id="toneTags">
+          <span class="tag on" data-val="professional">專業</span>
+          <span class="tag" data-val="casual">輕鬆</span>
+          <span class="tag" data-val="storytelling">敘事</span>
+          <span class="tag" data-val="academic">學術</span>
+          <span class="tag" data-val="humorous">幽默</span>
+          <span class="tag" data-val="inspirational">勵志</span>
+        </div>
+      </div>
+
+      <!-- Length -->
+      <div class="sec" id="lengthSection">
+        <div class="slbl">文章長度</div>
+        <div class="g3" id="lengthOpts">
+          <button class="ob" data-val="short">
+            <span class="ol">短篇</span>
+            <span class="od">500-800字</span>
+          </button>
+          <button class="ob on" data-val="medium">
+            <span class="ol">中篇</span>
+            <span class="od">1000-1500字</span>
+          </button>
+          <button class="ob" data-val="long">
+            <span class="ol">長篇</span>
+            <span class="od">2000-3000字</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Audience -->
+      <div class="sec" id="audienceSection">
+        <div class="slbl">目標讀者</div>
+        <div class="g2" id="audienceOpts">
+          <button class="ob on" data-val="general">
+            <span class="ol">一般大眾</span>
+          </button>
+          <button class="ob" data-val="professional">
+            <span class="ol">專業人士</span>
+          </button>
+          <button class="ob" data-val="student">
+            <span class="ol">學生族群</span>
+          </button>
+          <button class="ob" data-val="business">
+            <span class="ol">商業決策者</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Book-specific: Chapter Count -->
+      <div class="sec hidden" id="chapterSection">
+        <div class="slbl">章節數量</div>
+        <div class="g4" id="chapterOpts">
+          <button class="ob" data-val="5"><span class="ol">5章</span></button>
+          <button class="ob on" data-val="8"><span class="ol">8章</span></button>
+          <button class="ob" data-val="10"><span class="ol">10章</span></button>
+          <button class="ob" data-val="12"><span class="ol">12章</span></button>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="sec">
+        <div class="slbl">進階選項</div>
+        <div class="togrow">
+          <div class="tog on" id="togSEO" data-key="seo"><div class="tth"></div></div>
+          <div class="tlb">SEO 優化建議</div>
+        </div>
+        <div class="togrow">
+          <div class="tog" id="togCTA" data-key="cta"><div class="tth"></div></div>
+          <div class="tlb">加入行動呼籲 (CTA)</div>
+        </div>
+        <div class="togrow">
+          <div class="tog" id="togData" data-key="data"><div class="tth"></div></div>
+          <div class="tlb">引用數據佐證</div>
+        </div>
+      </div>
+
+      <!-- Keywords -->
+      <div class="sec">
+        <div class="slbl">關鍵字 (選填)</div>
+        <input type="text" id="kwInput" placeholder="以逗號分隔，例：AI, 行銷, 趨勢">
+      </div>
+
+      <!-- Extra Instructions -->
+      <div class="sec">
+        <div class="slbl">額外指示 (選填)</div>
+        <textarea id="extraInput" rows="2" placeholder="任何額外的創作要求..."></textarea>
+      </div>
+    </div>
+
+    <div class="sb-ft">
+      <button class="genbtn" id="genBtn">&#9998; 開始創作</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="mh">
+      <div>
+        <h1>&#128396; 內容創作工作台</h1>
+        <p>選擇創作模式、設定參數，讓 AI 為你生成高品質內容</p>
+        <div class="badges">
+          <span class="bdg g">Claude Opus</span>
+          <span class="bdg">繁體中文</span>
+          <span class="bdg">串流輸出</span>
+        </div>
+      </div>
+      <button class="abtn" id="apiKeyBtn">&#128273; API Key</button>
+    </div>
+
+    <!-- Welcome State -->
+    <div id="welcomeState" class="welcome">
+      <div class="wi">&#9997;</div>
+      <h2>準備好開始創作了嗎？</h2>
+      <p>在左側選擇創作模式、輸入主題，點擊「開始創作」即可生成內容。支援個人文章、專欄分析與書籍大綱三種模式。</p>
+      <div class="qblock">
+        <p>「好的內容不是一次寫成的，而是在不斷打磨中誕生。」</p>
+      </div>
+    </div>
+
+    <!-- Output State -->
+    <div id="outputState" class="hidden">
+      <div class="sind" id="streamInd">
+        <div class="pulse"></div>
+        <span>AI 正在生成內容中...</span>
+      </div>
+      <div id="outputArea"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Refine Modal -->
+<div class="modal-bg" id="refineModal">
+  <div class="modal">
+    <h3>&#128295; 精煉內容</h3>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:10px;">告訴 AI 你想如何修改這段內容</p>
+    <textarea id="refineInput" rows="4" placeholder="例：語氣更輕鬆一點、加入更多具體案例、縮短為300字以內..."></textarea>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;">
+      <button class="abtn" id="refineCancelBtn">取消</button>
+      <button class="abtn p" id="refineSubmitBtn">送出修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal-bg" id="apiKeyModal">
+  <div class="modal">
+    <h3>&#128273; 設定 API Key</h3>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:10px;">輸入你的 Anthropic API Key（儲存在本機 localStorage）</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;">
+      <button class="abtn" id="apiKeyCancelBtn">取消</button>
+      <button class="abtn p" id="apiKeySaveBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+const S = {
+  mode: 'personal',
+  tone: 'professional',
+  length: 'medium',
+  audience: 'general',
+  chapters: '8',
+  seo: true,
+  cta: false,
+  data: false,
+  topic: '',
+  keywords: '',
+  extra: '',
+  apiKey: localStorage.getItem('guo_api_key') || '',
+  streaming: false,
+  lastOutput: ''
+};
+
+// ── DOM Refs ──
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+const modeTabs = $$('#modeTabs .mtab');
+const toneTags = $$('#toneTags .tag');
+const lengthOpts = $$('#lengthOpts .ob');
+const audienceOpts = $$('#audienceOpts .ob');
+const chapterOpts = $$('#chapterOpts .ob');
+const toggles = $$('.tog');
+
+const topicInput = $('#topicInput');
+const kwInput = $('#kwInput');
+const extraInput = $('#extraInput');
+const genBtn = $('#genBtn');
+const welcomeState = $('#welcomeState');
+const outputState = $('#outputState');
+const outputArea = $('#outputArea');
+const streamInd = $('#streamInd');
+
+// ── UI Wiring ──
+function wireRadio(elems, stateKey, parentClass) {
+  elems.forEach(el => {
+    el.addEventListener('click', () => {
+      elems.forEach(e => e.classList.remove('on'));
+      el.classList.add('on');
+      S[stateKey] = el.dataset.val || el.dataset.mode;
+      if (stateKey === 'mode') onModeChange();
+    });
+  });
+}
+
+wireRadio(modeTabs, 'mode');
+wireRadio(toneTags, 'tone');
+wireRadio(lengthOpts, 'length');
+wireRadio(audienceOpts, 'audience');
+wireRadio(chapterOpts, 'chapters');
+
+toggles.forEach(t => {
+  t.addEventListener('click', () => {
+    t.classList.toggle('on');
+    S[t.dataset.key] = t.classList.contains('on');
+  });
+});
+
+topicInput.addEventListener('input', e => S.topic = e.target.value);
+kwInput.addEventListener('input', e => S.keywords = e.target.value);
+extraInput.addEventListener('input', e => S.extra = e.target.value);
+
+function onModeChange() {
+  const isBook = S.mode === 'book';
+  $('#chapterSection').classList.toggle('hidden', !isBook);
+  $('#lengthSection').classList.toggle('hidden', isBook);
+  $('#audienceSection').classList.toggle('hidden', false);
+  $('#toneSection').classList.toggle('hidden', false);
+}
+
+// ── API Key Modal ──
+$('#apiKeyBtn').addEventListener('click', () => {
+  $('#apiKeyInput').value = S.apiKey;
+  $('#apiKeyModal').classList.add('show');
+});
+$('#apiKeyCancelBtn').addEventListener('click', () => $('#apiKeyModal').classList.remove('show'));
+$('#apiKeySaveBtn').addEventListener('click', () => {
+  S.apiKey = $('#apiKeyInput').value.trim();
+  localStorage.setItem('guo_api_key', S.apiKey);
+  $('#apiKeyModal').classList.remove('show');
+});
+
+// ── Refine Modal ──
+let refineTarget = '';
+$('#refineCancelBtn').addEventListener('click', () => $('#refineModal').classList.remove('show'));
+$('#refineSubmitBtn').addEventListener('click', () => {
+  const instruction = $('#refineInput').value.trim();
+  if (!instruction) return;
+  $('#refineModal').classList.remove('show');
+  doRefine(refineTarget, instruction);
+});
+
+// ── Prompt Building ──
+function buildPrompt() {
+  const modeMap = {
+    personal: '個人文章（部落格/社群貼文）',
+    column: '專欄文章（深度分析）',
+    book: '書籍大綱（章節規劃）'
+  };
+  const toneMap = {
+    professional: '專業',
+    casual: '輕鬆',
+    storytelling: '敘事',
+    academic: '學術',
+    humorous: '幽默',
+    inspirational: '勵志'
+  };
+  const lenMap = {
+    short: '500-800字',
+    medium: '1000-1500字',
+    long: '2000-3000字'
+  };
+  const audMap = {
+    general: '一般大眾',
+    professional: '專業人士',
+    student: '學生族群',
+    business: '商業決策者'
+  };
+
+  let prompt = `你是一位資深的繁體中文內容創作專家「郭佑」。請根據以下要求創作內容：\n\n`;
+  prompt += `【創作模式】${modeMap[S.mode]}\n`;
+  prompt += `【主題】${S.topic}\n`;
+  prompt += `【語調風格】${toneMap[S.tone]}\n`;
+  prompt += `【目標讀者】${audMap[S.audience]}\n`;
+
+  if (S.mode === 'book') {
+    prompt += `【章節數量】${S.chapters} 章\n`;
+    prompt += `\n請為此主題設計一本書的完整大綱，包含：\n`;
+    prompt += `1. 書名建議（3個選項）\n`;
+    prompt += `2. 書籍簡介（100字內）\n`;
+    prompt += `3. 目標讀者描述\n`;
+    prompt += `4. 每章包含：章節標題、核心概念、主要內容摘要（50字）、預估字數\n`;
+  } else {
+    prompt += `【文章長度】${lenMap[S.length]}\n`;
+    if (S.mode === 'column') {
+      prompt += `\n請撰寫一篇深度專欄分析文章，包含：\n`;
+      prompt += `1. 引人注目的標題\n2. 導言\n3. 核心論點（至少3個）\n4. 數據或案例支撐\n5. 結論與展望\n`;
+    } else {
+      prompt += `\n請撰寫一篇完整的文章，包含：\n`;
+      prompt += `1. 吸引人的標題\n2. 開頭引言\n3. 主體內容（分段落）\n4. 結尾\n`;
+    }
+  }
+
+  if (S.keywords) prompt += `\n【關鍵字】${S.keywords}\n`;
+  if (S.seo) prompt += `\n【SEO】請在文章中自然融入SEO優化元素，包含meta描述建議。\n`;
+  if (S.cta) prompt += `\n【CTA】請在適當位置加入行動呼籲。\n`;
+  if (S.data) prompt += `\n【數據】請引用相關數據或研究來佐證觀點。\n`;
+  if (S.extra) prompt += `\n【額外要求】${S.extra}\n`;
+
+  prompt += `\n請全程使用繁體中文撰寫，語言流暢自然。`;
+  return prompt;
+}
+
+// ── API Streaming ──
+async function callAPI(prompt, onChunk) {
+  if (!S.apiKey) {
+    throw new Error('請先設定 API Key（點擊右上角 🔑 API Key 按鈕）');
+  }
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': S.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      stream: true,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API 錯誤 (${res.status})`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const json = JSON.parse(data);
+          if (json.type === 'content_block_delta' && json.delta?.text) {
+            fullText += json.delta.text;
+            onChunk(fullText);
+          }
+        } catch (e) {}
+      }
+    }
+  }
+  return fullText;
+}
+
+// ── Render Output ──
+function renderArticle(text, isStreaming) {
+  const actions = isStreaming ? '' : `
+    <div class="oacts">
+      <button class="abtn" onclick="copyText()">&#128203; 複製</button>
+      <button class="abtn" onclick="openRefine('article')">&#128295; 精煉</button>
+      <button class="abtn" onclick="downloadText()">&#128229; 下載</button>
+    </div>`;
+
+  outputArea.innerHTML = `
+    <div class="ocard">
+      <div class="ocard-hd">
+        <span class="ocard-title">${S.mode === 'book' ? '書籍大綱' : S.mode === 'column' ? '專欄文章' : '個人文章'}</span>
+        ${actions}
+      </div>
+      <div class="ocard-body">
+        <textarea class="mta" id="mainOutput" ${isStreaming ? 'readonly' : ''}>${escapeHtml(text)}</textarea>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function showError(msg) {
+  outputArea.innerHTML = `<div class="errbox">${escapeHtml(msg)}</div>`;
+}
+
+// ── Actions ──
+function copyText() {
+  const el = $('#mainOutput');
+  if (el) {
+    navigator.clipboard.writeText(el.value).then(() => {
+      const btn = document.querySelector('.oacts .abtn');
+      if (btn) { btn.textContent = '✓ 已複製'; setTimeout(() => btn.innerHTML = '&#128203; 複製', 1500); }
+    });
+  }
+}
+
+function downloadText() {
+  const el = $('#mainOutput');
+  if (!el) return;
+  const blob = new Blob([el.value], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${S.topic || '內容'}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+function openRefine(target) {
+  refineTarget = target;
+  $('#refineInput').value = '';
+  $('#refineModal').classList.add('show');
+}
+
+async function doRefine(target, instruction) {
+  const el = $('#mainOutput');
+  if (!el) return;
+  const original = el.value;
+
+  S.streaming = true;
+  genBtn.disabled = true;
+  streamInd.classList.add('show');
+
+  const prompt = `以下是一篇已生成的文章，請根據使用者的修改指示進行調整。\n\n【原文】\n${original}\n\n【修改指示】\n${instruction}\n\n請輸出修改後的完整文章，全程使用繁體中文。`;
+
+  try {
+    const result = await callAPI(prompt, (text) => {
+      renderArticle(text, true);
+    });
+    S.lastOutput = result;
+    renderArticle(result, false);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    S.streaming = false;
+    genBtn.disabled = false;
+    streamInd.classList.remove('show');
+  }
+}
+
+// ── Generate ──
+genBtn.addEventListener('click', async () => {
+  if (S.streaming) return;
+  if (!S.topic.trim()) {
+    topicInput.focus();
+    topicInput.style.borderColor = '#c83c3c';
+    setTimeout(() => topicInput.style.borderColor = '', 1500);
+    return;
+  }
+
+  S.streaming = true;
+  genBtn.disabled = true;
+  genBtn.textContent = '⏳ 生成中...';
+  welcomeState.classList.add('hidden');
+  outputState.classList.remove('hidden');
+  streamInd.classList.add('show');
+  outputArea.innerHTML = '';
+
+  const prompt = buildPrompt();
+
+  try {
+    const result = await callAPI(prompt, (text) => {
+      renderArticle(text, true);
+    });
+    S.lastOutput = result;
+    renderArticle(result, false);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    S.streaming = false;
+    genBtn.disabled = false;
+    genBtn.innerHTML = '&#9998; 開始創作';
+    streamInd.classList.remove('show');
+  }
+});
+
+// ── Close modals on bg click ──
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => {
+    if (e.target === bg) bg.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>
