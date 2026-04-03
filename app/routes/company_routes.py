@@ -8,9 +8,10 @@ router = APIRouter(prefix="/companies")
 templates = Jinja2Templates(directory="app/templates")
 
 
-def _ctx(request, **kwargs):
-    return {"request": request, "user": request.state.user,
-            "get_flashed_messages": lambda: request.state.flash, **kwargs}
+def _render(request, template, **kwargs):
+    ctx = {"request": request, "user": request.state.user,
+           "get_flashed_messages": lambda: request.state.flash, **kwargs}
+    return templates.TemplateResponse(request=request, name=template, context=ctx)
 
 
 @router.get("")
@@ -24,13 +25,13 @@ async def list_companies(request: Request):
         GROUP BY c.id ORDER BY c.name
     """).fetchall()
     db.close()
-    return templates.TemplateResponse("companies/list.html", _ctx(request, companies=companies))
+    return _render(request, "companies/list.html", companies=companies)
 
 
 @router.get("/new")
 @login_required
 async def new_company(request: Request):
-    return templates.TemplateResponse("companies/form.html", _ctx(request, company=None))
+    return _render(request, "companies/form.html", company=None)
 
 
 @router.post("/new")
@@ -74,7 +75,7 @@ async def view_company(request: Request, company_id: int):
         WHERE r.company_id = ? ORDER BY r.is_current DESC, p.last_name
     """, (company_id,)).fetchall()
     db.close()
-    return templates.TemplateResponse("companies/detail.html", _ctx(request, company=company, people=people))
+    return _render(request, "companies/detail.html", company=company, people=people)
 
 
 @router.get("/{company_id}/edit")
@@ -85,7 +86,7 @@ async def edit_company(request: Request, company_id: int):
     db.close()
     if not company:
         return RedirectResponse("/companies", status_code=302)
-    return templates.TemplateResponse("companies/form.html", _ctx(request, company=company))
+    return _render(request, "companies/form.html", company=company)
 
 
 @router.post("/{company_id}/edit")

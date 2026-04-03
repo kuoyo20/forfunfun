@@ -8,14 +8,18 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
+def _render(request, template, **kwargs):
+    ctx = {"request": request, "user": kwargs.pop("user", None),
+           "get_flashed_messages": lambda: request.state.flash, **kwargs}
+    return templates.TemplateResponse(request=request, name=template, context=ctx)
+
+
 @router.get("/login")
 async def login_page(request: Request):
     user = get_user_from_request(request)
     if user:
         return RedirectResponse("/", status_code=302)
-    return templates.TemplateResponse("login.html", {
-        "request": request, "user": None, "get_flashed_messages": lambda: request.state.flash
-    })
+    return _render(request, "login.html")
 
 
 @router.post("/login")
@@ -26,9 +30,7 @@ async def login_submit(request: Request, username: str = Form(...), password: st
 
     if not user or not verify_password(password, user["password_hash"]):
         request.state.flash = [("error", "帳號或密碼錯誤")]
-        return templates.TemplateResponse("login.html", {
-            "request": request, "user": None, "get_flashed_messages": lambda: request.state.flash
-        })
+        return _render(request, "login.html")
 
     response = RedirectResponse("/", status_code=302)
     response.set_cookie("session", create_session_token(user["id"]), httponly=True, max_age=86400 * 30)
@@ -37,9 +39,7 @@ async def login_submit(request: Request, username: str = Form(...), password: st
 
 @router.get("/register")
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {
-        "request": request, "user": None, "get_flashed_messages": lambda: request.state.flash
-    })
+    return _render(request, "register.html")
 
 
 @router.post("/register")
@@ -53,9 +53,7 @@ async def register_submit(
 ):
     if password != password_confirm:
         request.state.flash = [("error", "兩次密碼不一致")]
-        return templates.TemplateResponse("register.html", {
-            "request": request, "user": None, "get_flashed_messages": lambda: request.state.flash
-        })
+        return _render(request, "register.html")
 
     db = get_db()
     existing = db.execute(
@@ -65,9 +63,7 @@ async def register_submit(
     if existing:
         db.close()
         request.state.flash = [("error", "帳號或 Email 已被使用")]
-        return templates.TemplateResponse("register.html", {
-            "request": request, "user": None, "get_flashed_messages": lambda: request.state.flash
-        })
+        return _render(request, "register.html")
 
     db.execute(
         "INSERT INTO users (username, email, password_hash, display_name) VALUES (?, ?, ?, ?)",

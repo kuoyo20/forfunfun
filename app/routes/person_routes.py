@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from typing import Optional
 from app.auth import login_required
 from app.database import get_db
 
@@ -9,9 +8,10 @@ router = APIRouter(prefix="/persons")
 templates = Jinja2Templates(directory="app/templates")
 
 
-def _ctx(request, **kwargs):
-    return {"request": request, "user": request.state.user,
-            "get_flashed_messages": lambda: request.state.flash, **kwargs}
+def _render(request, template, **kwargs):
+    ctx = {"request": request, "user": request.state.user,
+           "get_flashed_messages": lambda: request.state.flash, **kwargs}
+    return templates.TemplateResponse(request=request, name=template, context=ctx)
 
 
 def _get_or_create_tag(db, name: str) -> int:
@@ -77,7 +77,6 @@ async def list_persons(request: Request):
     else:
         persons = db.execute("SELECT * FROM persons ORDER BY updated_at DESC").fetchall()
 
-    # Get tags and roles for each person
     person_list = []
     for p in persons:
         pid = p["id"]
@@ -92,8 +91,8 @@ async def list_persons(request: Request):
 
     all_tags = db.execute("SELECT DISTINCT t.name FROM tags t JOIN person_tags pt ON pt.tag_id = t.id ORDER BY t.name").fetchall()
     db.close()
-    return templates.TemplateResponse("persons/list.html",
-        _ctx(request, person_list=person_list, all_tags=[t["name"] for t in all_tags], current_tag=tag_filter))
+    return _render(request, "persons/list.html",
+        person_list=person_list, all_tags=[t["name"] for t in all_tags], current_tag=tag_filter)
 
 
 @router.get("/new")
@@ -102,8 +101,8 @@ async def new_person(request: Request):
     db = get_db()
     companies = db.execute("SELECT id, name FROM companies ORDER BY name").fetchall()
     db.close()
-    return templates.TemplateResponse("persons/form.html",
-        _ctx(request, person=None, roles=[], tags=[], companies=[dict(c) for c in companies]))
+    return _render(request, "persons/form.html",
+        person=None, roles=[], tags=[], companies=[dict(c) for c in companies])
 
 
 @router.post("/new")
@@ -168,14 +167,12 @@ async def view_person(request: Request, person_id: int):
         ORDER BY el.created_at DESC LIMIT 10
     """, (person_id,)).fetchall()
 
-    # Get all persons for relationship dropdown
     all_persons = db.execute("SELECT id, first_name, last_name FROM persons WHERE id != ? ORDER BY first_name", (person_id,)).fetchall()
 
     db.close()
-    return templates.TemplateResponse("persons/detail.html", _ctx(
-        request, person=person, roles=roles, tags=[t["name"] for t in tags],
-        relationships=relationships, logs=logs, all_persons=all_persons,
-    ))
+    return _render(request, "persons/detail.html",
+        person=person, roles=roles, tags=[t["name"] for t in tags],
+        relationships=relationships, logs=logs, all_persons=all_persons)
 
 
 @router.get("/{person_id}/edit")
@@ -195,10 +192,9 @@ async def edit_person(request: Request, person_id: int):
     """, (person_id,)).fetchall()
     companies = db.execute("SELECT id, name FROM companies ORDER BY name").fetchall()
     db.close()
-    return templates.TemplateResponse("persons/form.html", _ctx(
-        request, person=dict(person), roles=[dict(r) for r in roles],
-        tags=[t["name"] for t in tags], companies=[dict(c) for c in companies],
-    ))
+    return _render(request, "persons/form.html",
+        person=dict(person), roles=[dict(r) for r in roles],
+        tags=[t["name"] for t in tags], companies=[dict(c) for c in companies])
 
 
 @router.post("/{person_id}/edit")

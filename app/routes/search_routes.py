@@ -7,6 +7,12 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
+def _render(request, template, **kwargs):
+    ctx = {"request": request, "user": request.state.user,
+           "get_flashed_messages": lambda: request.state.flash, **kwargs}
+    return templates.TemplateResponse(request=request, name=template, context=ctx)
+
+
 @router.get("/search")
 @login_required
 async def search(request: Request):
@@ -43,11 +49,7 @@ async def search(request: Request):
 
         db.close()
 
-    return templates.TemplateResponse("search.html", {
-        "request": request, "user": request.state.user,
-        "get_flashed_messages": lambda: request.state.flash,
-        "q": q, "results": results,
-    })
+    return _render(request, "search.html", q=q, results=results)
 
 
 @router.get("/dashboard")
@@ -69,8 +71,5 @@ async def dashboard(request: Request):
         ORDER BY el.created_at DESC LIMIT 20
     """).fetchall()
     db.close()
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request, "user": request.state.user,
-        "get_flashed_messages": lambda: request.state.flash,
-        "stats": stats, "recent_persons": recent_persons, "recent_logs": recent_logs,
-    })
+    return _render(request, "dashboard.html",
+        stats=stats, recent_persons=recent_persons, recent_logs=recent_logs)
