@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}名片辨識結果 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>名片辨識結果</h2>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>OCR 辨識文字</h3>
+        <pre style="white-space: pre-wrap; background: var(--bg-light); padding: 1rem; border-radius: 6px;">{{ ocr_text }}</pre>
+    </div>
+
+    <div class="card">
+        <h3>請確認並修正資料</h3>
+        <form method="post" action="/persons/new">
+            <div class="grid-2">
+                <label>姓
+                    <input type="text" name="first_name" value="{{ card_info.first_name }}" required>
+                </label>
+                <label>名
+                    <input type="text" name="last_name" value="{{ card_info.last_name }}">
+                </label>
+            </div>
+            <div class="grid-2">
+                <label>Email
+                    <input type="email" name="email" value="{{ card_info.email }}">
+                </label>
+                <label>電話
+                    <input type="text" name="phone" value="{{ card_info.phone }}">
+                </label>
+            </div>
+
+            <h4>身分</h4>
+            <div class="grid-2">
+                <label>公司
+                    <select name="role_company_id[]">
+                        <option value="">-- 選擇或之後新增 --</option>
+                        {% for c in companies %}
+                        <option value="{{ c.id }}" {% if c.name == card_info.company %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>職稱
+                    <input type="text" name="role_title[]" value="{{ card_info.title }}">
+                </label>
+            </div>
+            <div class="grid-2">
+                <label>工作 Email
+                    <input type="email" name="role_work_email[]" value="{{ card_info.email }}">
+                </label>
+                <label>工作電話
+                    <input type="text" name="role_work_phone[]" value="{{ card_info.phone }}">
+                </label>
+            </div>
+            <input type="hidden" name="role_is_current[]" value="0">
+
+            <label>備註
+                <textarea name="notes" rows="2">名片掃描匯入{% if card_info.company %} - {{ card_info.company }}{% endif %}</textarea>
+            </label>
+            <input type="hidden" name="tags" value="名片掃描">
+
+            <div class="btn-group">
+                <button type="submit">儲存聯絡人</button>
+                <a href="/import" role="button" class="btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if card_info.company %}
+<p style="margin-top: 0.5rem; color: #6c757d;">
+    偵測到公司名稱「{{ card_info.company }}」。如果公司不在下拉選單中，請先<a href="/companies/new" target="_blank">新增公司</a>後重新掃描。
+</p>
+{% endif %}
+{% endblock %}

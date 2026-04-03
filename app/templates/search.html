@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}搜尋「{{ q }}」 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>搜尋結果：「{{ q }}」</h2>
+
+{% if not q %}
+<p>請在上方搜尋欄輸入關鍵字。</p>
+{% else %}
+
+{% if results.persons %}
+<div class="card">
+    <h3>聯絡人 ({{ results.persons|length }})</h3>
+    <table>
+        <thead><tr><th>姓名</th><th>Email</th><th>電話</th></tr></thead>
+        <tbody>
+        {% for p in results.persons %}
+        <tr>
+            <td><a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a></td>
+            <td>{{ p.email or '-' }}</td>
+            <td>{{ p.phone or '-' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if results.companies %}
+<div class="card">
+    <h3>公司 ({{ results.companies|length }})</h3>
+    <table>
+        <thead><tr><th>名稱</th><th>產業</th><th>網站</th></tr></thead>
+        <tbody>
+        {% for c in results.companies %}
+        <tr>
+            <td><a href="/companies/{{ c.id }}">{{ c.name }}</a></td>
+            <td>{{ c.industry or '-' }}</td>
+            <td>{{ c.website or '-' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if results.tags %}
+<div class="card">
+    <h3>標籤</h3>
+    {% for t in results.tags %}
+    <a href="/persons?tag={{ t.name }}" class="tag">{{ t.name }} ({{ t.cnt }})</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not results.persons and not results.companies and not results.tags %}
+<p>找不到符合「{{ q }}」的結果。</p>
+{% endif %}
+
+{% endif %}
+{% endblock %}

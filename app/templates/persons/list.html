@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}聯絡人列表 - 人脈管理系統{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <h2>聯絡人列表{% if current_tag %} <span class="tag">{{ current_tag }}</span>{% endif %}</h2>
+    <a href="/persons/new" role="button">新增聯絡人</a>
+</div>
+
+{% if all_tags %}
+<div style="margin-bottom: 1rem;">
+    <strong>標籤篩選：</strong>
+    <a href="/persons" style="margin-right: 0.5rem; {% if not current_tag %}font-weight:bold;{% endif %}">全部</a>
+    {% for t in all_tags %}
+    <a href="/persons?tag={{ t }}" class="tag" style="{% if t == current_tag %}background:#1565c0;color:white;{% endif %}">{{ t }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if person_list %}
+<table>
+    <thead>
+        <tr>
+            <th>姓名</th>
+            <th>Email</th>
+            <th>公司 / 職稱</th>
+            <th>標籤</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in person_list %}
+        <tr>
+            <td><a href="/persons/{{ item.person.id }}">{{ item.person.first_name }} {{ item.person.last_name }}</a></td>
+            <td>{{ item.person.email or '-' }}</td>
+            <td>
+                {% for r in item.roles %}
+                    <div>
+                        {% if r.company_name %}<a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>{% endif %}
+                        {% if r.title %} - {{ r.title }}{% endif %}
+                        {% if not r.is_current %}<span class="badge past">已離職</span>{% endif %}
+                    </div>
+                {% endfor %}
+                {% if not item.roles %}-{% endif %}
+            </td>
+            <td>
+                {% for t in item.tags %}
+                <a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>
+                {% endfor %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>尚無聯絡人{% if current_tag %}符合標籤「{{ current_tag }}」{% endif %}。<a href="/persons/new">新增第一位聯絡人</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}首頁 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>歡迎回來，{{ user.display_name or user.username }}！</h2>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.persons }}</div>
+        <div class="stat-label">聯絡人</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.companies }}</div>
+        <div class="stat-label">公司</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.tags }}</div>
+        <div class="stat-label">標籤</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.users }}</div>
+        <div class="stat-label">使用者</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div>
+        <div class="card">
+            <h3>最近更新的聯絡人</h3>
+            {% if recent_persons %}
+            <table>
+                <thead><tr><th>姓名</th><th>Email</th><th>更新時間</th></tr></thead>
+                <tbody>
+                {% for p in recent_persons %}
+                <tr>
+                    <td><a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a></td>
+                    <td>{{ p.email or '-' }}</td>
+                    <td>{{ p.updated_at[:16] if p.updated_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>尚無聯絡人。<a href="/persons/new">新增第一位聯絡人</a></p>
+            {% endif %}
+        </div>
+    </div>
+    <div>
+        <div class="card">
+            <h3>最近活動</h3>
+            {% if recent_logs %}
+            {% for log in recent_logs %}
+            <div class="activity-item">
+                <strong>{{ log.username or '系統' }}</strong> {{ log.action }}了{{ log.entity_type }}
+                {% if log.changes %} - {{ log.changes }}{% endif %}
+                <div class="time">{{ log.created_at[:16] if log.created_at else '' }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>尚無活動紀錄。</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="btn-group" style="margin-top: 1rem;">
+    <a href="/persons/new" role="button">新增聯絡人</a>
+    <a href="/companies/new" role="button" class="btn-secondary">新增公司</a>
+    <a href="/import" role="button" class="btn-secondary">匯入資料</a>
+</div>
+{% endblock %}

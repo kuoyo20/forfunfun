@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}匯入資料 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>匯入資料</h2>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>批次匯入（CSV / Excel）</h3>
+        <p>上傳 CSV 或 Excel (.xlsx) 檔案，系統會讓你對應欄位後匯入。</p>
+        <form method="post" action="/import/file" enctype="multipart/form-data">
+            <label>選擇檔案
+                <input type="file" name="file" accept=".csv,.xlsx,.xls" required>
+            </label>
+            <button type="submit">上傳檔案</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>名片掃描（OCR）</h3>
+        <p>上傳名片照片，系統會自動辨識文字並預填表單。</p>
+        <form method="post" action="/import/scan" enctype="multipart/form-data">
+            <label>選擇名片圖片
+                <input type="file" name="file" accept="image/*" required>
+            </label>
+            <button type="submit">掃描名片</button>
+        </form>
+        <p style="font-size: 0.8rem; color: #6c757d; margin-top: 0.5rem;">
+            支援 JPG、PNG 格式。需要安裝 Tesseract OCR。辨識結果可在儲存前修改。
+        </p>
+    </div>
+</div>
+{% endblock %}

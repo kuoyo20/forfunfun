@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ person.first_name }} {{ person.last_name }} - 人脈管理系統{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>{{ person.first_name }} {{ person.last_name }}</h2>
+    <div class="btn-group">
+        <a href="/persons/{{ person.id }}/edit" role="button" class="btn-sm">編輯</a>
+        <form method="post" action="/persons/{{ person.id }}/delete" style="margin:0;">
+            <button type="button" class="btn-sm btn-danger" onclick="confirmDelete(this.closest('form'), '{{ person.first_name }} {{ person.last_name }}')">刪除</button>
+        </form>
+    </div>
+</div>
+
+<!-- Basic Info -->
+<div class="card">
+    <h3>基本資料</h3>
+    <div class="grid-2">
+        <div><strong>Email：</strong>{{ person.email or '-' }}</div>
+        <div><strong>電話：</strong>{{ person.phone or '-' }}</div>
+    </div>
+    {% if person.notes %}
+    <div style="margin-top: 0.5rem;"><strong>備註：</strong>{{ person.notes }}</div>
+    {% endif %}
+    {% if tags %}
+    <div style="margin-top: 0.75rem;">
+        <strong>標籤：</strong>
+        {% for t in tags %}
+        <a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Roles / Identities -->
+<div class="card">
+    <h3>身分 / 職位 ({{ roles|length }})</h3>
+    {% if roles %}
+        {% for r in roles %}
+        <div class="role-row">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ r.title or '(無職稱)' }}</strong>
+                    {% if r.company_name %}
+                        @ <a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>
+                    {% endif %}
+                </div>
+                <span class="badge {{ 'current' if r.is_current else 'past' }}">{{ '在職' if r.is_current else '已離職' }}</span>
+            </div>
+            {% if r.work_email or r.work_phone %}
+            <div style="margin-top: 0.3rem; color: #6c757d; font-size: 0.9rem;">
+                {% if r.work_email %}Email: {{ r.work_email }}{% endif %}
+                {% if r.work_phone %} | 電話: {{ r.work_phone }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>尚無身分資料。<a href="/persons/{{ person.id }}/edit">新增身分</a></p>
+    {% endif %}
+</div>
+
+<!-- Relationships -->
+<div class="card">
+    <h3>人脈關係</h3>
+    {% if relationships %}
+        {% for rel in relationships %}
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                {% if rel.person_a_id == person.id %}
+                    {{ rel.label }} →
+                    <a href="/persons/{{ rel.person_b_id }}">{{ rel.person_b_name }}</a>
+                {% else %}
+                    <a href="/persons/{{ rel.person_a_id }}">{{ rel.person_a_name }}</a>
+                    → {{ rel.label }}
+                {% endif %}
+                {% if rel.notes %}<span style="color: #6c757d;"> ({{ rel.notes }})</span>{% endif %}
+            </div>
+            <form method="post" action="/persons/relationship/{{ rel.id }}/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="{{ person.id }}">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: #6c757d;">尚無人脈關係。</p>
+    {% endif %}
+
+    <details style="margin-top: 0.75rem;">
+        <summary>新增關係</summary>
+        <form method="post" action="/persons/{{ person.id }}/relationship" style="margin-top: 0.5rem;">
+            <div class="grid-3">
+                <label>相關聯絡人
+                    <select name="other_person_id" required>
+                        <option value="">-- 選擇 --</option>
+                        {% for p in all_persons %}
+                        <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>關係標籤
+                    <input type="text" name="label" required placeholder="例：大學同學、引薦人、合作夥伴">
+                </label>
+                <label>備註
+                    <input type="text" name="rel_notes" placeholder="選填">
+                </label>
+            </div>
+            <button type="submit" class="btn-sm">新增關係</button>
+        </form>
+    </details>
+</div>
+
+<!-- Edit Log -->
+{% if logs %}
+<div class="card">
+    <h3>編輯紀錄</h3>
+    {% for log in logs %}
+    <div class="activity-item">
+        <strong>{{ log.username or '系統' }}</strong> - {{ log.action }} - {{ log.changes or '' }}
+        <div class="time">{{ log.created_at[:16] if log.created_at else '' }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
