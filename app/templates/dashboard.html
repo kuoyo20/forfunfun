@@ -17,6 +17,10 @@
         <div class="stat-label">標籤</div>
     </div>
     <div class="stat-card">
+        <div class="stat-number">{{ stats.interactions }}</div>
+        <div class="stat-label">互動紀錄</div>
+    </div>
+    <div class="stat-card">
         <div class="stat-number">{{ stats.users }}</div>
         <div class="stat-label">使用者</div>
     </div>
@@ -27,18 +31,13 @@
         <div class="card">
             <h3>最近更新的聯絡人</h3>
             {% if recent_persons %}
-            <table>
-                <thead><tr><th>姓名</th><th>Email</th><th>更新時間</th></tr></thead>
-                <tbody>
-                {% for p in recent_persons %}
-                <tr>
-                    <td><a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a></td>
-                    <td>{{ p.email or '-' }}</td>
-                    <td>{{ p.updated_at[:16] if p.updated_at else '-' }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            {% for p in recent_persons %}
+            <div class="contact-card-mobile">
+                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }} {{ p.last_name }}</strong></a>
+                <span class="text-muted">{{ p.email or '' }}</span>
+                <span class="text-muted">{{ p.updated_at[:16] if p.updated_at else '' }}</span>
+            </div>
+            {% endfor %}
             {% else %}
             <p>尚無聯絡人。<a href="/persons/new">新增第一位聯絡人</a></p>
             {% endif %}
@@ -62,9 +61,12 @@
     </div>
 </div>
 
+{% if can_edit %}
 <div class="btn-group" style="margin-top: 1rem;">
     <a href="/persons/new" role="button">新增聯絡人</a>
     <a href="/companies/new" role="button" class="btn-secondary">新增公司</a>
     <a href="/import" role="button" class="btn-secondary">匯入資料</a>
+    <a href="/export/csv" role="button" class="btn-secondary">匯出 CSV</a>
 </div>
+{% endif %}
 {% endblock %}

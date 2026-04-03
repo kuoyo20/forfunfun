@@ -3,9 +3,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from app.database import init_db
 from app.auth import get_user_from_request
+from app.config import PHOTO_DIR
 from app.routes import auth_routes, company_routes, person_routes, search_routes, import_routes, api_routes
 
 app = FastAPI(title="人脈管理系統")
+app.mount("/static/photos", StaticFiles(directory=str(PHOTO_DIR)), name="photos")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 

@@ -2,14 +2,31 @@
 {% block title %}{{ person.first_name }} {{ person.last_name }} - 人脈管理系統{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h2>{{ person.first_name }} {{ person.last_name }}</h2>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        {% if person.photo_url %}
+        <img src="{{ person.photo_url }}" class="avatar-lg">
+        {% endif %}
+        <h2 style="margin:0;">{{ person.first_name }} {{ person.last_name }}</h2>
+    </div>
+    {% if can_edit %}
     <div class="btn-group">
         <a href="/persons/{{ person.id }}/edit" role="button" class="btn-sm">編輯</a>
         <form method="post" action="/persons/{{ person.id }}/delete" style="margin:0;">
             <button type="button" class="btn-sm btn-danger" onclick="confirmDelete(this.closest('form'), '{{ person.first_name }} {{ person.last_name }}')">刪除</button>
         </form>
     </div>
+    {% endif %}
 </div>
+
+<!-- Photo upload -->
+{% if can_edit %}
+<form method="post" action="/persons/{{ person.id }}/photo" enctype="multipart/form-data" style="margin: 0.5rem 0;">
+    <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+        <input type="file" name="photo" accept="image/*" onchange="this.form.submit()" style="max-width: 200px;">
+        上傳照片
+    </label>
+</form>
+{% endif %}
 
 <!-- Basic Info -->
 <div class="card">
@@ -24,9 +41,7 @@
     {% if tags %}
     <div style="margin-top: 0.75rem;">
         <strong>標籤：</strong>
-        {% for t in tags %}
-        <a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>
-        {% endfor %}
+        {% for t in tags %}<a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>{% endfor %}
     </div>
     {% endif %}
 </div>
@@ -40,9 +55,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>{{ r.title or '(無職稱)' }}</strong>
-                    {% if r.company_name %}
-                        @ <a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>
-                    {% endif %}
+                    {% if r.company_name %} @ <a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>{% endif %}
                 </div>
                 <span class="badge {{ 'current' if r.is_current else 'past' }}">{{ '在職' if r.is_current else '已離職' }}</span>
             </div>
@@ -55,7 +68,62 @@
         </div>
         {% endfor %}
     {% else %}
-        <p>尚無身分資料。<a href="/persons/{{ person.id }}/edit">新增身分</a></p>
+        <p>尚無身分資料。{% if can_edit %}<a href="/persons/{{ person.id }}/edit">新增身分</a>{% endif %}</p>
+    {% endif %}
+</div>
+
+<!-- Interactions / Activity Records -->
+<div class="card">
+    <h3>互動紀錄</h3>
+    {% if interactions %}
+        {% for i in interactions %}
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="badge {{ i.type }}">{{ {"meeting":"會議","call":"通話","email":"信件","note":"備忘","other":"其他"}.get(i.type, i.type) }}</span>
+                <strong>{{ i.title }}</strong>
+                <span class="text-muted"> - {{ i.interaction_date }}</span>
+                {% if i.username %}<span class="text-muted"> by {{ i.username }}</span>{% endif %}
+                {% if i.content %}<div style="margin-top: 0.25rem; font-size: 0.9rem;">{{ i.content }}</div>{% endif %}
+            </div>
+            {% if can_edit %}
+            <form method="post" action="/persons/interaction/{{ i.id }}/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="{{ person.id }}">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">尚無互動紀錄。</p>
+    {% endif %}
+
+    {% if can_edit %}
+    <details style="margin-top: 0.75rem;">
+        <summary>新增互動紀錄</summary>
+        <form method="post" action="/persons/{{ person.id }}/interaction" style="margin-top: 0.5rem;">
+            <div class="grid-3">
+                <label>類型
+                    <select name="type">
+                        <option value="meeting">會議</option>
+                        <option value="call">通話</option>
+                        <option value="email">信件</option>
+                        <option value="note" selected>備忘</option>
+                        <option value="other">其他</option>
+                    </select>
+                </label>
+                <label>標題
+                    <input type="text" name="title" required placeholder="簡短描述">
+                </label>
+                <label>日期
+                    <input type="date" name="interaction_date" required value="{{ now_date }}">
+                </label>
+            </div>
+            <label>內容
+                <textarea name="content" rows="2" placeholder="詳細內容（選填）"></textarea>
+            </label>
+            <button type="submit" class="btn-sm">新增</button>
+        </form>
+    </details>
     {% endif %}
 </div>
 
@@ -67,24 +135,25 @@
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 {% if rel.person_a_id == person.id %}
-                    {{ rel.label }} →
-                    <a href="/persons/{{ rel.person_b_id }}">{{ rel.person_b_name }}</a>
+                    {{ rel.label }} &rarr; <a href="/persons/{{ rel.person_b_id }}">{{ rel.person_b_name }}</a>
                 {% else %}
-                    <a href="/persons/{{ rel.person_a_id }}">{{ rel.person_a_name }}</a>
-                    → {{ rel.label }}
+                    <a href="/persons/{{ rel.person_a_id }}">{{ rel.person_a_name }}</a> &rarr; {{ rel.label }}
                 {% endif %}
-                {% if rel.notes %}<span style="color: #6c757d;"> ({{ rel.notes }})</span>{% endif %}
+                {% if rel.notes %}<span class="text-muted"> ({{ rel.notes }})</span>{% endif %}
             </div>
+            {% if can_edit %}
             <form method="post" action="/persons/relationship/{{ rel.id }}/delete" style="margin:0;">
                 <input type="hidden" name="person_id" value="{{ person.id }}">
                 <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
             </form>
+            {% endif %}
         </div>
         {% endfor %}
     {% else %}
-        <p style="color: #6c757d;">尚無人脈關係。</p>
+        <p class="text-muted">尚無人脈關係。</p>
     {% endif %}
 
+    {% if can_edit %}
     <details style="margin-top: 0.75rem;">
         <summary>新增關係</summary>
         <form method="post" action="/persons/{{ person.id }}/relationship" style="margin-top: 0.5rem;">
@@ -98,7 +167,7 @@
                     </select>
                 </label>
                 <label>關係標籤
-                    <input type="text" name="label" required placeholder="例：大學同學、引薦人、合作夥伴">
+                    <input type="text" name="label" required placeholder="例：大學同學、引薦人">
                 </label>
                 <label>備註
                     <input type="text" name="rel_notes" placeholder="選填">
@@ -107,6 +176,7 @@
             <button type="submit" class="btn-sm">新增關係</button>
         </form>
     </details>
+    {% endif %}
 </div>
 
 <!-- Edit Log -->
@@ -116,6 +186,9 @@
     {% for log in logs %}
     <div class="activity-item">
         <strong>{{ log.username or '系統' }}</strong> - {{ log.action }} - {{ log.changes or '' }}
+        {% if log.diff_json %}
+        <details style="font-size: 0.8rem;"><summary>變更詳情</summary><pre>{{ log.diff_json }}</pre></details>
+        {% endif %}
         <div class="time">{{ log.created_at[:16] if log.created_at else '' }}</div>
     </div>
     {% endfor %}

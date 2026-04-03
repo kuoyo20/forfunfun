@@ -2,24 +2,62 @@
 {% block title %}聯絡人列表 - 人脈管理系統{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-    <h2>聯絡人列表{% if current_tag %} <span class="tag">{{ current_tag }}</span>{% endif %}</h2>
-    <a href="/persons/new" role="button">新增聯絡人</a>
+    <h2>聯絡人列表 ({{ total }}){% if current_tag %} <span class="tag">{{ current_tag }}</span>{% endif %}{% if current_company %} <span class="tag">{{ current_company }}</span>{% endif %}</h2>
+    <div class="btn-group">
+        {% if can_edit %}<a href="/persons/new" role="button">新增聯絡人</a>{% endif %}
+        <a href="/export/csv" role="button" class="btn-secondary btn-sm">匯出 CSV</a>
+    </div>
 </div>
 
-{% if all_tags %}
-<div style="margin-bottom: 1rem;">
-    <strong>標籤篩選：</strong>
-    <a href="/persons" style="margin-right: 0.5rem; {% if not current_tag %}font-weight:bold;{% endif %}">全部</a>
-    {% for t in all_tags %}
-    <a href="/persons?tag={{ t }}" class="tag" style="{% if t == current_tag %}background:#1565c0;color:white;{% endif %}">{{ t }}</a>
-    {% endfor %}
+<!-- Filters -->
+<div class="card" style="padding: 0.75rem;">
+    <details {% if current_tag or current_company %}open{% endif %}>
+        <summary>篩選條件</summary>
+        <div style="margin-top: 0.5rem;">
+            {% if all_tags %}
+            <div style="margin-bottom: 0.5rem;">
+                <strong>標籤：</strong>
+                <a href="/persons" style="margin-right: 0.5rem; {% if not current_tag %}font-weight:bold;{% endif %}">全部</a>
+                {% for t in all_tags %}
+                <a href="/persons?tag={{ t }}{% if current_company %}&company={{ current_company }}{% endif %}" class="tag" style="{% if t == current_tag %}background:#1565c0;color:white;{% endif %}">{{ t }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if all_companies %}
+            <div>
+                <strong>公司：</strong>
+                <a href="/persons{% if current_tag %}?tag={{ current_tag }}{% endif %}" style="margin-right: 0.5rem; {% if not current_company %}font-weight:bold;{% endif %}">全部</a>
+                {% for c in all_companies %}
+                <a href="/persons?company={{ c }}{% if current_tag %}&tag={{ current_tag }}{% endif %}" class="tag" style="{% if c == current_company %}background:#1565c0;color:white;{% endif %}">{{ c }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </details>
+</div>
+
+{% if can_edit and person_list %}
+<form method="post" action="/persons/batch" id="batch-form">
+<div class="batch-bar" id="batch-bar" style="display:none;">
+    <span id="selected-count">0</span> 已選擇 |
+    <select name="batch_action" id="batch-action">
+        <option value="">-- 批次操作 --</option>
+        <option value="add_tag">加標籤</option>
+        <option value="remove_tag">移除標籤</option>
+        <option value="delete">刪除</option>
+    </select>
+    <input type="text" name="batch_tag" id="batch-tag" placeholder="標籤名稱" style="display:none; width: 150px; margin: 0;">
+    <button type="submit" class="btn-sm" onclick="return confirmBatch()">執行</button>
 </div>
 {% endif %}
 
+<!-- Mobile card view & Desktop table -->
 {% if person_list %}
+<div class="desktop-only">
 <table>
     <thead>
         <tr>
+            {% if can_edit %}<th><input type="checkbox" id="select-all"></th>{% endif %}
             <th>姓名</th>
             <th>Email</th>
             <th>公司 / 職稱</th>
@@ -29,28 +67,93 @@
     <tbody>
     {% for item in person_list %}
         <tr>
-            <td><a href="/persons/{{ item.person.id }}">{{ item.person.first_name }} {{ item.person.last_name }}</a></td>
+            {% if can_edit %}<td><input type="checkbox" name="selected[]" value="{{ item.person.id }}" class="row-select"></td>{% endif %}
+            <td>
+                {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
+                <a href="/persons/{{ item.person.id }}">{{ item.person.first_name }} {{ item.person.last_name }}</a>
+            </td>
             <td>{{ item.person.email or '-' }}</td>
             <td>
                 {% for r in item.roles %}
-                    <div>
-                        {% if r.company_name %}<a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>{% endif %}
-                        {% if r.title %} - {{ r.title }}{% endif %}
-                        {% if not r.is_current %}<span class="badge past">已離職</span>{% endif %}
-                    </div>
+                    <div>{% if r.company_name %}<a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>{% endif %}{% if r.title %} - {{ r.title }}{% endif %}{% if not r.is_current %} <span class="badge past">已離職</span>{% endif %}</div>
                 {% endfor %}
                 {% if not item.roles %}-{% endif %}
             </td>
-            <td>
-                {% for t in item.tags %}
-                <a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>
-                {% endfor %}
-            </td>
+            <td>{% for t in item.tags %}<a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>{% endfor %}</td>
         </tr>
     {% endfor %}
     </tbody>
 </table>
-{% else %}
-<p>尚無聯絡人{% if current_tag %}符合標籤「{{ current_tag }}」{% endif %}。<a href="/persons/new">新增第一位聯絡人</a></p>
+</div>
+
+<div class="mobile-only">
+    {% for item in person_list %}
+    <div class="contact-card-mobile">
+        <div class="contact-card-header">
+            {% if can_edit %}<input type="checkbox" name="selected[]" value="{{ item.person.id }}" class="row-select">{% endif %}
+            {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
+            <a href="/persons/{{ item.person.id }}"><strong>{{ item.person.first_name }} {{ item.person.last_name }}</strong></a>
+        </div>
+        {% if item.person.email %}<div class="text-muted">{{ item.person.email }}</div>{% endif %}
+        {% for r in item.roles %}
+            <div class="text-muted">{% if r.company_name %}{{ r.company_name }}{% endif %}{% if r.title %} - {{ r.title }}{% endif %}</div>
+        {% endfor %}
+        {% if item.tags %}<div>{% for t in item.tags %}<a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>{% endfor %}</div>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% if can_edit %}</form>{% endif %}
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}<a href="/persons?page={{ page-1 }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">&laquo; 上一頁</a>{% endif %}
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}<span class="current">{{ p }}</span>
+        {% else %}<a href="/persons?page={{ p }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">{{ p }}</a>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}<a href="/persons?page={{ page+1 }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">下一頁 &raquo;</a>{% endif %}
+</div>
 {% endif %}
+
+{% else %}
+<p>尚無聯絡人{% if current_tag %}符合標籤「{{ current_tag }}」{% endif %}。{% if can_edit %}<a href="/persons/new">新增第一位聯絡人</a>{% endif %}</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selectAll = document.getElementById('select-all');
+    const batchBar = document.getElementById('batch-bar');
+    const batchAction = document.getElementById('batch-action');
+    const batchTag = document.getElementById('batch-tag');
+    const checkboxes = document.querySelectorAll('.row-select');
+    const countSpan = document.getElementById('selected-count');
+
+    function updateBar() {
+        const checked = document.querySelectorAll('.row-select:checked').length;
+        if (countSpan) countSpan.textContent = checked;
+        if (batchBar) batchBar.style.display = checked > 0 ? 'flex' : 'none';
+    }
+
+    if (selectAll) selectAll.addEventListener('change', () => {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBar();
+    });
+    checkboxes.forEach(cb => cb.addEventListener('change', updateBar));
+
+    if (batchAction) batchAction.addEventListener('change', () => {
+        batchTag.style.display = (batchAction.value === 'add_tag' || batchAction.value === 'remove_tag') ? 'inline' : 'none';
+    });
+});
+
+function confirmBatch() {
+    const action = document.getElementById('batch-action').value;
+    if (!action) { alert('請選擇操作'); return false; }
+    if (action === 'delete') return confirm('確定要刪除所選聯絡人嗎？');
+    return true;
+}
+</script>
 {% endblock %}

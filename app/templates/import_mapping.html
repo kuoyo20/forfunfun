@@ -4,7 +4,7 @@
 <h2>欄位對應</h2>
 <p>共 {{ total }} 筆資料。請將檔案中的欄位對應到系統欄位：</p>
 
-<form method="post" action="/import/confirm">
+<form method="post" action="/import/check-duplicates">
     <input type="hidden" name="tmp_file" value="{{ tmp_file }}">
 
     <div class="card">
@@ -54,7 +54,7 @@
     </div>
 
     <div class="btn-group">
-        <button type="submit">確認匯入 {{ total }} 筆資料</button>
+        <button type="submit">檢查重複並匯入 {{ total }} 筆資料</button>
         <a href="/import" role="button" class="btn-secondary">取消</a>
     </div>
 </form>

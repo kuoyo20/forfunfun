@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}關係圖 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>人脈關係圖</h2>
+<div id="graph-container" style="width: 100%; height: 600px; border: 1px solid #dee2e6; border-radius: 8px; background: white;"></div>
+<p class="text-muted" style="margin-top: 0.5rem; font-size: 0.85rem;">
+    圓形 = 聯絡人，方形 = 公司。可拖曳節點、滾輪縮放。
+</p>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('graph-container');
+    const nodesData = {{ nodes | tojson }};
+    const edgesData = {{ edges | tojson }};
+
+    const nodes = new vis.DataSet(nodesData.map(n => ({
+        id: n.id,
+        label: n.label,
+        shape: n.type === 'company' ? 'box' : 'dot',
+        color: n.type === 'company' ? '#f39c12' : '#4a90d9',
+        font: { size: 12, color: '#333' },
+        size: n.type === 'company' ? 20 : 15,
+    })));
+
+    const edges = new vis.DataSet(edgesData.map((e, i) => ({
+        id: i,
+        from: e.from,
+        to: e.to,
+        label: e.label || '',
+        font: { size: 10, color: '#999' },
+        arrows: e.label ? 'to' : '',
+        color: { color: e.label ? '#4a90d9' : '#ccc' },
+    })));
+
+    const network = new vis.Network(container, { nodes, edges }, {
+        physics: {
+            stabilization: { iterations: 100 },
+            barnesHut: { gravitationalConstant: -3000, springLength: 150 },
+        },
+        interaction: { hover: true, zoomView: true, dragView: true },
+    });
+
+    network.on('doubleClick', (params) => {
+        if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            if (nodeId.startsWith('p_')) {
+                window.location.href = '/persons/' + nodeId.replace('p_', '');
+            } else if (nodeId.startsWith('c_')) {
+                window.location.href = '/companies/' + nodeId.replace('c_', '');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

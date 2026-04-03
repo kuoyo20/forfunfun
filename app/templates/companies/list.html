@@ -2,20 +2,14 @@
 {% block title %}公司列表 - 人脈管理系統{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h2>公司列表</h2>
-    <a href="/companies/new" role="button">新增公司</a>
+    <h2>公司列表 ({{ total }})</h2>
+    {% if can_edit %}<a href="/companies/new" role="button">新增公司</a>{% endif %}
 </div>
 
 {% if companies %}
+<div class="desktop-only">
 <table>
-    <thead>
-        <tr>
-            <th>名稱</th>
-            <th>產業</th>
-            <th>網站</th>
-            <th>聯絡人數</th>
-        </tr>
-    </thead>
+    <thead><tr><th>名稱</th><th>產業</th><th>網站</th><th>聯絡人數</th></tr></thead>
     <tbody>
     {% for c in companies %}
         <tr>
@@ -27,7 +21,30 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
+
+<div class="mobile-only">
+    {% for c in companies %}
+    <div class="contact-card-mobile">
+        <a href="/companies/{{ c.id }}"><strong>{{ c.name }}</strong></a>
+        {% if c.industry %}<span class="text-muted">{{ c.industry }}</span>{% endif %}
+        <span class="text-muted">{{ c.person_count }} 位聯絡人</span>
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}<a href="/companies?page={{ page-1 }}">&laquo; 上一頁</a>{% endif %}
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}<span class="current">{{ p }}</span>
+        {% else %}<a href="/companies?page={{ p }}">{{ p }}</a>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}<a href="/companies?page={{ page+1 }}">下一頁 &raquo;</a>{% endif %}
+</div>
+{% endif %}
+
 {% else %}
-<p>尚無公司資料。<a href="/companies/new">新增第一間公司</a></p>
+<p>尚無公司資料。{% if can_edit %}<a href="/companies/new">新增第一間公司</a>{% endif %}</p>
 {% endif %}
 {% endblock %}

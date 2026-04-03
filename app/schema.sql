@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     display_name TEXT,
+    role TEXT NOT NULL DEFAULT 'editor',  -- admin, editor, viewer
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -74,7 +75,7 @@ CREATE TABLE IF NOT EXISTS relationships (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Edit log for audit trail
+-- Edit log for audit trail (with JSON diff)
 CREATE TABLE IF NOT EXISTS edit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER REFERENCES users(id),
@@ -82,5 +83,28 @@ CREATE TABLE IF NOT EXISTS edit_log (
     entity_id INTEGER NOT NULL,
     action TEXT NOT NULL,
     changes TEXT,
+    diff_json TEXT,  -- JSON storing old/new values
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Interaction / Activity records (CRM core)
+CREATE TABLE IF NOT EXISTS interactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id),
+    type TEXT NOT NULL DEFAULT 'note',  -- meeting, call, email, note, other
+    title TEXT NOT NULL,
+    content TEXT,
+    interaction_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    message TEXT NOT NULL,
+    link TEXT,
+    is_read BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
