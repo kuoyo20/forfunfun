@@ -32,6 +32,11 @@ CREATE TABLE IF NOT EXISTS persons (
     phone TEXT,
     notes TEXT,
     photo_url TEXT,
+    -- Gift & relationship management
+    gift_tier TEXT DEFAULT '',           -- VIP, A, B, C, D or empty
+    birthday TEXT DEFAULT '',            -- MM-DD or YYYY-MM-DD
+    preferences TEXT DEFAULT '',         -- likes, hobbies, dietary
+    gift_notes TEXT DEFAULT '',          -- gift taboos, special notes
     created_by INTEGER REFERENCES users(id),
     updated_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -96,6 +101,19 @@ CREATE TABLE IF NOT EXISTS interactions (
     title TEXT NOT NULL,
     content TEXT,
     interaction_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Gift records (送禮紀錄)
+CREATE TABLE IF NOT EXISTS gift_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id),
+    gift_date DATE NOT NULL,
+    occasion TEXT DEFAULT '',            -- 生日, 過年, 中秋, 喬遷, 感謝, 其他
+    item TEXT NOT NULL,                  -- what was given
+    amount REAL DEFAULT 0,               -- cost/value
+    notes TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

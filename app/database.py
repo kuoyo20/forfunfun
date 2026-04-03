@@ -40,3 +40,12 @@ def _migrate(conn):
     if "diff_json" not in log_cols:
         conn.execute("ALTER TABLE edit_log ADD COLUMN diff_json TEXT")
         conn.commit()
+
+    # Gift tier and preferences columns on persons
+    cursor = conn.execute("PRAGMA table_info(persons)")
+    person_cols = [row[1] for row in cursor.fetchall()]
+    for col, col_type in [("gift_tier", "TEXT DEFAULT ''"), ("birthday", "TEXT DEFAULT ''"),
+                           ("preferences", "TEXT DEFAULT ''"), ("gift_notes", "TEXT DEFAULT ''")]:
+        if col not in person_cols:
+            conn.execute(f"ALTER TABLE persons ADD COLUMN {col} {col_type}")
+    conn.commit()

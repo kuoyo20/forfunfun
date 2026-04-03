@@ -23,6 +23,13 @@
                 {% endfor %}
             </div>
             {% endif %}
+            <div style="margin-bottom: 0.5rem;">
+                <strong>送禮層級：</strong>
+                <a href="/persons?{% if current_tag %}tag={{ current_tag }}&{% endif %}{% if current_company %}company={{ current_company }}&{% endif %}" style="margin-right: 0.5rem; {% if not current_tier %}font-weight:bold;{% endif %}">全部</a>
+                {% for t in ['VIP', 'A', 'B', 'C', 'D'] %}
+                <a href="/persons?tier={{ t }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}" class="badge gift-{{ t|lower }}" style="text-decoration:none; {% if t == current_tier %}outline: 2px solid #333;{% endif %}">{{ t }}</a>
+                {% endfor %}
+            </div>
             {% if all_companies %}
             <div>
                 <strong>公司：</strong>
@@ -71,6 +78,7 @@
             <td>
                 {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
                 <a href="/persons/{{ item.person.id }}">{{ item.person.first_name }} {{ item.person.last_name }}</a>
+                {% if item.person.gift_tier %}<span class="badge gift-{{ item.person.gift_tier|lower }}">{{ item.person.gift_tier }}</span>{% endif %}
             </td>
             <td>{{ item.person.email or '-' }}</td>
             <td>

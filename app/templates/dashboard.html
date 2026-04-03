@@ -26,6 +26,43 @@
     </div>
 </div>
 
+<!-- Gift Tier Summary -->
+{% if gift_tiers or upcoming_bdays %}
+<div class="grid-2">
+    <div class="card">
+        <h3>送禮層級分佈</h3>
+        {% if gift_tiers %}
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+            {% for t in gift_tiers %}
+            <a href="/persons?tier={{ t.gift_tier }}" style="text-decoration: none;">
+                <span class="badge gift-{{ t.gift_tier|lower }}" style="font-size: 1rem; padding: 0.3rem 0.75rem;">{{ t.gift_tier }} ({{ t.cnt }})</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% if gift_total_spent %}
+        <p class="text-muted">累計送禮金額：${{ "%.0f"|format(gift_total_spent) }}</p>
+        {% endif %}
+        {% else %}
+        <p class="text-muted">尚未設定任何人的送禮層級。<a href="/persons">前往設定</a></p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>有生日資料的聯絡人</h3>
+        {% if upcoming_bdays %}
+        {% for p in upcoming_bdays %}
+        <div class="activity-item">
+            <a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a>
+            <span class="text-muted">{{ p.birthday }}</span>
+            {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted">尚未記錄任何人的生日。</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <div class="grid-2">
     <div>
         <div class="card">
@@ -34,6 +71,7 @@
             {% for p in recent_persons %}
             <div class="contact-card-mobile">
                 <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }} {{ p.last_name }}</strong></a>
+                {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
                 <span class="text-muted">{{ p.email or '' }}</span>
                 <span class="text-muted">{{ p.updated_at[:16] if p.updated_at else '' }}</span>
             </div>

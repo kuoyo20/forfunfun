@@ -46,6 +46,98 @@
     {% endif %}
 </div>
 
+<!-- Gift Tier & Preferences -->
+{% if person.gift_tier or person.birthday or person.preferences or person.gift_notes %}
+<div class="card">
+    <h3>送禮管理</h3>
+    <div class="grid-2">
+        {% if person.gift_tier %}
+        <div>
+            <strong>送禮層級：</strong>
+            <span class="badge gift-{{ person.gift_tier|lower }}">{{ person.gift_tier }}</span>
+            {% set tier_desc = {"VIP": "最高規格", "A": "重要人脈", "B": "一般維護", "C": "偶爾聯繫", "D": "基本禮數"} %}
+            <span class="text-muted">{{ tier_desc.get(person.gift_tier, '') }}</span>
+        </div>
+        {% endif %}
+        {% if person.birthday %}
+        <div><strong>生日：</strong>{{ person.birthday }}</div>
+        {% endif %}
+    </div>
+    {% if person.preferences %}
+    <div style="margin-top: 0.5rem;"><strong>喜好 / 興趣：</strong>{{ person.preferences }}</div>
+    {% endif %}
+    {% if person.gift_notes %}
+    <div style="margin-top: 0.5rem;"><strong>送禮備註 / 禁忌：</strong>{{ person.gift_notes }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Gift Records -->
+<div class="card">
+    <h3>送禮紀錄 {% if gift_total %}<span class="text-muted" style="font-size: 0.9rem;">(累計 ${{ "%.0f"|format(gift_total) }})</span>{% endif %}</h3>
+    {% if gift_records %}
+        {% for g in gift_records %}
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <strong>{{ g.item }}</strong>
+                {% if g.occasion %}<span class="badge note">{{ g.occasion }}</span>{% endif %}
+                <span class="text-muted"> - {{ g.gift_date }}</span>
+                {% if g.amount %}<span class="text-muted"> (${{ "%.0f"|format(g.amount) }})</span>{% endif %}
+                {% if g.username %}<span class="text-muted"> by {{ g.username }}</span>{% endif %}
+                {% if g.notes %}<div style="margin-top: 0.25rem; font-size: 0.9rem;">{{ g.notes }}</div>{% endif %}
+            </div>
+            {% if can_edit %}
+            <form method="post" action="/persons/gift/{{ g.id }}/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="{{ person.id }}">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">尚無送禮紀錄。</p>
+    {% endif %}
+
+    {% if can_edit %}
+    <details style="margin-top: 0.75rem;">
+        <summary>新增送禮紀錄</summary>
+        <form method="post" action="/persons/{{ person.id }}/gift" style="margin-top: 0.5rem;">
+            <div class="grid-2">
+                <label>送了什麼 *
+                    <input type="text" name="item" required placeholder="例：紅酒一瓶、禮盒、禮券">
+                </label>
+                <label>場合
+                    <select name="occasion">
+                        <option value="">-- 選擇 --</option>
+                        <option value="生日">生日</option>
+                        <option value="過年">過年</option>
+                        <option value="中秋">中秋</option>
+                        <option value="端午">端午</option>
+                        <option value="喬遷">喬遷</option>
+                        <option value="感謝">感謝</option>
+                        <option value="慶祝">慶祝</option>
+                        <option value="拜訪">拜訪</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid-2">
+                <label>日期 *
+                    <input type="date" name="gift_date" required>
+                </label>
+                <label>金額
+                    <input type="number" name="amount" placeholder="0" min="0" step="1">
+                </label>
+            </div>
+            <label>備註
+                <input type="text" name="gift_record_notes" placeholder="選填">
+            </label>
+            <button type="submit" class="btn-sm">新增紀錄</button>
+        </form>
+    </details>
+    {% endif %}
+</div>
+
 <!-- Roles / Identities -->
 <div class="card">
     <h3>身分 / 職位 ({{ roles|length }})</h3>

@@ -59,6 +59,11 @@ nav.top-nav .nav-search input { margin: 0; padding: 0.4rem 0.75rem; border: none
 .badge.email { background: #f39c12; color: white; }
 .badge.note { background: #6c757d; color: white; }
 .badge.other { background: #95a5a6; color: white; }
+.badge.gift-vip { background: #e74c3c; color: white; font-weight: 700; }
+.badge.gift-a { background: #e67e22; color: white; }
+.badge.gift-b { background: #3498db; color: white; }
+.badge.gift-c { background: #27ae60; color: white; }
+.badge.gift-d { background: #95a5a6; color: white; }
 
 /* Text helpers */
 .text-muted { color: #6c757d; font-size: 0.9rem; }

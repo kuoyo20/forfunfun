@@ -89,6 +89,7 @@ def _compute_diff(old: dict, new: dict) -> str:
 async def list_persons(request: Request):
     tag_filter = request.query_params.get("tag", "")
     company_filter = request.query_params.get("company", "")
+    tier_filter = request.query_params.get("tier", "")
     page = int(request.query_params.get("page", 1))
     offset = (page - 1) * PER_PAGE
     db = get_db()
@@ -103,6 +104,10 @@ async def list_persons(request: Request):
     if company_filter:
         conditions.append("p.id IN (SELECT r.person_id FROM roles r JOIN companies c ON c.id = r.company_id WHERE c.name = ?)")
         params.append(company_filter)
+
+    if tier_filter:
+        conditions.append("p.gift_tier = ?")
+        params.append(tier_filter)
 
     where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -128,6 +133,7 @@ async def list_persons(request: Request):
         person_list=person_list, all_tags=[t["name"] for t in all_tags],
         all_companies=[c["name"] for c in all_companies],
         current_tag=tag_filter, current_company=company_filter,
+        current_tier=tier_filter,
         page=page, total_pages=total_pages, total=total)
 
 
@@ -151,9 +157,11 @@ async def create_person(request: Request):
     form = await request.form()
     db = get_db()
     db.execute(
-        "INSERT INTO persons (first_name, last_name, email, phone, notes, created_by, updated_by) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO persons (first_name, last_name, email, phone, notes, gift_tier, birthday, preferences, gift_notes, created_by, updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         (form.get("first_name", ""), form.get("last_name", ""), form.get("email", ""),
          form.get("phone", ""), form.get("notes", ""),
+         form.get("gift_tier", ""), form.get("birthday", ""),
+         form.get("preferences", ""), form.get("gift_notes", ""),
          request.state.user["id"], request.state.user["id"]),
     )
     db.commit()
@@ -206,6 +214,16 @@ async def view_person(request: Request, person_id: int):
         WHERE i.person_id = ? ORDER BY i.interaction_date DESC, i.created_at DESC
     """, (person_id,)).fetchall()
 
+    gift_records = db.execute("""
+        SELECT g.*, u.username FROM gift_records g
+        LEFT JOIN users u ON u.id = g.user_id
+        WHERE g.person_id = ? ORDER BY g.gift_date DESC
+    """, (person_id,)).fetchall()
+
+    gift_total = db.execute(
+        "SELECT COALESCE(SUM(amount), 0) FROM gift_records WHERE person_id = ?", (person_id,)
+    ).fetchone()[0]
+
     logs = db.execute("""
         SELECT el.*, u.username FROM edit_log el
         LEFT JOIN users u ON u.id = el.user_id
@@ -219,6 +237,7 @@ async def view_person(request: Request, person_id: int):
     return _render(request, "persons/detail.html",
         person=person, roles=roles, tags=[t["name"] for t in tags],
         relationships=relationships, interactions=interactions,
+        gift_records=gift_records, gift_total=gift_total,
         logs=logs, all_persons=all_persons)
 
 
@@ -252,9 +271,14 @@ async def update_person(request: Request, person_id: int):
     old_data = _get_person_snapshot(db, person_id)
 
     db.execute(
-        "UPDATE persons SET first_name=?, last_name=?, email=?, phone=?, notes=?, updated_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        """UPDATE persons SET first_name=?, last_name=?, email=?, phone=?, notes=?,
+           gift_tier=?, birthday=?, preferences=?, gift_notes=?,
+           updated_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
         (form.get("first_name", ""), form.get("last_name", ""), form.get("email", ""),
-         form.get("phone", ""), form.get("notes", ""), request.state.user["id"], person_id),
+         form.get("phone", ""), form.get("notes", ""),
+         form.get("gift_tier", ""), form.get("birthday", ""),
+         form.get("preferences", ""), form.get("gift_notes", ""),
+         request.state.user["id"], person_id),
     )
     db.commit()
 
@@ -375,6 +399,44 @@ async def delete_interaction(request: Request, interaction_id: int):
     person_id = form.get("person_id", "")
     db = get_db()
     db.execute("DELETE FROM interactions WHERE id = ?", (interaction_id,))
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/persons/{person_id}", status_code=302)
+
+
+# --- Gift record routes ---
+@router.post("/{person_id}/gift")
+@login_required
+async def add_gift_record(request: Request, person_id: int):
+    if not can_edit(request.state.user):
+        return RedirectResponse(f"/persons/{person_id}", status_code=302)
+    form = await request.form()
+    db = get_db()
+    amount = 0
+    try:
+        amount = float(form.get("amount", 0))
+    except (ValueError, TypeError):
+        pass
+    db.execute(
+        "INSERT INTO gift_records (person_id, user_id, gift_date, occasion, item, amount, notes) VALUES (?,?,?,?,?,?,?)",
+        (person_id, request.state.user["id"], form.get("gift_date", ""),
+         form.get("occasion", ""), form.get("item", ""),
+         amount, form.get("gift_record_notes", "")),
+    )
+    db.commit()
+    db.close()
+    return RedirectResponse(f"/persons/{person_id}", status_code=302)
+
+
+@router.post("/gift/{gift_id}/delete")
+@login_required
+async def delete_gift_record(request: Request, gift_id: int):
+    if not can_edit(request.state.user):
+        return RedirectResponse("/persons", status_code=302)
+    form = await request.form()
+    person_id = form.get("person_id", "")
+    db = get_db()
+    db.execute("DELETE FROM gift_records WHERE id = ?", (gift_id,))
     db.commit()
     db.close()
     return RedirectResponse(f"/persons/{person_id}", status_code=302)

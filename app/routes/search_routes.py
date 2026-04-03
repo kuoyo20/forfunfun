@@ -98,9 +98,26 @@ async def dashboard(request: Request):
         LEFT JOIN users u ON u.id = el.user_id
         ORDER BY el.created_at DESC LIMIT 20
     """).fetchall()
+
+    # Gift tier summary
+    gift_tiers = db.execute("""
+        SELECT gift_tier, COUNT(*) as cnt FROM persons
+        WHERE gift_tier != '' GROUP BY gift_tier ORDER BY
+        CASE gift_tier WHEN 'VIP' THEN 1 WHEN 'A' THEN 2 WHEN 'B' THEN 3 WHEN 'C' THEN 4 WHEN 'D' THEN 5 END
+    """).fetchall()
+    gift_total_spent = db.execute("SELECT COALESCE(SUM(amount), 0) FROM gift_records").fetchone()[0]
+
+    # Upcoming birthdays (simple: get all with birthdays)
+    upcoming_bdays = db.execute("""
+        SELECT id, first_name, last_name, birthday, gift_tier FROM persons
+        WHERE birthday != '' ORDER BY SUBSTR(birthday, -5) LIMIT 10
+    """).fetchall()
+
     db.close()
     return _render(request, "dashboard.html",
-        stats=stats, recent_persons=recent_persons, recent_logs=recent_logs)
+        stats=stats, recent_persons=recent_persons, recent_logs=recent_logs,
+        gift_tiers=gift_tiers, gift_total_spent=gift_total_spent,
+        upcoming_bdays=upcoming_bdays)
 
 
 @router.get("/export/csv")

@@ -73,6 +73,32 @@
     </div>
 
     <div class="card">
+        <h3>送禮管理</h3>
+        <div class="grid-2">
+            <label>送禮層級
+                <select name="gift_tier">
+                    <option value="" {% if not person or not person.gift_tier %}selected{% endif %}>-- 未設定 --</option>
+                    <option value="VIP" {% if person and person.gift_tier == 'VIP' %}selected{% endif %}>VIP — 最高規格</option>
+                    <option value="A" {% if person and person.gift_tier == 'A' %}selected{% endif %}>A 級 — 重要人脈</option>
+                    <option value="B" {% if person and person.gift_tier == 'B' %}selected{% endif %}>B 級 — 一般維護</option>
+                    <option value="C" {% if person and person.gift_tier == 'C' %}selected{% endif %}>C 級 — 偶爾聯繫</option>
+                    <option value="D" {% if person and person.gift_tier == 'D' %}selected{% endif %}>D 級 — 基本禮數</option>
+                </select>
+            </label>
+            <label>生日
+                <input type="text" name="birthday" value="{{ person.birthday if person and person.birthday else '' }}" placeholder="MM-DD 或 YYYY-MM-DD">
+            </label>
+        </div>
+        <label>喜好 / 興趣
+            <textarea name="preferences" rows="2" placeholder="例如：喜歡紅酒、高爾夫、素食者、對堅果過敏...">{{ person.preferences if person and person.preferences else '' }}</textarea>
+        </label>
+        <label>送禮備註 / 禁忌
+            <textarea name="gift_notes" rows="2" placeholder="例如：不收菸酒、偏好實用性禮物、上次送過茶葉...">{{ person.gift_notes if person and person.gift_notes else '' }}</textarea>
+        </label>
+        <p class="text-muted" style="font-size: 0.85rem;">送禮層級幫你區分每個人的送禮規格，方便在節日統一安排。</p>
+    </div>
+
+    <div class="card">
         <h3>標籤</h3>
         <div class="tag-input-wrapper" id="tag-input-wrapper">
             <input type="text" placeholder="輸入標籤後按 Enter...">
