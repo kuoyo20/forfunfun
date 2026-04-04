@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}通知 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>通知</h2>
+
+{% if notifs %}
+{% for n in notifs %}
+<div class="activity-item" style="{% if not n.is_read %}background: #e3f2fd; padding: 0.5rem; border-radius: 4px;{% endif %}">
+    <div>
+        {{ n.message }}
+        {% if n.link %} <a href="{{ n.link }}">查看</a>{% endif %}
+    </div>
+    <div class="time">{{ n.created_at[:16] if n.created_at else '' }}</div>
+</div>
+{% endfor %}
+{% else %}
+<p>沒有通知。</p>
+{% endif %}
+{% endblock %}

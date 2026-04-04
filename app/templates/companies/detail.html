@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} - 人脈管理系統{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>{{ company.name }}</h2>
+    <div class="btn-group">
+        <a href="/companies/{{ company.id }}/edit" role="button" class="btn-sm">編輯</a>
+        <form method="post" action="/companies/{{ company.id }}/delete" style="margin:0;">
+            <button type="button" class="btn-sm btn-danger" onclick="confirmDelete(this.closest('form'), '{{ company.name }}')">刪除</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="grid-2">
+        {% if company.industry %}<div><strong>產業：</strong>{{ company.industry }}</div>{% endif %}
+        {% if company.website %}<div><strong>網站：</strong><a href="{{ company.website }}" target="_blank">{{ company.website }}</a></div>{% endif %}
+        {% if company.domain %}<div><strong>網域：</strong>{{ company.domain }}</div>{% endif %}
+        {% if company.address %}<div><strong>地址：</strong>{{ company.address }}</div>{% endif %}
+    </div>
+    {% if company.notes %}
+    <div style="margin-top: 0.75rem;"><strong>備註：</strong>{{ company.notes }}</div>
+    {% endif %}
+</div>
+
+<h3>相關聯絡人 ({{ people|length }})</h3>
+{% if people %}
+<table>
+    <thead><tr><th>姓名</th><th>職稱</th><th>狀態</th><th>工作 Email</th><th>工作電話</th></tr></thead>
+    <tbody>
+    {% for p in people %}
+    <tr>
+        <td><a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a></td>
+        <td>{{ p.title or '-' }}</td>
+        <td><span class="badge {{ 'current' if p.is_current else 'past' }}">{{ '在職' if p.is_current else '已離職' }}</span></td>
+        <td>{{ p.work_email or '-' }}</td>
+        <td>{{ p.work_phone or '-' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>這間公司尚無相關聯絡人。</p>
+{% endif %}
+{% endblock %}

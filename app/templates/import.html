@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}匯入資料 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>匯入資料</h2>
+
+<div class="grid-3">
+    <div class="card">
+        <h3>批次匯入（CSV / Excel）</h3>
+        <p>上傳 CSV 或 Excel (.xlsx) 檔案，系統會讓你對應欄位後匯入。</p>
+        <p class="text-muted" style="font-size: 0.85rem;">支援重複偵測，匯入前會提示可能重複的資料。</p>
+        {% if can_edit %}
+        <form method="post" action="/import/file" enctype="multipart/form-data">
+            <label>選擇檔案
+                <input type="file" name="file" accept=".csv,.xlsx,.xls" required>
+            </label>
+            <button type="submit">上傳檔案</button>
+        </form>
+        {% else %}
+        <p class="text-muted">您沒有匯入權限。</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>名片掃描（OCR）</h3>
+        <p>上傳名片照片，系統會自動辨識文字並預填表單。</p>
+        {% if can_edit %}
+        <form method="post" action="/import/scan" enctype="multipart/form-data">
+            <label>選擇名片圖片
+                <input type="file" name="file" accept="image/*" required>
+            </label>
+            <button type="submit">掃描名片</button>
+        </form>
+        <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.5rem;">
+            支援 JPG、PNG 格式。需要安裝 Tesseract OCR。
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>貼上名片文字</h3>
+        <p>直接貼上名片上的文字，系統會自動解析。</p>
+        {% if can_edit %}
+        <form method="post" action="/import/text">
+            <label>名片文字
+                <textarea name="card_text" rows="5" placeholder="直接貼上名片上的文字內容..." required></textarea>
+            </label>
+            <button type="submit">解析文字</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

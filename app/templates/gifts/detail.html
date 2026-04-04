@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}{{ gift_list.name }} - 送禮清單{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+        <h2 style="margin-bottom: 0.25rem;">{{ gift_list.name }}</h2>
+        {% if gift_list.occasion %}<span class="badge">{{ gift_list.occasion }}</span>{% endif %}
+        {% if gift_list.notes %}<p class="text-muted">{{ gift_list.notes }}</p>{% endif %}
+    </div>
+    <div class="btn-group">
+        <a href="/gifts" role="button" class="btn-secondary btn-sm">返回列表</a>
+        {% if can_edit %}
+        <form method="post" action="/gifts/{{ gift_list.id }}/delete" style="margin:0;" onsubmit="return confirm('確定刪除此清單？')">
+            <button type="submit" class="btn-sm btn-danger">刪除清單</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="stats-grid" style="margin: 1rem 0;">
+    <div class="stat-card">
+        <div class="stat-number">{{ items|length }}</div>
+        <div class="stat-label">總人數</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">${{ "%.0f"|format(total_planned) }}</div>
+        <div class="stat-label">預算總額</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ items|selectattr('status', 'equalto', 'done')|list|length }}</div>
+        <div class="stat-label">已完成</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ items|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+        <div class="stat-label">待處理</div>
+    </div>
+</div>
+
+<!-- Add person -->
+{% if can_edit and all_persons %}
+<div class="card">
+    <h3>新增人員</h3>
+    <form method="post" action="/gifts/{{ gift_list.id }}/add" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: end;">
+        <label style="flex: 1; min-width: 150px;">聯絡人
+            <select name="person_id" required>
+                <option value="">-- 選擇 --</option>
+                {% for p in all_persons %}
+                <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }}{% if p.gift_tier %} ({{ p.gift_tier }}){% endif %}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label style="flex: 1; min-width: 150px;">禮品
+            <input type="text" name="planned_item" placeholder="例：紅酒禮盒">
+        </label>
+        <label style="width: 120px;">金額
+            <input type="number" name="planned_amount" step="1" min="0" placeholder="0">
+        </label>
+        <button type="submit" class="btn-sm">加入</button>
+    </form>
+</div>
+{% endif %}
+
+<!-- Items list -->
+{% if items %}
+<div class="desktop-only">
+<table>
+    <thead>
+        <tr>
+            <th>層級</th>
+            <th>姓名</th>
+            <th>喜好 / 備註</th>
+            <th>禮品</th>
+            <th>金額</th>
+            <th>狀態</th>
+            {% if can_edit %}<th>操作</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{% if item.gift_tier %}<span class="badge gift-{{ item.gift_tier|lower }}">{{ item.gift_tier }}</span>{% endif %}</td>
+            <td><a href="/persons/{{ item.person_id }}">{{ item.first_name }} {{ item.last_name }}</a></td>
+            <td class="text-muted">{{ item.preferences[:30] if item.preferences else '' }}{{ '...' if item.preferences and item.preferences|length > 30 else '' }}</td>
+            <td>
+                {% if can_edit %}
+                <form method="post" action="/gifts/{{ gift_list.id }}/item/{{ item.id }}/update" style="display:flex; gap:0.25rem; align-items:center;">
+                    <input type="text" name="planned_item" value="{{ item.planned_item or '' }}" placeholder="禮品" style="margin:0; padding:0.2rem 0.4rem; width:120px;">
+                {% else %}
+                    {{ item.planned_item or '-' }}
+                {% endif %}
+            </td>
+            <td>
+                {% if can_edit %}
+                    <input type="number" name="planned_amount" value="{{ item.planned_amount or 0 }}" step="1" min="0" style="margin:0; padding:0.2rem 0.4rem; width:80px;">
+                {% else %}
+                    ${{ "%.0f"|format(item.planned_amount or 0) }}
+                {% endif %}
+            </td>
+            <td>
+                {% if can_edit %}
+                    <select name="status" style="margin:0; padding:0.2rem; font-size:0.85rem;">
+                        {% for s in ['pending', 'purchased', 'sent', 'done'] %}
+                        <option value="{{ s }}" {{ 'selected' if item.status == s else '' }}>{{ {'pending':'待處理','purchased':'已購買','sent':'已送出','done':'完成'}[s] }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="notes" value="{{ item.notes or '' }}">
+                    <button type="submit" class="btn-sm" style="padding:0.2rem 0.5rem;">存</button>
+                </form>
+                {% else %}
+                    <span class="badge">{{ {'pending':'待處理','purchased':'已購買','sent':'已送出','done':'完成'}.get(item.status, item.status) }}</span>
+                {% endif %}
+            </td>
+            {% if can_edit %}
+            <td>
+                <form method="post" action="/gifts/{{ gift_list.id }}/item/{{ item.id }}/delete" style="margin:0;" onsubmit="return confirm('移除此人？')">
+                    <button type="submit" class="btn-sm btn-danger" style="padding:0.2rem 0.5rem;">移除</button>
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<!-- Mobile view -->
+<div class="mobile-only">
+    {% for item in items %}
+    <div class="card" style="padding: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                {% if item.gift_tier %}<span class="badge gift-{{ item.gift_tier|lower }}">{{ item.gift_tier }}</span>{% endif %}
+                <a href="/persons/{{ item.person_id }}"><strong>{{ item.first_name }} {{ item.last_name }}</strong></a>
+            </div>
+            <span class="badge">{{ {'pending':'待處理','purchased':'已購買','sent':'已送出','done':'完成'}.get(item.status, item.status) }}</span>
+        </div>
+        {% if item.planned_item %}<div class="text-muted">{{ item.planned_item }} - ${{ "%.0f"|format(item.planned_amount or 0) }}</div>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">清單尚無人員。{% if can_edit %}使用上方表單加入聯絡人，或在建立清單時自動依層級加入。{% endif %}</p>
+{% endif %}
+{% endblock %}

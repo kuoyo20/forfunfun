@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ '編輯' if person else '新增' }}聯絡人 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>{{ '編輯' if person else '新增' }}聯絡人</h2>
+
+<form method="post" action="{{ '/persons/' ~ person.id ~ '/edit' if person else '/persons/new' }}">
+    <div class="card">
+        <h3>基本資料</h3>
+        <div class="grid-2">
+            <label>姓 *
+                <input type="text" name="first_name" value="{{ person.first_name if person else '' }}" required>
+            </label>
+            <label>名
+                <input type="text" name="last_name" value="{{ person.last_name if person else '' }}">
+            </label>
+        </div>
+        <div class="grid-2">
+            <label>個人 Email
+                <input type="email" name="email" value="{{ person.email if person else '' }}">
+            </label>
+            <label>個人電話
+                <input type="text" name="phone" value="{{ person.phone if person else '' }}">
+            </label>
+        </div>
+        <label>備註
+            <textarea name="notes" rows="3">{{ person.notes if person else '' }}</textarea>
+        </label>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>身分 / 職位</h3>
+            <button type="button" class="btn-sm" onclick="addRoleRow()">+ 新增身分</button>
+        </div>
+        <div id="roles-container">
+            {% if roles %}
+                {% for r in roles %}
+                <div class="role-row">
+                    <div class="role-header">
+                        <strong>身分 #{{ loop.index }}</strong>
+                        <button type="button" class="btn-sm btn-danger" onclick="this.closest('.role-row').remove()">移除</button>
+                    </div>
+                    <div class="grid-2">
+                        <label>公司
+                            <select name="role_company_id[]">
+                                <option value="">-- 選擇公司 --</option>
+                                {% for c in companies %}
+                                <option value="{{ c.id }}" {% if r.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>職稱
+                            <input type="text" name="role_title[]" value="{{ r.title or '' }}">
+                        </label>
+                    </div>
+                    <div class="grid-2">
+                        <label>工作 Email
+                            <input type="email" name="role_work_email[]" value="{{ r.work_email or '' }}">
+                        </label>
+                        <label>工作電話
+                            <input type="text" name="role_work_phone[]" value="{{ r.work_phone or '' }}">
+                        </label>
+                    </div>
+                    <label>
+                        <input type="checkbox" name="role_is_current[]" value="{{ loop.index0 }}" {% if r.is_current %}checked{% endif %}>
+                        目前在職
+                    </label>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <p class="text-muted" style="font-size: 0.85rem;">一個人可以有多個身分（如：在 A 公司擔任 CEO，同時是 B 公司顧問）</p>
+    </div>
+
+    <div class="card">
+        <h3>送禮管理</h3>
+        <div class="grid-2">
+            <label>送禮層級
+                <select name="gift_tier">
+                    <option value="" {% if not person or not person.gift_tier %}selected{% endif %}>-- 未設定 --</option>
+                    <option value="VIP" {% if person and person.gift_tier == 'VIP' %}selected{% endif %}>VIP — 最高規格</option>
+                    <option value="A" {% if person and person.gift_tier == 'A' %}selected{% endif %}>A 級 — 重要人脈</option>
+                    <option value="B" {% if person and person.gift_tier == 'B' %}selected{% endif %}>B 級 — 一般維護</option>
+                    <option value="C" {% if person and person.gift_tier == 'C' %}selected{% endif %}>C 級 — 偶爾聯繫</option>
+                    <option value="D" {% if person and person.gift_tier == 'D' %}selected{% endif %}>D 級 — 基本禮數</option>
+                </select>
+            </label>
+            <label>生日
+                <input type="text" name="birthday" value="{{ person.birthday if person and person.birthday else '' }}" placeholder="MM-DD 或 YYYY-MM-DD">
+            </label>
+        </div>
+        <label>喜好 / 興趣
+            <textarea name="preferences" rows="2" placeholder="例如：喜歡紅酒、高爾夫、素食者、對堅果過敏...">{{ person.preferences if person and person.preferences else '' }}</textarea>
+        </label>
+        <label>送禮備註 / 禁忌
+            <textarea name="gift_notes" rows="2" placeholder="例如：不收菸酒、偏好實用性禮物、上次送過茶葉...">{{ person.gift_notes if person and person.gift_notes else '' }}</textarea>
+        </label>
+        <p class="text-muted" style="font-size: 0.85rem;">送禮層級幫你區分每個人的送禮規格，方便在節日統一安排。</p>
+    </div>
+
+    <div class="card">
+        <h3>標籤</h3>
+        <div class="tag-input-wrapper" id="tag-input-wrapper">
+            <input type="text" placeholder="輸入標籤後按 Enter...">
+        </div>
+        <input type="hidden" id="tags-hidden" name="tags" value="{{ tags|join(',') if tags else '' }}">
+        <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.5rem;">用標籤標記聯絡人，例如：大學同學、合作夥伴、投資人...</p>
+    </div>
+
+    {% if custom_fields %}
+    <div class="card">
+        <h3>自訂欄位</h3>
+        {% for cf in custom_fields %}
+        <label>{{ cf.field_label }}
+            {% if cf.field_type == 'number' %}
+            <input type="number" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}">
+            {% elif cf.field_type == 'date' %}
+            <input type="date" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}">
+            {% elif cf.field_type == 'url' %}
+            <input type="url" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}" placeholder="https://...">
+            {% else %}
+            <input type="text" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}">
+            {% endif %}
+        </label>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="btn-group">
+        <button type="submit">儲存</button>
+        <a href="/persons" role="button" class="btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>window.__companies = {{ companies | tojson }};</script>
+{% endblock %}

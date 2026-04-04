@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}人脈管理系統{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    {% if user %}
+    <nav class="top-nav">
+        <a href="/" class="brand">人脈管理系統</a>
+        <a href="/persons">聯絡人</a>
+        <a href="/companies">公司</a>
+        <a href="/gifts">送禮清單</a>
+        <a href="/reminders">提醒</a>
+        <a href="/graph">關係圖</a>
+        <a href="/import">匯入</a>
+        <a href="/export/csv">匯出</a>
+        <form class="nav-search" action="/search" method="get">
+            <input type="search" name="q" placeholder="搜尋聯絡人、公司、標籤..." value="{{ request.query_params.get('q', '') }}">
+        </form>
+        <a href="/notifications" class="notif-link">
+            通知{% if notif_count %} <span class="notif-badge">{{ notif_count }}</span>{% endif %}
+        </a>
+        {% if user.role == 'admin' %}<a href="/admin/users">管理</a>{% endif %}
+        {% if user.role in ['admin', 'editor'] %}<a href="/admin/custom-fields">自訂欄位</a>{% endif %}
+        <a href="/logout">登出 ({{ user.username }}) <span class="badge {{ user.role }}">{{ user.role }}</span></a>
+    </nav>
+    {% endif %}
+
+    <main class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>人脈管理系統 &copy; 2026</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

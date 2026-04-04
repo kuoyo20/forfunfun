@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ '編輯' if gift_list else '建立' }}送禮清單 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>{{ '編輯' if gift_list else '建立' }}送禮清單</h2>
+
+<form method="post" action="/gifts/new">
+    <label>清單名稱
+        <input type="text" name="name" required placeholder="例：2026 中秋送禮" value="{{ gift_list.name if gift_list else '' }}">
+    </label>
+    <label>場合
+        <select name="occasion">
+            <option value="">-- 選擇場合 --</option>
+            {% for o in ['過年', '中秋', '端午', '生日', '聖誕', '感謝', '喬遷', '其他'] %}
+            <option value="{{ o }}" {{ 'selected' if gift_list and gift_list.occasion == o else '' }}>{{ o }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>備註
+        <textarea name="notes" rows="2">{{ gift_list.notes if gift_list else '' }}</textarea>
+    </label>
+
+    <fieldset>
+        <legend>自動加入聯絡人（依送禮層級）</legend>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            {% for tier in ['VIP', 'A', 'B', 'C', 'D'] %}
+            <label>
+                <input type="checkbox" name="auto_tiers[]" value="{{ tier }}">
+                <span class="badge gift-{{ tier|lower }}">{{ tier }}</span>
+            </label>
+            {% endfor %}
+        </div>
+        <p class="text-muted">勾選後，該層級的所有聯絡人將自動加入清單。</p>
+    </fieldset>
+
+    <div class="btn-group">
+        <button type="submit">建立清單</button>
+        <a href="/gifts" role="button" class="btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

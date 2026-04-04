@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}註冊 - 人脈管理系統{% endblock %}
+{% block content %}
+<article style="max-width: 400px; margin: 3rem auto; padding: 2rem;">
+    <h2 style="text-align: center;">註冊新帳號</h2>
+    <form method="post" action="/register">
+        <label>帳號
+            <input type="text" name="username" required autofocus>
+        </label>
+        <label>Email
+            <input type="email" name="email" required>
+        </label>
+        <label>顯示名稱
+            <input type="text" name="display_name" placeholder="選填">
+        </label>
+        <label>密碼
+            <input type="password" name="password" required minlength="6">
+        </label>
+        <label>確認密碼
+            <input type="password" name="password_confirm" required>
+        </label>
+        <button type="submit" style="width: 100%;">註冊</button>
+    </form>
+    <p style="text-align: center; margin-top: 1rem;">
+        已有帳號？ <a href="/login">登入</a>
+    </p>
+</article>
+{% endblock %}

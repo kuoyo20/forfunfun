@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}首頁 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>歡迎回來，{{ user.display_name or user.username }}！</h2>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.persons }}</div>
+        <div class="stat-label">聯絡人</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.companies }}</div>
+        <div class="stat-label">公司</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.tags }}</div>
+        <div class="stat-label">標籤</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.interactions }}</div>
+        <div class="stat-label">互動紀錄</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.users }}</div>
+        <div class="stat-label">使用者</div>
+    </div>
+    {% if pending_reminders %}
+    <div class="stat-card" style="border-color: var(--warning);">
+        <div class="stat-number" style="color: var(--warning);">{{ pending_reminders }}</div>
+        <div class="stat-label"><a href="/reminders">待辦提醒</a></div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Gift Tier Summary -->
+{% if gift_tiers or upcoming_bdays %}
+<div class="grid-2">
+    <div class="card">
+        <h3>送禮層級分佈</h3>
+        {% if gift_tiers %}
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+            {% for t in gift_tiers %}
+            <a href="/persons?tier={{ t.gift_tier }}" style="text-decoration: none;">
+                <span class="badge gift-{{ t.gift_tier|lower }}" style="font-size: 1rem; padding: 0.3rem 0.75rem;">{{ t.gift_tier }} ({{ t.cnt }})</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% if gift_total_spent %}
+        <p class="text-muted">累計送禮金額：${{ "%.0f"|format(gift_total_spent) }}</p>
+        {% endif %}
+        {% else %}
+        <p class="text-muted">尚未設定任何人的送禮層級。<a href="/persons">前往設定</a></p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>有生日資料的聯絡人</h3>
+        {% if upcoming_bdays %}
+        {% for p in upcoming_bdays %}
+        <div class="activity-item">
+            <a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a>
+            <span class="text-muted">{{ p.birthday }}</span>
+            {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted">尚未記錄任何人的生日。</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="grid-2">
+    <div>
+        <div class="card">
+            <h3>最近更新的聯絡人</h3>
+            {% if recent_persons %}
+            {% for p in recent_persons %}
+            <div class="contact-card-mobile">
+                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }} {{ p.last_name }}</strong></a>
+                {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
+                <span class="text-muted">{{ p.email or '' }}</span>
+                <span class="text-muted">{{ p.updated_at[:16] if p.updated_at else '' }}</span>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>尚無聯絡人。<a href="/persons/new">新增第一位聯絡人</a></p>
+            {% endif %}
+        </div>
+    </div>
+    <div>
+        <div class="card">
+            <h3>最近活動</h3>
+            {% if recent_logs %}
+            {% for log in recent_logs %}
+            <div class="activity-item">
+                <strong>{{ log.username or '系統' }}</strong> {{ log.action }}了{{ log.entity_type }}
+                {% if log.changes %} - {{ log.changes }}{% endif %}
+                <div class="time">{{ log.created_at[:16] if log.created_at else '' }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>尚無活動紀錄。</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+{% if gift_tiers or monthly_interactions %}
+<div class="grid-2">
+    {% if gift_tiers %}
+    <div class="card">
+        <h3>送禮層級分佈圖</h3>
+        <canvas id="tierChart" style="max-height: 250px;"></canvas>
+    </div>
+    {% endif %}
+    {% if monthly_interactions %}
+    <div class="card">
+        <h3>近半年互動趨勢</h3>
+        <canvas id="interactionChart" style="max-height: 250px;"></canvas>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if can_edit %}
+<div class="btn-group" style="margin-top: 1rem;">
+    <a href="/persons/new" role="button">新增聯絡人</a>
+    <a href="/companies/new" role="button" class="btn-secondary">新增公司</a>
+    <a href="/import" role="button" class="btn-secondary">匯入資料</a>
+    <a href="/export/csv" role="button" class="btn-secondary">匯出 CSV</a>
+    <a href="/export/calendar/birthdays" role="button" class="btn-secondary">匯出生日日曆</a>
+    <a href="/export/calendar/reminders" role="button" class="btn-secondary">匯出提醒日曆</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+{% if gift_tiers %}
+new Chart(document.getElementById('tierChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ tier_labels | tojson }},
+        datasets: [{
+            data: {{ tier_counts | tojson }},
+            backgroundColor: ['#e74c3c', '#e67e22', '#3498db', '#27ae60', '#95a5a6']
+        }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+{% endif %}
+{% if monthly_interactions %}
+new Chart(document.getElementById('interactionChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ monthly_labels | tojson }},
+        datasets: [{
+            label: '互動次數',
+            data: {{ monthly_counts | tojson }},
+            backgroundColor: 'rgba(74, 144, 217, 0.7)'
+        }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+});
+{% endif %}
+</script>
+{% endblock %}

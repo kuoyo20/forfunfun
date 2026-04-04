@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}自訂欄位管理 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>自訂欄位管理</h2>
+<p class="text-muted">自訂欄位會出現在每位聯絡人的詳細資料頁面。</p>
+
+{% if can_edit %}
+<div class="card">
+    <h3>新增欄位</h3>
+    <form method="post" action="/admin/custom-fields/new" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: end;">
+        <label style="flex: 1; min-width: 150px;">欄位名稱（內部鍵）
+            <input type="text" name="field_name" required placeholder="例：line_id" pattern="[a-z0-9_]+" title="只能使用小寫英文、數字、底線">
+        </label>
+        <label style="flex: 1; min-width: 150px;">顯示名稱
+            <input type="text" name="field_label" required placeholder="例：LINE ID">
+        </label>
+        <label style="width: 120px;">類型
+            <select name="field_type">
+                <option value="text">文字</option>
+                <option value="number">數字</option>
+                <option value="date">日期</option>
+                <option value="url">網址</option>
+            </select>
+        </label>
+        <button type="submit" class="btn-sm">新增</button>
+    </form>
+</div>
+{% endif %}
+
+{% if fields %}
+<table>
+    <thead>
+        <tr>
+            <th>顯示名稱</th>
+            <th>欄位名稱</th>
+            <th>類型</th>
+            <th>排序</th>
+            {% if can_edit %}<th>操作</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for f in fields %}
+        <tr>
+            <td><strong>{{ f.field_label }}</strong></td>
+            <td class="text-muted">{{ f.field_name }}</td>
+            <td><span class="badge">{{ {'text':'文字','number':'數字','date':'日期','url':'網址'}.get(f.field_type, f.field_type) }}</span></td>
+            <td>{{ f.sort_order }}</td>
+            {% if can_edit %}
+            <td>
+                <form method="post" action="/admin/custom-fields/{{ f.id }}/delete" style="margin:0;" onsubmit="return confirm('刪除此欄位？所有聯絡人的此欄位資料也會被刪除。')">
+                    <button type="submit" class="btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">尚未建立任何自訂欄位。</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}待辦提醒 - 人脈管理系統{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <h2>待辦提醒</h2>
+    {% if can_edit %}
+    <button type="button" onclick="document.getElementById('new-reminder').style.display='block'" class="btn-sm">新增提醒</button>
+    {% endif %}
+</div>
+
+<!-- New reminder form -->
+{% if can_edit %}
+<div id="new-reminder" class="card" style="display:none; margin-bottom:1rem;">
+    <h3>新增提醒</h3>
+    <form method="post" action="/reminders/new">
+        <div class="grid-2">
+            <label>聯絡人
+                <select name="person_id" required>
+                    <option value="">-- 選擇 --</option>
+                    {% for p in all_persons %}
+                    <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>提醒日期
+                <input type="date" name="remind_date" required>
+            </label>
+        </div>
+        <label>標題
+            <input type="text" name="title" required placeholder="例：聯絡王先生討論合作">
+        </label>
+        <label>備註
+            <textarea name="notes" rows="2"></textarea>
+        </label>
+        <div class="btn-group">
+            <button type="submit">建立</button>
+            <button type="button" class="btn-secondary" onclick="document.getElementById('new-reminder').style.display='none'">取消</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Filter tabs -->
+<div class="btn-group" style="margin-bottom: 1rem;">
+    <a href="/reminders?filter=pending" role="button" class="{{ '' if filter != 'done' else 'btn-secondary' }} btn-sm">待辦 ({{ pending_count }})</a>
+    <a href="/reminders?filter=done" role="button" class="{{ '' if filter == 'done' else 'btn-secondary' }} btn-sm">已完成</a>
+    <a href="/reminders?filter=all" role="button" class="btn-secondary btn-sm">全部</a>
+</div>
+
+{% if reminders %}
+{% for r in reminders %}
+<div class="card" style="padding: 0.75rem 1rem; {{ 'opacity: 0.6;' if r.is_done else '' }}">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+            {% if r.is_done %}<s>{% endif %}
+            <strong>{{ r.title }}</strong>
+            {% if r.is_done %}</s>{% endif %}
+            <span class="text-muted">— <a href="/persons/{{ r.person_id }}">{{ r.first_name }} {{ r.last_name }}</a></span>
+            {% if r.remind_date < today and not r.is_done %}
+            <span class="badge" style="background: var(--danger); color: white;">逾期</span>
+            {% elif r.remind_date == today and not r.is_done %}
+            <span class="badge" style="background: var(--warning); color: white;">今天</span>
+            {% endif %}
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="text-muted">{{ r.remind_date }}</span>
+            {% if can_edit and not r.is_done %}
+            <form method="post" action="/reminders/{{ r.id }}/done" style="margin:0;">
+                <button type="submit" class="btn-sm" style="padding:0.2rem 0.5rem;">完成</button>
+            </form>
+            {% endif %}
+            {% if can_edit %}
+            <form method="post" action="/reminders/{{ r.id }}/delete" style="margin:0;" onsubmit="return confirm('刪除此提醒？')">
+                <button type="submit" class="btn-sm btn-danger" style="padding:0.2rem 0.5rem;">刪</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% if r.notes %}<p class="text-muted" style="margin: 0.25rem 0 0 0;">{{ r.notes }}</p>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p class="text-muted">沒有提醒。</p>
+{% endif %}
+{% endblock %}

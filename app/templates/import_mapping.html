@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}欄位對應 - 匯入資料{% endblock %}
+{% block content %}
+<h2>欄位對應</h2>
+<p>共 {{ total }} 筆資料。請將檔案中的欄位對應到系統欄位：</p>
+
+<form method="post" action="/import/check-duplicates">
+    <input type="hidden" name="tmp_file" value="{{ tmp_file }}">
+
+    <div class="card">
+        <h3>欄位對應</h3>
+        <table>
+            <thead><tr><th>系統欄位</th><th>對應的檔案欄位</th></tr></thead>
+            <tbody>
+            {% set field_labels = {
+                "first_name": "姓 *",
+                "last_name": "名",
+                "email": "Email",
+                "phone": "電話",
+                "company": "公司",
+                "title": "職稱",
+                "tags": "標籤（逗號分隔）",
+                "notes": "備註"
+            } %}
+            {% for field in field_options %}
+            <tr>
+                <td>{{ field_labels.get(field, field) }}</td>
+                <td>
+                    <select name="map_{{ field }}">
+                        <option value="">-- 不對應 --</option>
+                        {% for h in headers %}
+                        <option value="{{ h }}" {% if h.lower() == field.lower() or h == field %}selected{% endif %}>{{ h }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>資料預覽（前 5 筆）</h3>
+        <div class="import-preview">
+            <table>
+                <thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                {% for row in preview %}
+                <tr>{% for h in headers %}<td>{{ row.get(h, '') }}</td>{% endfor %}</tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button type="submit">檢查重複並匯入 {{ total }} 筆資料</button>
+        <a href="/import" role="button" class="btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

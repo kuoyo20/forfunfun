@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}重複偵測 - 匯入資料{% endblock %}
+{% block content %}
+<h2>偵測到重複資料</h2>
+<p>共 {{ total }} 筆資料中發現 {{ dupes|length }} 筆可能重複。請選擇要跳過哪些：</p>
+
+<form method="post" action="/import/confirm">
+    <input type="hidden" name="tmp_file" value="{{ tmp_file }}">
+    <input type="hidden" name="mapping_json" value='{{ mapping_json }}'>
+
+    <table>
+        <thead>
+            <tr><th>跳過</th><th>匯入資料</th><th>比對方式</th><th>已存在的聯絡人</th></tr>
+        </thead>
+        <tbody>
+        {% for d in dupes %}
+        <tr>
+            <td>
+                <input type="checkbox" name="skip_{{ d.row_index }}" value="1" checked>
+            </td>
+            <td>{{ d.new_name }}</td>
+            <td><span class="badge past">{{ '同 Email' if d.match_field == 'email' else '同姓名' }}</span></td>
+            <td>
+                <a href="/persons/{{ d.existing.id }}">{{ d.existing.first_name }} {{ d.existing.last_name }}</a>
+                {% if d.existing.email %} ({{ d.existing.email }}){% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="btn-group" style="margin-top: 1rem;">
+        <button type="submit">確認匯入（跳過勾選項目）</button>
+        <a href="/import" role="button" class="btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

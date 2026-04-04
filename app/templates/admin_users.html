@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}使用者管理 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>使用者管理</h2>
+
+<table>
+    <thead>
+        <tr><th>帳號</th><th>Email</th><th>顯示名稱</th><th>角色</th><th>註冊時間</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+    <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.display_name or '-' }}</td>
+        <td><span class="badge {{ u.role }}">{{ u.role }}</span></td>
+        <td>{{ u.created_at[:16] if u.created_at else '-' }}</td>
+        <td>
+            {% if u.id != user.id %}
+            <form method="post" action="/admin/users/{{ u.id }}/role" style="display:inline-flex; gap:0.25rem; align-items:center;">
+                <select name="role" style="margin:0; padding: 0.2rem;">
+                    <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>admin</option>
+                    <option value="editor" {% if u.role == 'editor' %}selected{% endif %}>editor</option>
+                    <option value="viewer" {% if u.role == 'viewer' %}selected{% endif %}>viewer</option>
+                </select>
+                <button type="submit" class="btn-sm">更新</button>
+            </form>
+            {% else %}
+            <span class="text-muted">目前使用者</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3>角色說明</h3>
+    <ul>
+        <li><strong>admin</strong>：管理員 — 可以管理使用者、修改角色，以及所有編輯操作</li>
+        <li><strong>editor</strong>：編輯者 — 可以新增、修改、刪除聯絡人和公司</li>
+        <li><strong>viewer</strong>：檢視者 — 只能查看資料，不能修改</li>
+    </ul>
+</div>
+{% endblock %}

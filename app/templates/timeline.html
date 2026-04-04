@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ person.first_name }} {{ person.last_name }} 時間軸 - 人脈管理系統{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <h2>{{ person.first_name }} {{ person.last_name }} — 時間軸</h2>
+    <a href="/persons/{{ person.id }}" role="button" class="btn-secondary btn-sm">返回聯絡人</a>
+</div>
+
+{% if events %}
+<div style="position: relative; padding-left: 2rem; border-left: 3px solid var(--primary); margin-left: 1rem;">
+    {% for ev in events %}
+    <div style="margin-bottom: 1.5rem; position: relative;">
+        <div style="position: absolute; left: -2.55rem; top: 0.2rem; width: 12px; height: 12px; border-radius: 50%; background: {{ {'interaction': 'var(--primary)', 'gift': 'var(--warning)', 'reminder': 'var(--success)', 'edit': '#6c757d'}.get(ev.type, '#6c757d') }}; border: 2px solid white;"></div>
+        <div class="card" style="padding: 0.75rem 1rem; margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <span class="badge {{ ev.type }}">{{ {'interaction':'互動','gift':'送禮','reminder':'提醒','edit':'編輯'}.get(ev.type, ev.type) }}</span>
+                    <strong>{{ ev.title }}</strong>
+                </div>
+                <span class="text-muted">{{ ev.date }}</span>
+            </div>
+            {% if ev.detail %}<p class="text-muted" style="margin: 0.25rem 0 0 0;">{{ ev.detail }}</p>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">尚無紀錄。</p>
+{% endif %}
+{% endblock %}
