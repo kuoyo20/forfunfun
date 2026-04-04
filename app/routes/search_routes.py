@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.auth import login_required, can_edit
 from app.database import get_db
@@ -107,17 +107,37 @@ async def dashboard(request: Request):
     """).fetchall()
     gift_total_spent = db.execute("SELECT COALESCE(SUM(amount), 0) FROM gift_records").fetchone()[0]
 
+    # Chart data: tier distribution
+    tier_labels = [t["gift_tier"] for t in gift_tiers]
+    tier_counts = [t["cnt"] for t in gift_tiers]
+
+    # Chart data: monthly interactions (last 6 months)
+    monthly_interactions = db.execute("""
+        SELECT strftime('%Y-%m', interaction_date) as month, COUNT(*) as cnt
+        FROM interactions
+        WHERE interaction_date >= date('now', '-6 months')
+        GROUP BY month ORDER BY month
+    """).fetchall()
+    monthly_labels = [m["month"] for m in monthly_interactions]
+    monthly_counts = [m["cnt"] for m in monthly_interactions]
+
     # Upcoming birthdays (simple: get all with birthdays)
     upcoming_bdays = db.execute("""
         SELECT id, first_name, last_name, birthday, gift_tier FROM persons
         WHERE birthday != '' ORDER BY SUBSTR(birthday, -5) LIMIT 10
     """).fetchall()
 
+    # Pending reminders count
+    pending_reminders = db.execute("SELECT COUNT(*) FROM reminders WHERE is_done = 0").fetchone()[0]
+
     db.close()
     return _render(request, "dashboard.html",
         stats=stats, recent_persons=recent_persons, recent_logs=recent_logs,
         gift_tiers=gift_tiers, gift_total_spent=gift_total_spent,
-        upcoming_bdays=upcoming_bdays)
+        tier_labels=tier_labels, tier_counts=tier_counts,
+        monthly_interactions=monthly_interactions,
+        monthly_labels=monthly_labels, monthly_counts=monthly_counts,
+        upcoming_bdays=upcoming_bdays, pending_reminders=pending_reminders)
 
 
 @router.get("/export/csv")

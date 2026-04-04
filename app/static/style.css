@@ -151,4 +151,16 @@ table tr:hover { background: var(--bg-light); }
     h2 { font-size: 1.3rem; }
 }
 
+/* Gift list status badges */
+.badge.pending { background: #ffc107; color: #333; }
+.badge.purchased { background: #17a2b8; color: white; }
+.badge.sent { background: #4a90d9; color: white; }
+.badge.done { background: #27ae60; color: white; }
+
+/* Timeline dot colors */
+.badge.interaction { background: var(--primary); color: white; }
+.badge.gift { background: var(--warning); color: white; }
+.badge.reminder { background: var(--success); color: white; }
+.badge.edit { background: #6c757d; color: white; }
+
 footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; border-top: 1px solid #dee2e6; }

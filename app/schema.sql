@@ -126,3 +126,56 @@ CREATE TABLE IF NOT EXISTS notifications (
     is_read BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Follow-up reminders
+CREATE TABLE IF NOT EXISTS reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id),
+    remind_date DATE NOT NULL,
+    title TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    is_done BOOLEAN DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Custom fields definition
+CREATE TABLE IF NOT EXISTS custom_field_defs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    field_name TEXT UNIQUE NOT NULL,     -- internal key
+    field_label TEXT NOT NULL,           -- display label (e.g. "Line ID")
+    field_type TEXT DEFAULT 'text',      -- text, number, date, url
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Custom field values per person
+CREATE TABLE IF NOT EXISTS custom_field_values (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    field_id INTEGER NOT NULL REFERENCES custom_field_defs(id) ON DELETE CASCADE,
+    value TEXT DEFAULT '',
+    UNIQUE(person_id, field_id)
+);
+
+-- Gift lists (送禮清單 for holidays)
+CREATE TABLE IF NOT EXISTS gift_lists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,                  -- e.g. "2026 中秋送禮"
+    occasion TEXT DEFAULT '',
+    created_by INTEGER REFERENCES users(id),
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Gift list items
+CREATE TABLE IF NOT EXISTS gift_list_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    list_id INTEGER NOT NULL REFERENCES gift_lists(id) ON DELETE CASCADE,
+    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    planned_item TEXT DEFAULT '',
+    planned_amount REAL DEFAULT 0,
+    status TEXT DEFAULT 'pending',       -- pending, purchased, sent, done
+    notes TEXT DEFAULT '',
+    UNIQUE(list_id, person_id)
+);

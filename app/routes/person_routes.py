@@ -144,9 +144,10 @@ async def new_person(request: Request):
         return RedirectResponse("/persons", status_code=302)
     db = get_db()
     companies = db.execute("SELECT id, name FROM companies ORDER BY name").fetchall()
+    custom_fields = db.execute("SELECT id, field_name, field_label, field_type, '' as value FROM custom_field_defs ORDER BY sort_order, id").fetchall()
     db.close()
     return _render(request, "persons/form.html",
-        person=None, roles=[], tags=[], companies=[dict(c) for c in companies])
+        person=None, roles=[], tags=[], companies=[dict(c) for c in companies], custom_fields=custom_fields)
 
 
 @router.post("/new")
@@ -169,6 +170,9 @@ async def create_person(request: Request):
 
     _save_tags(db, person_id, form.get("tags", ""))
     _save_roles(db, person_id, form)
+
+    from app.routes.custom_field_routes import save_custom_fields_for_person
+    save_custom_fields_for_person(db, person_id, form)
 
     name = f"{form.get('first_name', '')} {form.get('last_name', '')}"
     db.execute(
@@ -233,12 +237,16 @@ async def view_person(request: Request, person_id: int):
 
     all_persons = db.execute("SELECT id, first_name, last_name FROM persons WHERE id != ? ORDER BY first_name", (person_id,)).fetchall()
 
+    # Custom fields
+    from app.routes.custom_field_routes import get_custom_fields_for_person
+    custom_fields = get_custom_fields_for_person(db, person_id)
+
     db.close()
     return _render(request, "persons/detail.html",
         person=person, roles=roles, tags=[t["name"] for t in tags],
         relationships=relationships, interactions=interactions,
         gift_records=gift_records, gift_total=gift_total,
-        logs=logs, all_persons=all_persons)
+        logs=logs, all_persons=all_persons, custom_fields=custom_fields)
 
 
 @router.get("/{person_id}/edit")
@@ -254,10 +262,12 @@ async def edit_person(request: Request, person_id: int):
     roles = db.execute("SELECT r.*, c.name as company_name FROM roles r LEFT JOIN companies c ON c.id = r.company_id WHERE r.person_id = ?", (person_id,)).fetchall()
     tags = db.execute("SELECT t.name FROM tags t JOIN person_tags pt ON pt.tag_id = t.id WHERE pt.person_id = ?", (person_id,)).fetchall()
     companies = db.execute("SELECT id, name FROM companies ORDER BY name").fetchall()
+    from app.routes.custom_field_routes import get_custom_fields_for_person
+    custom_fields = get_custom_fields_for_person(db, person_id)
     db.close()
     return _render(request, "persons/form.html",
         person=dict(person), roles=[dict(r) for r in roles],
-        tags=[t["name"] for t in tags], companies=[dict(c) for c in companies])
+        tags=[t["name"] for t in tags], companies=[dict(c) for c in companies], custom_fields=custom_fields)
 
 
 @router.post("/{person_id}/edit")
@@ -287,6 +297,9 @@ async def update_person(request: Request, person_id: int):
 
     _save_tags(db, person_id, form.get("tags", ""))
     _save_roles(db, person_id, form)
+
+    from app.routes.custom_field_routes import save_custom_fields_for_person
+    save_custom_fields_for_person(db, person_id, form)
 
     name = f"{form.get('first_name', '')} {form.get('last_name', '')}"
     db.execute(

@@ -13,6 +13,8 @@
         <a href="/" class="brand">人脈管理系統</a>
         <a href="/persons">聯絡人</a>
         <a href="/companies">公司</a>
+        <a href="/gifts">送禮清單</a>
+        <a href="/reminders">提醒</a>
         <a href="/graph">關係圖</a>
         <a href="/import">匯入</a>
         <a href="/export/csv">匯出</a>
@@ -23,6 +25,7 @@
             通知{% if notif_count %} <span class="notif-badge">{{ notif_count }}</span>{% endif %}
         </a>
         {% if user.role == 'admin' %}<a href="/admin/users">管理</a>{% endif %}
+        {% if user.role in ['admin', 'editor'] %}<a href="/admin/custom-fields">自訂欄位</a>{% endif %}
         <a href="/logout">登出 ({{ user.username }}) <span class="badge {{ user.role }}">{{ user.role }}</span></a>
     </nav>
     {% endif %}

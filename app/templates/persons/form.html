@@ -107,6 +107,25 @@
         <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.5rem;">用標籤標記聯絡人，例如：大學同學、合作夥伴、投資人...</p>
     </div>
 
+    {% if custom_fields %}
+    <div class="card">
+        <h3>自訂欄位</h3>
+        {% for cf in custom_fields %}
+        <label>{{ cf.field_label }}
+            {% if cf.field_type == 'number' %}
+            <input type="number" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}">
+            {% elif cf.field_type == 'date' %}
+            <input type="date" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}">
+            {% elif cf.field_type == 'url' %}
+            <input type="url" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}" placeholder="https://...">
+            {% else %}
+            <input type="text" name="cf_{{ cf.field_name }}" value="{{ cf.value or '' }}">
+            {% endif %}
+        </label>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="btn-group">
         <button type="submit">儲存</button>
         <a href="/persons" role="button" class="btn-secondary">取消</a>
