@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+
+@layer base {
+  :root {
+    --background: 40 33% 97%;
+    --foreground: 30 10% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 15%;
+    --primary: 36 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 30 10% 25%;
+    --muted: 35 15% 93%;
+    --muted-foreground: 30 8% 50%;
+    --accent: 160 40% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 35 20% 88%;
+    --input: 35 20% 88%;
+    --ring: 36 80% 50%;
+    --radius: 0.75rem;
+
+    --role-active-bg: 36 85% 92%;
+    --role-active-border: 36 80% 50%;
+    --role-active-text: 30 60% 25%;
+
+    --badge-opening: 200 60% 94%;
+    --badge-opening-text: 200 60% 35%;
+    --badge-closing: 0 60% 94%;
+    --badge-closing-text: 0 50% 40%;
+    --badge-explore: 36 70% 93%;
+    --badge-explore-text: 36 60% 35%;
+
+    --listen-bg: 200 40% 96%;
+    --listen-border: 200 40% 80%;
+    --praise-bg: 140 40% 96%;
+    --praise-border: 140 40% 80%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
