@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時口譯系統</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/translation.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="/" class="brand">即時口譯系統</a>
+        <a href="/">返回首頁</a>
+    </nav>
+
+    <main class="container">
+        <header class="translation-header">
+            <h1>即時口譯系統</h1>
+            <p class="subtitle">選擇來源與目標語言，按下麥克風開始即時翻譯</p>
+        </header>
+
+        <!-- Browser compatibility warning -->
+        <div id="browser-warning" class="alert alert-warning" style="display:none;">
+            <strong>注意：</strong>此功能需要 Google Chrome 瀏覽器以獲得最佳語音辨識體驗。
+            其他瀏覽器可能不支援語音辨識功能。
+        </div>
+
+        <!-- Language selection -->
+        <div class="lang-controls">
+            <div class="lang-select-group">
+                <label for="source-lang">來源語言（說的語言）</label>
+                <select id="source-lang">
+                    {% for code, name in languages.items() %}
+                    <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}
+                            data-speech-code="{{ speech_codes[code] }}">
+                        {{ name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button id="swap-langs" class="swap-btn" title="交換語言">
+                &#8646;
+            </button>
+
+            <div class="lang-select-group">
+                <label for="target-lang">目標語言（翻譯成）</label>
+                <select id="target-lang">
+                    {% for code, name in languages.items() %}
+                    <option value="{{ code }}" {% if code == 'zh-TW' %}selected{% endif %}
+                            data-speech-code="{{ speech_codes[code] }}">
+                        {{ name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="control-panel">
+            <button id="mic-btn" class="mic-button" title="開始錄音">
+                <svg id="mic-icon" viewBox="0 0 24 24" width="48" height="48">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" fill="currentColor"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="currentColor"/>
+                </svg>
+                <svg id="mic-off-icon" viewBox="0 0 24 24" width="48" height="48" style="display:none;">
+                    <path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z" fill="currentColor"/>
+                </svg>
+            </button>
+            <div class="mic-status">
+                <span id="mic-status-text">點擊麥克風開始錄音</span>
+                <div id="audio-visualizer" class="visualizer" style="display:none;">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                    <div class="bar"></div><div class="bar"></div>
+                </div>
+            </div>
+
+            <div class="extra-controls">
+                <label class="toggle-label">
+                    <input type="checkbox" id="auto-speak" checked>
+                    自動朗讀翻譯結果
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="continuous-mode" checked>
+                    連續辨識模式
+                </label>
+                <div class="speed-control">
+                    <label for="speech-rate">語速</label>
+                    <input type="range" id="speech-rate" min="0.5" max="2" step="0.1" value="1">
+                    <span id="speech-rate-value">1.0x</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Translation display area -->
+        <div class="translation-area">
+            <div class="panel original-panel">
+                <div class="panel-header">
+                    <h3 id="original-lang-label">原文</h3>
+                    <button class="clear-btn" id="clear-original" title="清除">&#10005;</button>
+                </div>
+                <div id="original-text" class="text-display">
+                    <p class="placeholder">等待語音輸入...</p>
+                </div>
+                <div id="interim-text" class="interim-display"></div>
+            </div>
+
+            <div class="panel translated-panel">
+                <div class="panel-header">
+                    <h3 id="translated-lang-label">譯文</h3>
+                    <button class="clear-btn" id="clear-translated" title="清除">&#10005;</button>
+                </div>
+                <div id="translated-text" class="text-display">
+                    <p class="placeholder">等待翻譯結果...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual text input -->
+        <div class="manual-input">
+            <h3>手動輸入翻譯</h3>
+            <div class="manual-input-row">
+                <textarea id="manual-text" placeholder="輸入要翻譯的文字..." rows="2"></textarea>
+                <button id="manual-translate-btn" class="translate-btn">翻譯</button>
+                <button id="manual-speak-btn" class="speak-btn" title="朗讀翻譯結果">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" fill="currentColor"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- History -->
+        <details class="history-section">
+            <summary>翻譯紀錄</summary>
+            <div id="history-list" class="history-list">
+                <p class="placeholder">尚無翻譯紀錄</p>
+            </div>
+            <button id="clear-history" class="outline secondary">清除所有紀錄</button>
+            <button id="export-history" class="outline">匯出紀錄</button>
+        </details>
+    </main>
+
+    <footer>
+        <p>即時口譯系統 &copy; 2026</p>
+    </footer>
+
+    <script src="/static/translation.js"></script>
+</body>
+</html>

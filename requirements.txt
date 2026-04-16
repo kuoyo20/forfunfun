@@ -8,3 +8,5 @@ aiosqlite
 openpyxl
 pytesseract
 Pillow
+deep-translator
+websockets
