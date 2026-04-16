@@ -113,7 +113,7 @@ SPEECH_RECOGNITION_CODES = {
 @router.get("/translation")
 async def translation_page(request: Request):
     """Render the real-time translation page."""
-    return templates.TemplateResponse("translation.html", {
+    return templates.TemplateResponse(request=request, name="translation.html", context={
         "request": request,
         "languages": SUPPORTED_LANGUAGES,
         "speech_codes": SPEECH_RECOGNITION_CODES,
