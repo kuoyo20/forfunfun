@@ -6,7 +6,8 @@ from app.auth import get_user_from_request
 from app.config import PHOTO_DIR
 from app.routes import (auth_routes, company_routes, person_routes, search_routes,
                         import_routes, api_routes, gift_routes, reminder_routes,
-                        merge_routes, custom_field_routes, timeline_routes, calendar_routes)
+                        merge_routes, custom_field_routes, timeline_routes, calendar_routes,
+                        translation_routes)
 
 app = FastAPI(title="人脈管理系統")
 app.mount("/static/photos", StaticFiles(directory=str(PHOTO_DIR)), name="photos")
@@ -37,6 +38,7 @@ app.include_router(merge_routes.router)
 app.include_router(custom_field_routes.router)
 app.include_router(timeline_routes.router)
 app.include_router(calendar_routes.router)
+app.include_router(translation_routes.router)
 
 
 @app.get("/")
