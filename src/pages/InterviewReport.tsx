@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { API } from "@/lib/config";
 
 interface Report {
   overallScore: number;

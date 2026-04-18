@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { ArrowLeft, Copy, Check, Send, Loader2 } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { API } from "@/lib/config";
 
 const TOPIC_OPTIONS = [
   "JavaScript", "TypeScript", "React", "Node.js",

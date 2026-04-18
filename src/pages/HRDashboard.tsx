@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Plus, Eye, Send, Trash2, Copy, Check, Loader2 } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { API } from "@/lib/config";
 
 interface Interview {
   id: string;

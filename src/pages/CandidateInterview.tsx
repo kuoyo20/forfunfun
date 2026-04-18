@@ -5,7 +5,7 @@ import InterviewChat from "@/components/InterviewChat";
 import ReportView from "@/components/ReportView";
 import type { InterviewReport, Message } from "@/types/interview";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { API } from "@/lib/config";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);

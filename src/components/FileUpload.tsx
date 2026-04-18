@@ -8,7 +8,7 @@ interface FileUploadProps {
   onUploaded: (data: { fileName: string; text: string }) => void;
 }
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { API } from "@/lib/config";
 
 export default function FileUpload({ label, accept = ".pdf,.doc,.docx,.txt", onUploaded }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
