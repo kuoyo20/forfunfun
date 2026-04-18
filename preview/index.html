@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脈管理系統 — 預覽目錄</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        body { max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .page-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+        .page-card { border: 1px solid #dee2e6; border-radius: 8px; padding: 1.25rem; text-align: center; text-decoration: none; color: inherit; transition: box-shadow 0.2s; }
+        .page-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .page-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .page-card .label { font-weight: 600; font-size: 1.1rem; }
+        .page-card .desc { color: #6c757d; font-size: 0.85rem; margin-top: 0.25rem; }
+        .note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 1rem; margin-top: 1.5rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1>人脈管理系統 — 頁面預覽</h1>
+    <p>點擊下方卡片可預覽各頁面的實際畫面。這些是從系統匯出的靜態 HTML，樣式與實際運行一致。</p>
+
+    <div class="page-grid">
+        <a href="dashboard.html" class="page-card">
+            <div class="icon">📊</div>
+            <div class="label">Dashboard 首頁</div>
+            <div class="desc">統計圖表、送禮分佈、生日提醒</div>
+        </a>
+        <a href="persons.html" class="page-card">
+            <div class="icon">👥</div>
+            <div class="label">聯絡人列表</div>
+            <div class="desc">10 位聯絡人 + 篩選 + 批次操作</div>
+        </a>
+        <a href="persons-1.html" class="page-card">
+            <div class="icon">👤</div>
+            <div class="label">聯絡人詳情</div>
+            <div class="desc">王志明 VIP — 完整資料頁</div>
+        </a>
+        <a href="persons-1-timeline.html" class="page-card">
+            <div class="icon">📅</div>
+            <div class="label">時間軸</div>
+            <div class="desc">王志明的互動 / 送禮 / 提醒紀錄</div>
+        </a>
+        <a href="gifts.html" class="page-card">
+            <div class="icon">🎁</div>
+            <div class="label">送禮清單</div>
+            <div class="desc">2026 端午送禮，6 人 $8,700</div>
+        </a>
+        <a href="gifts-1.html" class="page-card">
+            <div class="icon">📋</div>
+            <div class="label">送禮清單詳情</div>
+            <div class="desc">每人禮品、金額、狀態追蹤</div>
+        </a>
+        <a href="reminders.html" class="page-card">
+            <div class="icon">⏰</div>
+            <div class="label">待辦提醒</div>
+            <div class="desc">5 個待辦 + 逾期標示</div>
+        </a>
+        <a href="companies.html" class="page-card">
+            <div class="icon">🏢</div>
+            <div class="label">公司列表</div>
+            <div class="desc">台積電、Google、鴻海等 5 間</div>
+        </a>
+        <a href="merge.html" class="page-card">
+            <div class="icon">🔀</div>
+            <div class="label">合併聯絡人</div>
+            <div class="desc">選擇兩人預覽 → 確認合併</div>
+        </a>
+        <a href="admin-custom-fields.html" class="page-card">
+            <div class="icon">⚙️</div>
+            <div class="label">自訂欄位</div>
+            <div class="desc">LINE ID、微信、LinkedIn 等</div>
+        </a>
+        <a href="graph.html" class="page-card">
+            <div class="icon">🕸️</div>
+            <div class="label">關係圖</div>
+            <div class="desc">vis.js 人脈網絡視覺化</div>
+        </a>
+        <a href="notifications.html" class="page-card">
+            <div class="icon">🔔</div>
+            <div class="label">通知</div>
+            <div class="desc">系統通知列表</div>
+        </a>
+    </div>
+
+    <div class="note">
+        <strong>注意：</strong>這些是靜態預覽，按鈕和表單不會實際運作。完整功能需要部署到 Render.com 後使用。
+    </div>
+</body>
+</html>

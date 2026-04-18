@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自訂欄位管理 - 人脈管理系統</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>/* Custom styles on top of Pico CSS */
+:root {
+    --primary: #4a90d9;
+    --primary-hover: #357abd;
+    --danger: #e74c3c;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --bg-light: #f8f9fa;
+}
+
+body { min-height: 100vh; display: flex; flex-direction: column; }
+main.container { flex: 1; padding-top: 1rem; padding-bottom: 2rem; }
+
+/* Navigation */
+nav.top-nav {
+    background: var(--primary);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+nav.top-nav a { color: white; text-decoration: none; font-weight: 500; font-size: 0.9rem; }
+nav.top-nav a:hover { opacity: 0.85; }
+nav.top-nav .brand { font-size: 1.15rem; font-weight: 700; margin-right: auto; }
+nav.top-nav .nav-search { flex: 0 1 250px; }
+nav.top-nav .nav-search input { margin: 0; padding: 0.4rem 0.75rem; border: none; border-radius: 4px; width: 100%; }
+.notif-link { position: relative; }
+.notif-badge {
+    background: var(--danger); color: white; border-radius: 50%;
+    padding: 0.1rem 0.4rem; font-size: 0.7rem; font-weight: 700;
+    position: relative; top: -0.3rem;
+}
+
+/* Flash messages */
+.flash { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-weight: 500; }
+.flash.success { background: #d4edda; color: #155724; }
+.flash.error { background: #f8d7da; color: #721c24; }
+.flash.info { background: #d1ecf1; color: #0c5460; }
+
+/* Cards */
+.card { border: 1px solid #dee2e6; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; background: white; }
+.card h3 { margin-top: 0; }
+
+/* Tags */
+.tag { display: inline-block; background: #e3f2fd; color: #1565c0; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.85rem; margin: 0.15rem; text-decoration: none; }
+.tag.removable { cursor: pointer; }
+.tag .remove { margin-left: 0.3rem; font-weight: bold; }
+
+/* Badge */
+.badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.current { background: #d4edda; color: #155724; }
+.badge.past { background: #e2e3e5; color: #383d41; }
+.badge.admin { background: #e74c3c; color: white; }
+.badge.editor { background: #27ae60; color: white; }
+.badge.viewer { background: #6c757d; color: white; }
+.badge.meeting { background: #4a90d9; color: white; }
+.badge.call { background: #27ae60; color: white; }
+.badge.email { background: #f39c12; color: white; }
+.badge.note { background: #6c757d; color: white; }
+.badge.other { background: #95a5a6; color: white; }
+.badge.gift-vip { background: #e74c3c; color: white; font-weight: 700; }
+.badge.gift-a { background: #e67e22; color: white; }
+.badge.gift-b { background: #3498db; color: white; }
+.badge.gift-c { background: #27ae60; color: white; }
+.badge.gift-d { background: #95a5a6; color: white; }
+
+/* Text helpers */
+.text-muted { color: #6c757d; font-size: 0.9rem; }
+
+/* Avatar */
+.avatar-sm { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 0.25rem; }
+.avatar-lg { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+table th, table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #dee2e6; }
+table tr:hover { background: var(--bg-light); }
+
+/* Role rows */
+.role-row { border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem; background: var(--bg-light); }
+.role-row .role-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+
+/* Grid helpers */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+/* Buttons */
+.btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: white; }
+.btn-secondary { background: #6c757d; border-color: #6c757d; color: white; }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { text-align: center; padding: 1rem; border: 1px solid #dee2e6; border-radius: 8px; background: white; }
+.stat-card .stat-number { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-card .stat-label { color: #6c757d; font-size: 0.9rem; }
+
+/* Activity log */
+.activity-item { padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+.activity-item .time { color: #6c757d; font-size: 0.8rem; }
+
+/* Import preview table */
+.import-preview { max-height: 400px; overflow-y: auto; margin: 1rem 0; }
+
+/* Tag input */
+.tag-input-wrapper {
+    display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.4rem;
+    border: 1px solid #dee2e6; border-radius: 6px; min-height: 42px; align-items: center; cursor: text;
+}
+.tag-input-wrapper input { border: none; outline: none; flex: 1; min-width: 100px; margin: 0; padding: 0.2rem; }
+.tag-suggestions { position: absolute; background: white; border: 1px solid #dee2e6; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 100; width: 200px; }
+.tag-suggestions div { padding: 0.4rem 0.75rem; cursor: pointer; }
+.tag-suggestions div:hover { background: var(--bg-light); }
+
+/* Pagination */
+.pagination { display: flex; gap: 0.25rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 0.4rem 0.8rem; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; font-size: 0.9rem; }
+.pagination a:hover { background: var(--bg-light); }
+.pagination .current { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Batch operations bar */
+.batch-bar {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem;
+    background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+.batch-bar select, .batch-bar input { margin: 0; padding: 0.3rem; font-size: 0.85rem; }
+
+/* Mobile card layout */
+.contact-card-mobile {
+    border: 1px solid #dee2e6; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; background: white;
+}
+.contact-card-mobile .contact-card-header { display: flex; align-items: center; gap: 0.5rem; }
+.contact-card-mobile strong { font-size: 1rem; }
+
+/* Responsive */
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+
+@media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    nav.top-nav { padding: 0.5rem 0.75rem; gap: 0.5rem; font-size: 0.8rem; }
+    nav.top-nav .nav-search { flex: 1 1 100%; order: 10; }
+    .desktop-only { display: none; }
+    .mobile-only { display: block; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .stat-card { padding: 0.75rem; }
+    .stat-card .stat-number { font-size: 1.5rem; }
+    h2 { font-size: 1.3rem; }
+}
+
+/* Gift list status badges */
+.badge.pending { background: #ffc107; color: #333; }
+.badge.purchased { background: #17a2b8; color: white; }
+.badge.sent { background: #4a90d9; color: white; }
+.badge.done { background: #27ae60; color: white; }
+
+/* Timeline dot colors */
+.badge.interaction { background: var(--primary); color: white; }
+.badge.gift { background: var(--warning); color: white; }
+.badge.reminder { background: var(--success); color: white; }
+.badge.edit { background: #6c757d; color: white; }
+
+footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; border-top: 1px solid #dee2e6; }</style>
+</head>
+<body>
+    
+    <nav class="top-nav">
+        <a href="/" class="brand">人脈管理系統</a>
+        <a href="/persons">聯絡人</a>
+        <a href="/companies">公司</a>
+        <a href="/gifts">送禮清單</a>
+        <a href="/reminders">提醒</a>
+        <a href="/graph">關係圖</a>
+        <a href="/import">匯入</a>
+        <a href="/export/csv">匯出</a>
+        <form class="nav-search" action="/search" method="get">
+            <input type="search" name="q" placeholder="搜尋聯絡人、公司、標籤..." value="">
+        </form>
+        <a href="/notifications" class="notif-link">
+            通知 <span class="notif-badge">3</span>
+        </a>
+        <a href="/admin/users">管理</a>
+        <a href="/admin/custom-fields">自訂欄位</a>
+        <a href="/logout">登出 (demo) <span class="badge admin">admin</span></a>
+    </nav>
+    
+
+    <main class="container">
+        
+            
+        
+
+        
+<h2>自訂欄位管理</h2>
+<p class="text-muted">自訂欄位會出現在每位聯絡人的詳細資料頁面。</p>
+
+
+<div class="card">
+    <h3>新增欄位</h3>
+    <form method="post" action="/admin/custom-fields/new" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: end;">
+        <label style="flex: 1; min-width: 150px;">欄位名稱（內部鍵）
+            <input type="text" name="field_name" required placeholder="例：line_id" pattern="[a-z0-9_]+" title="只能使用小寫英文、數字、底線">
+        </label>
+        <label style="flex: 1; min-width: 150px;">顯示名稱
+            <input type="text" name="field_label" required placeholder="例：LINE ID">
+        </label>
+        <label style="width: 120px;">類型
+            <select name="field_type">
+                <option value="text">文字</option>
+                <option value="number">數字</option>
+                <option value="date">日期</option>
+                <option value="url">網址</option>
+            </select>
+        </label>
+        <button type="submit" class="btn-sm">新增</button>
+    </form>
+</div>
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>顯示名稱</th>
+            <th>欄位名稱</th>
+            <th>類型</th>
+            <th>排序</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        
+        <tr>
+            <td><strong>LINE ID</strong></td>
+            <td class="text-muted">line_id</td>
+            <td><span class="badge">文字</span></td>
+            <td>1</td>
+            
+            <td>
+                <form method="post" action="/admin/custom-fields/1/delete" style="margin:0;" onsubmit="return confirm('刪除此欄位？所有聯絡人的此欄位資料也會被刪除。')">
+                    <button type="submit" class="btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+            
+        </tr>
+        
+        <tr>
+            <td><strong>微信 WeChat</strong></td>
+            <td class="text-muted">wechat</td>
+            <td><span class="badge">文字</span></td>
+            <td>2</td>
+            
+            <td>
+                <form method="post" action="/admin/custom-fields/2/delete" style="margin:0;" onsubmit="return confirm('刪除此欄位？所有聯絡人的此欄位資料也會被刪除。')">
+                    <button type="submit" class="btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+            
+        </tr>
+        
+        <tr>
+            <td><strong>LinkedIn</strong></td>
+            <td class="text-muted">linkedin</td>
+            <td><span class="badge">網址</span></td>
+            <td>3</td>
+            
+            <td>
+                <form method="post" action="/admin/custom-fields/3/delete" style="margin:0;" onsubmit="return confirm('刪除此欄位？所有聯絡人的此欄位資料也會被刪除。')">
+                    <button type="submit" class="btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+            
+        </tr>
+        
+        <tr>
+            <td><strong>飲食限制</strong></td>
+            <td class="text-muted">dietary</td>
+            <td><span class="badge">文字</span></td>
+            <td>4</td>
+            
+            <td>
+                <form method="post" action="/admin/custom-fields/4/delete" style="margin:0;" onsubmit="return confirm('刪除此欄位？所有聯絡人的此欄位資料也會被刪除。')">
+                    <button type="submit" class="btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+            
+        </tr>
+        
+    </tbody>
+</table>
+
+
+    </main>
+
+    <footer>
+        <p>人脈管理系統 &copy; 2026</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+    
+</body>
+</html>

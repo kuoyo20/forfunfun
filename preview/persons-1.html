@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>志明 王 - 人脈管理系統</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>/* Custom styles on top of Pico CSS */
+:root {
+    --primary: #4a90d9;
+    --primary-hover: #357abd;
+    --danger: #e74c3c;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --bg-light: #f8f9fa;
+}
+
+body { min-height: 100vh; display: flex; flex-direction: column; }
+main.container { flex: 1; padding-top: 1rem; padding-bottom: 2rem; }
+
+/* Navigation */
+nav.top-nav {
+    background: var(--primary);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+nav.top-nav a { color: white; text-decoration: none; font-weight: 500; font-size: 0.9rem; }
+nav.top-nav a:hover { opacity: 0.85; }
+nav.top-nav .brand { font-size: 1.15rem; font-weight: 700; margin-right: auto; }
+nav.top-nav .nav-search { flex: 0 1 250px; }
+nav.top-nav .nav-search input { margin: 0; padding: 0.4rem 0.75rem; border: none; border-radius: 4px; width: 100%; }
+.notif-link { position: relative; }
+.notif-badge {
+    background: var(--danger); color: white; border-radius: 50%;
+    padding: 0.1rem 0.4rem; font-size: 0.7rem; font-weight: 700;
+    position: relative; top: -0.3rem;
+}
+
+/* Flash messages */
+.flash { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-weight: 500; }
+.flash.success { background: #d4edda; color: #155724; }
+.flash.error { background: #f8d7da; color: #721c24; }
+.flash.info { background: #d1ecf1; color: #0c5460; }
+
+/* Cards */
+.card { border: 1px solid #dee2e6; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; background: white; }
+.card h3 { margin-top: 0; }
+
+/* Tags */
+.tag { display: inline-block; background: #e3f2fd; color: #1565c0; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.85rem; margin: 0.15rem; text-decoration: none; }
+.tag.removable { cursor: pointer; }
+.tag .remove { margin-left: 0.3rem; font-weight: bold; }
+
+/* Badge */
+.badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge.current { background: #d4edda; color: #155724; }
+.badge.past { background: #e2e3e5; color: #383d41; }
+.badge.admin { background: #e74c3c; color: white; }
+.badge.editor { background: #27ae60; color: white; }
+.badge.viewer { background: #6c757d; color: white; }
+.badge.meeting { background: #4a90d9; color: white; }
+.badge.call { background: #27ae60; color: white; }
+.badge.email { background: #f39c12; color: white; }
+.badge.note { background: #6c757d; color: white; }
+.badge.other { background: #95a5a6; color: white; }
+.badge.gift-vip { background: #e74c3c; color: white; font-weight: 700; }
+.badge.gift-a { background: #e67e22; color: white; }
+.badge.gift-b { background: #3498db; color: white; }
+.badge.gift-c { background: #27ae60; color: white; }
+.badge.gift-d { background: #95a5a6; color: white; }
+
+/* Text helpers */
+.text-muted { color: #6c757d; font-size: 0.9rem; }
+
+/* Avatar */
+.avatar-sm { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 0.25rem; }
+.avatar-lg { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+table th, table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #dee2e6; }
+table tr:hover { background: var(--bg-light); }
+
+/* Role rows */
+.role-row { border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem; background: var(--bg-light); }
+.role-row .role-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+
+/* Grid helpers */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+/* Buttons */
+.btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: white; }
+.btn-secondary { background: #6c757d; border-color: #6c757d; color: white; }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { text-align: center; padding: 1rem; border: 1px solid #dee2e6; border-radius: 8px; background: white; }
+.stat-card .stat-number { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-card .stat-label { color: #6c757d; font-size: 0.9rem; }
+
+/* Activity log */
+.activity-item { padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+.activity-item .time { color: #6c757d; font-size: 0.8rem; }
+
+/* Import preview table */
+.import-preview { max-height: 400px; overflow-y: auto; margin: 1rem 0; }
+
+/* Tag input */
+.tag-input-wrapper {
+    display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.4rem;
+    border: 1px solid #dee2e6; border-radius: 6px; min-height: 42px; align-items: center; cursor: text;
+}
+.tag-input-wrapper input { border: none; outline: none; flex: 1; min-width: 100px; margin: 0; padding: 0.2rem; }
+.tag-suggestions { position: absolute; background: white; border: 1px solid #dee2e6; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 100; width: 200px; }
+.tag-suggestions div { padding: 0.4rem 0.75rem; cursor: pointer; }
+.tag-suggestions div:hover { background: var(--bg-light); }
+
+/* Pagination */
+.pagination { display: flex; gap: 0.25rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+.pagination a, .pagination span { padding: 0.4rem 0.8rem; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; font-size: 0.9rem; }
+.pagination a:hover { background: var(--bg-light); }
+.pagination .current { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* Batch operations bar */
+.batch-bar {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem;
+    background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+.batch-bar select, .batch-bar input { margin: 0; padding: 0.3rem; font-size: 0.85rem; }
+
+/* Mobile card layout */
+.contact-card-mobile {
+    border: 1px solid #dee2e6; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; background: white;
+}
+.contact-card-mobile .contact-card-header { display: flex; align-items: center; gap: 0.5rem; }
+.contact-card-mobile strong { font-size: 1rem; }
+
+/* Responsive */
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+
+@media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    nav.top-nav { padding: 0.5rem 0.75rem; gap: 0.5rem; font-size: 0.8rem; }
+    nav.top-nav .nav-search { flex: 1 1 100%; order: 10; }
+    .desktop-only { display: none; }
+    .mobile-only { display: block; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+    .stat-card { padding: 0.75rem; }
+    .stat-card .stat-number { font-size: 1.5rem; }
+    h2 { font-size: 1.3rem; }
+}
+
+/* Gift list status badges */
+.badge.pending { background: #ffc107; color: #333; }
+.badge.purchased { background: #17a2b8; color: white; }
+.badge.sent { background: #4a90d9; color: white; }
+.badge.done { background: #27ae60; color: white; }
+
+/* Timeline dot colors */
+.badge.interaction { background: var(--primary); color: white; }
+.badge.gift { background: var(--warning); color: white; }
+.badge.reminder { background: var(--success); color: white; }
+.badge.edit { background: #6c757d; color: white; }
+
+footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; border-top: 1px solid #dee2e6; }</style>
+</head>
+<body>
+    
+    <nav class="top-nav">
+        <a href="/" class="brand">人脈管理系統</a>
+        <a href="/persons">聯絡人</a>
+        <a href="/companies">公司</a>
+        <a href="/gifts">送禮清單</a>
+        <a href="/reminders">提醒</a>
+        <a href="/graph">關係圖</a>
+        <a href="/import">匯入</a>
+        <a href="/export/csv">匯出</a>
+        <form class="nav-search" action="/search" method="get">
+            <input type="search" name="q" placeholder="搜尋聯絡人、公司、標籤..." value="">
+        </form>
+        <a href="/notifications" class="notif-link">
+            通知 <span class="notif-badge">3</span>
+        </a>
+        <a href="/admin/users">管理</a>
+        <a href="/admin/custom-fields">自訂欄位</a>
+        <a href="/logout">登出 (demo) <span class="badge admin">admin</span></a>
+    </nav>
+    
+
+    <main class="container">
+        
+            
+        
+
+        
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        
+        <h2 style="margin:0;">志明 王</h2>
+    </div>
+    
+    <div class="btn-group">
+        <a href="/persons/1/edit" role="button" class="btn-sm">編輯</a>
+        <form method="post" action="/persons/1/delete" style="margin:0;">
+            <button type="button" class="btn-sm btn-danger" onclick="confirmDelete(this.closest('form'), '志明 王')">刪除</button>
+        </form>
+    </div>
+    
+</div>
+
+<!-- Photo upload -->
+
+<form method="post" action="/persons/1/photo" enctype="multipart/form-data" style="margin: 0.5rem 0;">
+    <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+        <input type="file" name="photo" accept="image/*" onchange="this.form.submit()" style="max-width: 200px;">
+        上傳照片
+    </label>
+</form>
+
+
+<!-- Basic Info -->
+<div class="card">
+    <h3>基本資料</h3>
+    <div class="grid-2">
+        <div><strong>Email：</strong>zmwang@tsmc.com</div>
+        <div><strong>電話：</strong>0912-345-678</div>
+    </div>
+    
+    <div style="margin-top: 0.5rem;"><strong>備註：</strong>認識十年的好友</div>
+    
+    
+    <div style="margin-top: 0.75rem;">
+        <strong>標籤：</strong>
+        <a href="/persons?tag=高中同學" class="tag">高中同學</a><a href="/persons?tag=合作夥伴" class="tag">合作夥伴</a><a href="/persons?tag=VIP客戶" class="tag">VIP客戶</a>
+    </div>
+    
+    <!-- Quick contact links -->
+    <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        
+        <a href="mailto:zmwang@tsmc.com" class="btn-sm" style="text-decoration:none; background:#4a90d9; color:white; border-radius:4px; padding:0.3rem 0.75rem;">Email</a>
+        
+        
+        <a href="tel:0912-345-678" class="btn-sm" style="text-decoration:none; background:#27ae60; color:white; border-radius:4px; padding:0.3rem 0.75rem;">撥號</a>
+        <a href="https://line.me/R/" class="btn-sm" style="text-decoration:none; background:#06C755; color:white; border-radius:4px; padding:0.3rem 0.75rem;">LINE</a>
+        
+        <a href="/persons/1/timeline" class="btn-sm" style="text-decoration:none; background:#6c757d; color:white; border-radius:4px; padding:0.3rem 0.75rem;">時間軸</a>
+    </div>
+</div>
+
+<!-- Gift Tier & Preferences -->
+
+<div class="card">
+    <h3>送禮管理</h3>
+    <div class="grid-2">
+        
+        <div>
+            <strong>送禮層級：</strong>
+            <span class="badge gift-vip">VIP</span>
+            
+            <span class="text-muted">最高規格</span>
+        </div>
+        
+        
+        <div><strong>生日：</strong>03-15</div>
+        
+    </div>
+    
+    <div style="margin-top: 0.5rem;"><strong>喜好 / 興趣：</strong>紅酒、高爾夫、日本旅遊</div>
+    
+    
+    <div style="margin-top: 0.5rem;"><strong>送禮備註 / 禁忌：</strong>不收菸，偏好實用禮物</div>
+    
+</div>
+
+
+<!-- Gift Records -->
+<div class="card">
+    <h3>送禮紀錄 <span class="text-muted" style="font-size: 0.9rem;">(累計 $5300)</span></h3>
+    
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <strong>日本清酒禮盒</strong>
+                <span class="badge note">過年</span>
+                <span class="text-muted"> - 2026-01-25</span>
+                <span class="text-muted"> ($3500)</span>
+                <span class="text-muted"> by demo</span>
+                <div style="margin-top: 0.25rem; font-size: 0.9rem;">桐箱裝，很受歡迎</div>
+            </div>
+            
+            <form method="post" action="/persons/gift/1/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <strong>奇華月餅禮盒</strong>
+                <span class="badge note">中秋</span>
+                <span class="text-muted"> - 2025-09-17</span>
+                <span class="text-muted"> ($1800)</span>
+                <span class="text-muted"> by demo</span>
+                
+            </div>
+            
+            <form method="post" action="/persons/gift/2/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+    
+
+    
+    <details style="margin-top: 0.75rem;">
+        <summary>新增送禮紀錄</summary>
+        <form method="post" action="/persons/1/gift" style="margin-top: 0.5rem;">
+            <div class="grid-2">
+                <label>送了什麼 *
+                    <input type="text" name="item" required placeholder="例：紅酒一瓶、禮盒、禮券">
+                </label>
+                <label>場合
+                    <select name="occasion">
+                        <option value="">-- 選擇 --</option>
+                        <option value="生日">生日</option>
+                        <option value="過年">過年</option>
+                        <option value="中秋">中秋</option>
+                        <option value="端午">端午</option>
+                        <option value="喬遷">喬遷</option>
+                        <option value="感謝">感謝</option>
+                        <option value="慶祝">慶祝</option>
+                        <option value="拜訪">拜訪</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid-2">
+                <label>日期 *
+                    <input type="date" name="gift_date" required>
+                </label>
+                <label>金額
+                    <input type="number" name="amount" placeholder="0" min="0" step="1">
+                </label>
+            </div>
+            <label>備註
+                <input type="text" name="gift_record_notes" placeholder="選填">
+            </label>
+            <button type="submit" class="btn-sm">新增紀錄</button>
+        </form>
+    </details>
+    
+</div>
+
+<!-- Roles / Identities -->
+<div class="card">
+    <h3>身分 / 職位 (2)</h3>
+    
+        
+        <div class="role-row">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>副總經理</strong>
+                     @ <a href="/companies/1">台積電</a>
+                </div>
+                <span class="badge current">在職</span>
+            </div>
+            
+            <div style="margin-top: 0.3rem; color: #6c757d; font-size: 0.9rem;">
+                Email: zmwang@tsmc.com
+                 | 電話: 03-1234-5678
+            </div>
+            
+        </div>
+        
+        <div class="role-row">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>獨立董事</strong>
+                     @ <a href="/companies/3">鴻海精密</a>
+                </div>
+                <span class="badge current">在職</span>
+            </div>
+            
+        </div>
+        
+    
+</div>
+
+<!-- Interactions / Activity Records -->
+<div class="card">
+    <h3>互動紀錄</h3>
+    
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="badge meeting">會議</span>
+                <strong>年度聚餐</strong>
+                <span class="text-muted"> - 2026-03-20</span>
+                <span class="text-muted"> by demo</span>
+                <div style="margin-top: 0.25rem; font-size: 0.9rem;">在信義區的餐廳聚餐，討論了合作方向</div>
+            </div>
+            
+            <form method="post" action="/persons/interaction/1/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="badge call">通話</span>
+                <strong>電話問候</strong>
+                <span class="text-muted"> - 2026-03-01</span>
+                <span class="text-muted"> by demo</span>
+                <div style="margin-top: 0.25rem; font-size: 0.9rem;">中秋節前致電問候</div>
+            </div>
+            
+            <form method="post" action="/persons/interaction/2/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="badge meeting">會議</span>
+                <strong>高爾夫球敘</strong>
+                <span class="text-muted"> - 2026-01-20</span>
+                <span class="text-muted"> by demo</span>
+                <div style="margin-top: 0.25rem; font-size: 0.9rem;">在林口球場打球</div>
+            </div>
+            
+            <form method="post" action="/persons/interaction/11/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+    
+
+    
+    <details style="margin-top: 0.75rem;">
+        <summary>新增互動紀錄</summary>
+        <form method="post" action="/persons/1/interaction" style="margin-top: 0.5rem;">
+            <div class="grid-3">
+                <label>類型
+                    <select name="type">
+                        <option value="meeting">會議</option>
+                        <option value="call">通話</option>
+                        <option value="email">信件</option>
+                        <option value="note" selected>備忘</option>
+                        <option value="other">其他</option>
+                    </select>
+                </label>
+                <label>標題
+                    <input type="text" name="title" required placeholder="簡短描述">
+                </label>
+                <label>日期
+                    <input type="date" name="interaction_date" required value="">
+                </label>
+            </div>
+            <label>內容
+                <textarea name="content" rows="2" placeholder="詳細內容（選填）"></textarea>
+            </label>
+            <button type="submit" class="btn-sm">新增</button>
+        </form>
+    </details>
+    
+</div>
+
+<!-- Relationships -->
+<div class="card">
+    <h3>人脈關係</h3>
+    
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                
+                    前同事 &rarr; <a href="/persons/3">大明 林</a>
+                
+                <span class="text-muted"> (一起在鴻海共事過)</span>
+            </div>
+            
+            <form method="post" action="/persons/relationship/1/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                
+                    客戶關係 &rarr; <a href="/persons/10">淑芬 蔡</a>
+                
+                <span class="text-muted"> (透過淑芬理財)</span>
+            </div>
+            
+            <form method="post" action="/persons/relationship/2/delete" style="margin:0;">
+                <input type="hidden" name="person_id" value="1">
+                <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+            </form>
+            
+        </div>
+        
+    
+
+    
+    <details style="margin-top: 0.75rem;">
+        <summary>新增關係</summary>
+        <form method="post" action="/persons/1/relationship" style="margin-top: 0.5rem;">
+            <div class="grid-3">
+                <label>相關聯絡人
+                    <select name="other_person_id" required>
+                        <option value="">-- 選擇 --</option>
+                        
+                        <option value="8">佳慧 吳</option>
+                        
+                        <option value="9">俊傑 許</option>
+                        
+                        <option value="3">大明 林</option>
+                        
+                        <option value="6">小芳 黃</option>
+                        
+                        <option value="7">建宏 趙</option>
+                        
+                        <option value="5">文哲 李</option>
+                        
+                        <option value="10">淑芬 蔡</option>
+                        
+                        <option value="2">美玲 陳</option>
+                        
+                        <option value="4">雅婷 張</option>
+                        
+                    </select>
+                </label>
+                <label>關係標籤
+                    <input type="text" name="label" required placeholder="例：大學同學、引薦人">
+                </label>
+                <label>備註
+                    <input type="text" name="rel_notes" placeholder="選填">
+                </label>
+            </div>
+            <button type="submit" class="btn-sm">新增關係</button>
+        </form>
+    </details>
+    
+</div>
+
+<!-- Custom Fields -->
+
+<div class="card">
+    <h3>自訂欄位</h3>
+    
+    
+    <div style="margin-bottom: 0.3rem;">
+        <strong>LINE ID：</strong>
+        
+        zmwang_line
+        
+    </div>
+    
+    
+    
+    
+    
+    <div style="margin-bottom: 0.3rem;">
+        <strong>LinkedIn：</strong>
+        
+        <a href="https://linkedin.com/in/zmwang" target="_blank">https://linkedin.com/in/zmwang</a>
+        
+    </div>
+    
+    
+    
+    
+</div>
+
+
+<!-- Edit Log -->
+
+<div class="card">
+    <h3>編輯紀錄</h3>
+    
+    <div class="activity-item">
+        <strong>demo</strong> - create - 建立聯絡人: 志明 王
+        
+        <div class="time">2026-04-04 05:00</div>
+    </div>
+    
+    <div class="activity-item">
+        <strong>demo</strong> - update - 更新送禮層級為 VIP
+        
+        <div class="time">2026-04-04 05:00</div>
+    </div>
+    
+</div>
+
+
+    </main>
+
+    <footer>
+        <p>人脈管理系統 &copy; 2026</p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+    
+</body>
+</html>
