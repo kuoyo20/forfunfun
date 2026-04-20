@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.auth import login_required, can_edit
 from app.database import get_db
+from app.services.line_service import notify_user
 
 router = APIRouter(prefix="/reminders")
 templates = Jinja2Templates(directory="app/templates")
@@ -64,6 +65,36 @@ async def create_reminder(request: Request):
     db.commit()
     db.close()
     return RedirectResponse("/reminders", status_code=302)
+
+
+@router.post("/notify-due")
+@login_required
+async def notify_due_reminders(request: Request):
+    """Send LINE Notify for reminders due today or overdue (user-triggered)."""
+    db = get_db()
+    rows = db.execute("""
+        SELECT r.*, p.first_name, p.last_name FROM reminders r
+        JOIN persons p ON p.id = r.person_id
+        WHERE r.is_done = 0 AND r.user_id = ? AND r.remind_date <= date('now')
+        ORDER BY r.remind_date ASC
+    """, (request.state.user["id"],)).fetchall()
+
+    if not rows:
+        db.close()
+        request.state.flash = [("info", "目前沒有到期或逾期的提醒")]
+        return RedirectResponse("/reminders", status_code=303)
+
+    today = date.today().isoformat()
+    lines = [f"\n【人脈管理系統 待辦提醒】"]
+    for r in rows:
+        tag = "逾期" if r["remind_date"] < today else "今天"
+        lines.append(f"[{tag}] {r['title']} — {r['first_name']} {r['last_name']} ({r['remind_date']})")
+
+    ok = notify_user(db, request.state.user["id"], "\n".join(lines))
+    db.close()
+    request.state.flash = [("success" if ok else "error",
+                            f"已推送 {len(rows)} 則提醒到 LINE" if ok else "LINE 推送失敗，請先在設定頁輸入 Token")]
+    return RedirectResponse("/reminders", status_code=303)
 
 
 @router.post("/{reminder_id}/done")

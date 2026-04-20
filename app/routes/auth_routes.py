@@ -48,6 +48,7 @@ async def register_submit(
     request: Request, username: str = Form(...), email: str = Form(...),
     password: str = Form(...), password_confirm: str = Form(...),
     display_name: str = Form(""),
+    security_question: str = Form(""), security_answer: str = Form(""),
 ):
     if password != password_confirm:
         request.state.flash = [("error", "兩次密碼不一致")]
@@ -61,13 +62,16 @@ async def register_submit(
         request.state.flash = [("error", "帳號或 Email 已被使用")]
         return _render(request, "register.html")
 
-    # First user is admin, others are editors
     user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     role = "admin" if user_count == 0 else "editor"
 
+    answer_hash = hash_password(security_answer.strip().lower()) if security_answer else ""
+
     db.execute(
-        "INSERT INTO users (username, email, password_hash, display_name, role) VALUES (?, ?, ?, ?, ?)",
-        (username, email, hash_password(password), display_name or username, role),
+        """INSERT INTO users (username, email, password_hash, display_name, role,
+           security_question, security_answer_hash) VALUES (?,?,?,?,?,?,?)""",
+        (username, email, hash_password(password), display_name or username, role,
+         security_question, answer_hash),
     )
     db.commit()
 
@@ -77,6 +81,67 @@ async def register_submit(
     response = RedirectResponse("/", status_code=302)
     response.set_cookie("session", create_session_token(user["id"]), httponly=True, max_age=86400 * 30)
     return response
+
+
+@router.get("/forgot-password")
+async def forgot_password_page(request: Request):
+    return _render(request, "forgot_password.html", step="lookup")
+
+
+@router.post("/forgot-password")
+async def forgot_password_submit(request: Request):
+    form = await request.form()
+    step = form.get("step", "lookup")
+    username = form.get("username", "").strip()
+
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+    if not user:
+        db.close()
+        request.state.flash = [("error", "找不到此帳號")]
+        return _render(request, "forgot_password.html", step="lookup")
+
+    if not user["security_question"] or not user["security_answer_hash"]:
+        db.close()
+        request.state.flash = [("error", "此帳號未設定安全問題，請聯絡管理員")]
+        return _render(request, "forgot_password.html", step="lookup")
+
+    if step == "lookup":
+        db.close()
+        return _render(request, "forgot_password.html", step="question",
+                       username=username, security_question=user["security_question"])
+
+    # step == 'question'
+    answer = form.get("security_answer", "").strip().lower()
+    new_password = form.get("new_password", "")
+    new_password_confirm = form.get("new_password_confirm", "")
+
+    if not verify_password(answer, user["security_answer_hash"]):
+        db.close()
+        request.state.flash = [("error", "安全問題答案錯誤")]
+        return _render(request, "forgot_password.html", step="question",
+                       username=username, security_question=user["security_question"])
+
+    if new_password != new_password_confirm:
+        db.close()
+        request.state.flash = [("error", "兩次密碼不一致")]
+        return _render(request, "forgot_password.html", step="question",
+                       username=username, security_question=user["security_question"])
+
+    if len(new_password) < 6:
+        db.close()
+        request.state.flash = [("error", "密碼至少需 6 個字元")]
+        return _render(request, "forgot_password.html", step="question",
+                       username=username, security_question=user["security_question"])
+
+    db.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+               (hash_password(new_password), user["id"]))
+    db.commit()
+    db.close()
+
+    request.state.flash = [("success", "密碼已重設，請用新密碼登入")]
+    return _render(request, "login.html")
 
 
 @router.get("/logout")

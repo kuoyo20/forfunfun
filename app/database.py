@@ -49,3 +49,31 @@ def _migrate(conn):
         if col not in person_cols:
             conn.execute(f"ALTER TABLE persons ADD COLUMN {col} {col_type}")
     conn.commit()
+
+    # Security question for password reset + LINE Notify token
+    cursor = conn.execute("PRAGMA table_info(users)")
+    user_cols = [row[1] for row in cursor.fetchall()]
+    for col, col_type in [
+        ("security_question", "TEXT DEFAULT ''"),
+        ("security_answer_hash", "TEXT DEFAULT ''"),
+        ("line_notify_token", "TEXT DEFAULT ''"),
+    ]:
+        if col not in user_cols:
+            conn.execute(f"ALTER TABLE users ADD COLUMN {col} {col_type}")
+    conn.commit()
+
+    # Attachments table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS attachments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(id),
+            filename TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            mime_type TEXT DEFAULT '',
+            size_bytes INTEGER DEFAULT 0,
+            description TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()

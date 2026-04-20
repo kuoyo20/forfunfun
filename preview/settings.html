@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>送禮清單 - 人脈管理系統</title>
+    <title>個人設定 - 人脈管理系統</title>
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#4a90d9">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -209,34 +209,76 @@ footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; 
         
 
         
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-    <h2>送禮清單</h2>
-    
-    <a href="/gifts/new" role="button">建立新清單</a>
+<h2>個人設定</h2>
+
+<div class="card">
+    <h3>基本資料</h3>
+    <p><strong>帳號：</strong>demo</p>
+    <p><strong>Email：</strong>demo@test.com</p>
+    <p><strong>角色：</strong><span class="badge admin">admin</span></p>
+    <p><strong>顯示名稱：</strong>Demo</p>
+</div>
+
+<div class="card">
+    <h3>LINE Notify 通知</h3>
+    <p class="text-muted">設定 LINE Notify Token 後，系統可將重要通知（提醒到期、長期未聯絡等）直接推送到你的 LINE。</p>
+    <ol style="font-size: 0.9rem; color: #555;">
+        <li>前往 <a href="https://notify-bot.line.me/my/" target="_blank">LINE Notify 網站</a> 登入</li>
+        <li>點「發行權杖」，選擇「透過 1 對 1 聊天接收 LINE Notify 的通知」</li>
+        <li>複製產生的權杖，貼到下方欄位</li>
+    </ol>
+    <form method="post" action="/settings/line-token">
+        <label>LINE Notify Token
+            <input type="text" name="line_notify_token" value="" placeholder="貼上你的 Token">
+        </label>
+        <div class="btn-group">
+            <button type="submit" class="btn-sm">儲存 Token</button>
+        </div>
+    </form>
     
 </div>
 
-
-<div class="grid-2">
-    
-    <div class="card">
-        <h3><a href="/gifts/1">2026 端午送禮</a></h3>
-        <span class="badge">端午</span>
-        <p class="text-muted">建立者：demo | 2026-04-04</p>
-        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-            <div><strong>6</strong> 人</div>
-            <div>預算 <strong>$8700</strong></div>
-            <div>已完成 <strong>0</strong>/6</div>
-        </div>
-        
-        <div style="margin-top: 0.5rem; background: #e9ecef; border-radius: 4px; height: 6px;">
-            <div style="background: var(--success); height: 100%; border-radius: 4px; width: 0%;"></div>
-        </div>
-        
-    </div>
-    
+<div class="card">
+    <h3>安全問題</h3>
+    <p class="text-muted">忘記密碼時，可透過此問題重設密碼。</p>
+    <form method="post" action="/settings/security-question">
+        <label>安全問題
+            <select name="security_question" required>
+                
+                <option value="我的出生地是？" >我的出生地是？</option>
+                
+                <option value="我的母親名字是？" >我的母親名字是？</option>
+                
+                <option value="我的第一個寵物名字是？" >我的第一個寵物名字是？</option>
+                
+                <option value="我的第一間學校名稱是？" >我的第一間學校名稱是？</option>
+                
+                <option value="我最喜歡的電影是？" >我最喜歡的電影是？</option>
+                
+            </select>
+        </label>
+        <label>答案（重新輸入）
+            <input type="text" name="security_answer" required placeholder="更新後會覆蓋舊答案">
+        </label>
+        <button type="submit" class="btn-sm">更新安全問題</button>
+    </form>
 </div>
 
+<div class="card">
+    <h3>變更密碼</h3>
+    <form method="post" action="/settings/password">
+        <label>目前密碼
+            <input type="password" name="current_password" required>
+        </label>
+        <label>新密碼
+            <input type="password" name="new_password" required minlength="6">
+        </label>
+        <label>確認新密碼
+            <input type="password" name="new_password_confirm" required minlength="6">
+        </label>
+        <button type="submit" class="btn-sm">變更密碼</button>
+    </form>
+</div>
 
     </main>
 

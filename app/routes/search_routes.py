@@ -130,6 +130,24 @@ async def dashboard(request: Request):
     # Pending reminders count
     pending_reminders = db.execute("SELECT COUNT(*) FROM reminders WHERE is_done = 0").fetchone()[0]
 
+    # Dormant contacts: high-tier contacts with no recent interaction
+    # Threshold: VIP/A - 90 days, B - 180 days, C/D - 365 days
+    dormant = db.execute("""
+        SELECT p.id, p.first_name, p.last_name, p.gift_tier,
+            MAX(i.interaction_date) as last_interaction,
+            CAST(JULIANDAY('now') - JULIANDAY(COALESCE(MAX(i.interaction_date), p.created_at)) AS INTEGER) as days_since
+        FROM persons p
+        LEFT JOIN interactions i ON i.person_id = p.id
+        WHERE p.gift_tier IN ('VIP', 'A', 'B')
+        GROUP BY p.id
+        HAVING days_since >
+            CASE p.gift_tier WHEN 'VIP' THEN 90 WHEN 'A' THEN 90 WHEN 'B' THEN 180 ELSE 365 END
+        ORDER BY
+            CASE p.gift_tier WHEN 'VIP' THEN 1 WHEN 'A' THEN 2 WHEN 'B' THEN 3 ELSE 4 END,
+            days_since DESC
+        LIMIT 10
+    """).fetchall()
+
     db.close()
     return _render(request, "dashboard.html",
         stats=stats, recent_persons=recent_persons, recent_logs=recent_logs,
@@ -137,7 +155,8 @@ async def dashboard(request: Request):
         tier_labels=tier_labels, tier_counts=tier_counts,
         monthly_interactions=monthly_interactions,
         monthly_labels=monthly_labels, monthly_counts=monthly_counts,
-        upcoming_bdays=upcoming_bdays, pending_reminders=pending_reminders)
+        upcoming_bdays=upcoming_bdays, pending_reminders=pending_reminders,
+        dormant=dormant)
 
 
 @router.get("/export/csv")

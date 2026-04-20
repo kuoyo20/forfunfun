@@ -6,6 +6,22 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     display_name TEXT,
     role TEXT NOT NULL DEFAULT 'editor',  -- admin, editor, viewer
+    security_question TEXT DEFAULT '',
+    security_answer_hash TEXT DEFAULT '',
+    line_notify_token TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Attachments for persons
+CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id),
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    mime_type TEXT DEFAULT '',
+    size_bytes INTEGER DEFAULT 0,
+    description TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

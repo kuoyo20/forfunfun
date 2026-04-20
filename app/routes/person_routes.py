@@ -241,12 +241,18 @@ async def view_person(request: Request, person_id: int):
     from app.routes.custom_field_routes import get_custom_fields_for_person
     custom_fields = get_custom_fields_for_person(db, person_id)
 
+    # Attachments
+    attachments = db.execute(
+        "SELECT * FROM attachments WHERE person_id = ? ORDER BY created_at DESC", (person_id,)
+    ).fetchall()
+
     db.close()
     return _render(request, "persons/detail.html",
         person=person, roles=roles, tags=[t["name"] for t in tags],
         relationships=relationships, interactions=interactions,
         gift_records=gift_records, gift_total=gift_total,
-        logs=logs, all_persons=all_persons, custom_fields=custom_fields)
+        logs=logs, all_persons=all_persons, custom_fields=custom_fields,
+        attachments=attachments)
 
 
 @router.get("/{person_id}/edit")

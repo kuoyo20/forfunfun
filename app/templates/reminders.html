@@ -3,9 +3,14 @@
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <h2>待辦提醒</h2>
-    {% if can_edit %}
-    <button type="button" onclick="document.getElementById('new-reminder').style.display='block'" class="btn-sm">新增提醒</button>
-    {% endif %}
+    <div class="btn-group">
+        <form method="post" action="/reminders/notify-due" style="margin:0;">
+            <button type="submit" class="btn-sm btn-secondary" title="將到期/逾期提醒推送到 LINE">📱 推送到 LINE</button>
+        </form>
+        {% if can_edit %}
+        <button type="button" onclick="document.getElementById('new-reminder').style.display='block'" class="btn-sm">新增提醒</button>
+        {% endif %}
+    </div>
 </div>
 
 <!-- New reminder form -->

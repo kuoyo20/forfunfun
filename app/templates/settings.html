@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}個人設定 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>個人設定</h2>
+
+<div class="card">
+    <h3>基本資料</h3>
+    <p><strong>帳號：</strong>{{ me.username }}</p>
+    <p><strong>Email：</strong>{{ me.email }}</p>
+    <p><strong>角色：</strong><span class="badge {{ me.role }}">{{ me.role }}</span></p>
+    <p><strong>顯示名稱：</strong>{{ me.display_name or me.username }}</p>
+</div>
+
+<div class="card">
+    <h3>LINE Notify 通知</h3>
+    <p class="text-muted">設定 LINE Notify Token 後，系統可將重要通知（提醒到期、長期未聯絡等）直接推送到你的 LINE。</p>
+    <ol style="font-size: 0.9rem; color: #555;">
+        <li>前往 <a href="https://notify-bot.line.me/my/" target="_blank">LINE Notify 網站</a> 登入</li>
+        <li>點「發行權杖」，選擇「透過 1 對 1 聊天接收 LINE Notify 的通知」</li>
+        <li>複製產生的權杖，貼到下方欄位</li>
+    </ol>
+    <form method="post" action="/settings/line-token">
+        <label>LINE Notify Token
+            <input type="text" name="line_notify_token" value="{{ me.line_notify_token or '' }}" placeholder="貼上你的 Token">
+        </label>
+        <div class="btn-group">
+            <button type="submit" class="btn-sm">儲存 Token</button>
+        </div>
+    </form>
+    {% if me.line_notify_token %}
+    <form method="post" action="/settings/line-test" style="margin-top: 0.5rem;">
+        <button type="submit" class="btn-sm btn-secondary">發送測試通知</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>安全問題</h3>
+    <p class="text-muted">忘記密碼時，可透過此問題重設密碼。</p>
+    <form method="post" action="/settings/security-question">
+        <label>安全問題
+            <select name="security_question" required>
+                {% for q in ['我的出生地是？', '我的母親名字是？', '我的第一個寵物名字是？', '我的第一間學校名稱是？', '我最喜歡的電影是？'] %}
+                <option value="{{ q }}" {{ 'selected' if me.security_question == q else '' }}>{{ q }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>答案（重新輸入）
+            <input type="text" name="security_answer" required placeholder="更新後會覆蓋舊答案">
+        </label>
+        <button type="submit" class="btn-sm">更新安全問題</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>變更密碼</h3>
+    <form method="post" action="/settings/password">
+        <label>目前密碼
+            <input type="password" name="current_password" required>
+        </label>
+        <label>新密碼
+            <input type="password" name="new_password" required minlength="6">
+        </label>
+        <label>確認新密碼
+            <input type="password" name="new_password_confirm" required minlength="6">
+        </label>
+        <button type="submit" class="btn-sm">變更密碼</button>
+    </form>
+</div>
+{% endblock %}

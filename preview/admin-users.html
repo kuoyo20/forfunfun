@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>送禮清單 - 人脈管理系統</title>
+    <title>使用者管理 - 人脈管理系統</title>
     <link rel="manifest" href="/static/manifest.json">
     <meta name="theme-color" content="#4a90d9">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -209,34 +209,92 @@ footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; 
         
 
         
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-    <h2>送禮清單</h2>
+<h2>使用者管理</h2>
+
+<table>
+    <thead>
+        <tr><th>帳號</th><th>Email</th><th>顯示名稱</th><th>角色</th><th>註冊時間</th><th>操作</th></tr>
+    </thead>
+    <tbody>
     
-    <a href="/gifts/new" role="button">建立新清單</a>
+    <tr>
+        <td>demo</td>
+        <td>demo@test.com</td>
+        <td>Demo</td>
+        <td><span class="badge admin">admin</span></td>
+        <td>2026-04-03 09:53</td>
+        <td>
+            
+            <span class="text-muted">目前使用者</span>
+            
+        </td>
+    </tr>
     
+    <tr>
+        <td>demo2</td>
+        <td>demo2@test.com</td>
+        <td>Demo</td>
+        <td><span class="badge editor">editor</span></td>
+        <td>2026-04-03 09:53</td>
+        <td>
+            
+            <form method="post" action="/admin/users/2/role" style="display:inline-flex; gap:0.25rem; align-items:center;">
+                <select name="role" style="margin:0; padding: 0.2rem;">
+                    <option value="admin" >admin</option>
+                    <option value="editor" selected>editor</option>
+                    <option value="viewer" >viewer</option>
+                </select>
+                <button type="submit" class="btn-sm">更新</button>
+            </form>
+            
+        </td>
+    </tr>
+    
+    <tr>
+        <td>test3</td>
+        <td>test3@test.com</td>
+        <td>Test</td>
+        <td><span class="badge editor">editor</span></td>
+        <td>2026-04-03 10:22</td>
+        <td>
+            
+            <form method="post" action="/admin/users/3/role" style="display:inline-flex; gap:0.25rem; align-items:center;">
+                <select name="role" style="margin:0; padding: 0.2rem;">
+                    <option value="admin" >admin</option>
+                    <option value="editor" selected>editor</option>
+                    <option value="viewer" >viewer</option>
+                </select>
+                <button type="submit" class="btn-sm">更新</button>
+            </form>
+            
+        </td>
+    </tr>
+    
+    </tbody>
+</table>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3>角色說明</h3>
+    <ul>
+        <li><strong>admin</strong>：管理員 — 可以管理使用者、修改角色，以及所有編輯操作</li>
+        <li><strong>editor</strong>：編輯者 — 可以新增、修改、刪除聯絡人和公司</li>
+        <li><strong>viewer</strong>：檢視者 — 只能查看資料，不能修改</li>
+    </ul>
 </div>
 
-
-<div class="grid-2">
-    
-    <div class="card">
-        <h3><a href="/gifts/1">2026 端午送禮</a></h3>
-        <span class="badge">端午</span>
-        <p class="text-muted">建立者：demo | 2026-04-04</p>
-        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-            <div><strong>6</strong> 人</div>
-            <div>預算 <strong>$8700</strong></div>
-            <div>已完成 <strong>0</strong>/6</div>
-        </div>
-        
-        <div style="margin-top: 0.5rem; background: #e9ecef; border-radius: 4px; height: 6px;">
-            <div style="background: var(--success); height: 100%; border-radius: 4px; width: 0%;"></div>
-        </div>
-        
+<div class="card" style="margin-top: 1rem; border-left: 4px solid var(--warning);">
+    <h3>資料備份 / 還原</h3>
+    <p class="text-muted">建議定期下載備份。還原時舊資料會先存為 .before-restore-xxx 保險檔。</p>
+    <div class="btn-group">
+        <a href="/admin/backup" role="button" class="btn-sm">下載資料庫備份</a>
     </div>
-    
+    <form method="post" action="/admin/restore" enctype="multipart/form-data" style="margin-top: 1rem;">
+        <label>還原資料庫（.db 檔）
+            <input type="file" name="file" accept=".db" required>
+        </label>
+        <button type="submit" class="btn-sm btn-danger" onclick="return confirm('確定還原？當前資料會被取代（會保留一份保險檔）')">還原</button>
+    </form>
 </div>
-
 
     </main>
 

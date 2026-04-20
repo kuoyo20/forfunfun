@@ -105,6 +105,28 @@
     </div>
 </div>
 
+<!-- Dormant Contacts -->
+{% if dormant %}
+<div class="card" style="border-left: 4px solid var(--warning);">
+    <h3>⚠ 該聯絡了 — 長期未互動的重要人脈</h3>
+    <p class="text-muted" style="margin-top: 0;">VIP/A 層級超過 90 天未互動、B 層級超過 180 天未互動</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem;">
+        {% for p in dormant %}
+        <div style="padding: 0.5rem 0.75rem; border: 1px solid #dee2e6; border-radius: 6px; background: #fff3cd;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }} {{ p.last_name }}</strong></a>
+                {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.85rem;">
+                {% if p.last_interaction %}最近：{{ p.last_interaction }}{% else %}從未互動{% endif %}
+                · <span style="color: var(--danger);">{{ p.days_since }} 天前</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Charts -->
 {% if gift_tiers or monthly_interactions %}
 <div class="grid-2">

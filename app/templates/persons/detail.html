@@ -301,6 +301,45 @@
 </div>
 {% endif %}
 
+<!-- Attachments -->
+<div class="card">
+    <h3>附件檔案 ({{ attachments|length if attachments else 0 }})</h3>
+    {% if attachments %}
+    {% for a in attachments %}
+    <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <a href="/attachment/{{ a.id }}" target="_blank"><strong>{{ a.original_name }}</strong></a>
+            <span class="text-muted">({{ (a.size_bytes / 1024)|round|int }} KB)</span>
+            {% if a.description %}<div class="text-muted" style="font-size: 0.85rem;">{{ a.description }}</div>{% endif %}
+            <div class="time">{{ a.created_at[:16] if a.created_at else '' }}</div>
+        </div>
+        {% if can_edit %}
+        <form method="post" action="/attachment/{{ a.id }}/delete" style="margin:0;" onsubmit="return confirm('刪除此附件？')">
+            <button type="submit" class="btn-sm btn-danger" style="padding: 0.15rem 0.5rem;">x</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-muted">尚無附件。</p>
+    {% endif %}
+
+    {% if can_edit %}
+    <details style="margin-top: 0.75rem;">
+        <summary>上傳附件（最大 10MB）</summary>
+        <form method="post" action="/persons/{{ person.id }}/attachment" enctype="multipart/form-data" style="margin-top: 0.5rem;">
+            <label>選擇檔案 *
+                <input type="file" name="file" required>
+            </label>
+            <label>說明
+                <input type="text" name="description" placeholder="例：合約、名片掃描、會議簡報">
+            </label>
+            <button type="submit" class="btn-sm">上傳</button>
+        </form>
+    </details>
+    {% endif %}
+</div>
+
 <!-- Edit Log -->
 {% if logs %}
 <div class="card">

@@ -1,0 +1,43 @@
+{
+  "name": "人脈管理系統",
+  "short_name": "人脈",
+  "description": "個人與團隊的人脈關係管理工具",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#4a90d9",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "聯絡人",
+      "url": "/persons",
+      "description": "瀏覽聯絡人列表"
+    },
+    {
+      "name": "送禮清單",
+      "url": "/gifts",
+      "description": "管理送禮清單"
+    },
+    {
+      "name": "待辦提醒",
+      "url": "/reminders",
+      "description": "查看待辦提醒"
+    }
+  ]
+}

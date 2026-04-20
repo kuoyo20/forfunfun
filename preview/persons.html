@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>聯絡人列表 - 人脈管理系統</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#4a90d9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="人脈">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="icon" type="image/png" href="/static/icon-192.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <style>/* Custom styles on top of Pico CSS */
 :root {
@@ -187,10 +194,11 @@ footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; 
             <input type="search" name="q" placeholder="搜尋聯絡人、公司、標籤..." value="">
         </form>
         <a href="/notifications" class="notif-link">
-            通知 <span class="notif-badge">3</span>
+            通知
         </a>
         <a href="/admin/users">管理</a>
         <a href="/admin/custom-fields">自訂欄位</a>
+        <a href="/settings">設定</a>
         <a href="/logout">登出 (demo) <span class="badge admin">admin</span></a>
     </nav>
     
@@ -621,6 +629,13 @@ footer { text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem; 
     </footer>
 
     <script src="/static/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js').catch(() => {});
+            });
+        }
+    </script>
     
 <script>
 document.addEventListener('DOMContentLoaded', () => {

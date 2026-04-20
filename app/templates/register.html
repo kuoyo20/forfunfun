@@ -19,6 +19,19 @@
         <label>確認密碼
             <input type="password" name="password_confirm" required>
         </label>
+        <label>安全問題
+            <select name="security_question" required>
+                <option value="">-- 請選擇 --</option>
+                <option value="我的出生地是？">我的出生地是？</option>
+                <option value="我的母親名字是？">我的母親名字是？</option>
+                <option value="我的第一個寵物名字是？">我的第一個寵物名字是？</option>
+                <option value="我的第一間學校名稱是？">我的第一間學校名稱是？</option>
+                <option value="我最喜歡的電影是？">我最喜歡的電影是？</option>
+            </select>
+        </label>
+        <label>安全問題答案
+            <input type="text" name="security_answer" required placeholder="忘記密碼時需要回答">
+        </label>
         <button type="submit" style="width: 100%;">註冊</button>
     </form>
     <p style="text-align: center; margin-top: 1rem;">
