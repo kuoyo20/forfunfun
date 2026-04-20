@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拍名片 - 人脈管理系統</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root { --primary: #4a90d9; --primary-hover: #357abd; --success: #27ae60; --warning: #f39c12; --bg-light: #f8f9fa; }
+        body { min-height: 100vh; display: flex; flex-direction: column; }
+        nav.top-nav { background: var(--primary); padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        nav.top-nav a { color: white; text-decoration: none; font-weight: 500; font-size: 0.9rem; }
+        nav.top-nav .brand { font-size: 1.15rem; font-weight: 700; margin-right: auto; }
+        nav.top-nav a.nav-scan { background: rgba(255,255,255,0.2); padding: 0.3rem 0.7rem; border-radius: 6px; font-weight: 700; }
+        main.container { flex: 1; padding-top: 1rem; padding-bottom: 2rem; }
+        .scan-page { max-width: 500px; margin: 0 auto; text-align: center; }
+        .scan-area { border: 3px dashed var(--primary); border-radius: 16px; padding: 3rem 2rem; cursor: pointer; transition: all 0.3s; margin: 1.5rem 0; background: var(--bg-light); }
+        .scan-area:hover { border-color: var(--primary-hover); background: #e8f0fe; transform: scale(1.02); }
+        .scan-icon { font-size: 4rem; margin-bottom: 0.5rem; }
+        .scan-text { font-size: 1.3rem; font-weight: 600; color: var(--primary); }
+        .scan-hint { font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem; }
+        .card { border: 1px solid #dee2e6; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; background: white; }
+        .card h3 { margin-top: 0; }
+        .scan-tips { text-align: left; }
+        .scan-tips ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+        .scan-tips li { margin-bottom: 0.3rem; color: #555; font-size: 0.9rem; }
+        .scan-alt { margin-top: 1.5rem; }
+        .scan-alt p { color: #6c757d; font-size: 0.9rem; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+        .btn-sm { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
+        .btn-secondary { background: #6c757d; border-color: #6c757d; color: white; }
+        .fab-scan { position: fixed; bottom: 2rem; right: 2rem; width: 60px; height: 60px; background: var(--primary); color: white; border: none; border-radius: 50%; font-size: 1.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; text-decoration: none; line-height: 1; }
+        .text-muted { color: #6c757d; font-size: 0.9rem; }
+        .preview-note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="index.html" class="brand">人脈管理系統</a>
+        <a href="persons.html">聯絡人</a>
+        <a href="companies.html">公司</a>
+        <a href="gifts.html">送禮清單</a>
+        <a href="reminders.html">提醒</a>
+        <a href="graph.html">關係圖</a>
+        <a href="scan.html" class="nav-scan">📷 拍名片</a>
+        <a href="notifications.html">通知</a>
+    </nav>
+
+    <main class="container">
+        <div class="preview-note">
+            <strong>預覽模式：</strong>靜態頁面無法實際拍攝。部署後，手機開啟此頁會直接呼叫相機。
+        </div>
+
+        <div class="scan-page">
+            <h2>拍名片自動建檔</h2>
+            <p class="text-muted">拍攝或選擇名片照片，系統將自動辨識並建立聯絡人</p>
+
+            <div class="scan-area">
+                <div class="scan-icon">📷</div>
+                <div class="scan-text">點擊拍攝名片</div>
+                <div class="scan-hint">支援中文、英文、日文、韓文名片</div>
+            </div>
+
+            <div class="scan-tips card">
+                <h3>拍攝技巧</h3>
+                <ul>
+                    <li>將名片平放在光線充足的地方</li>
+                    <li>盡量讓名片填滿畫面</li>
+                    <li>避免反光和陰影</li>
+                    <li>確保文字清晰可辨</li>
+                </ul>
+            </div>
+
+            <div class="card" style="text-align: left;">
+                <h3>一鍵建檔流程</h3>
+                <ol>
+                    <li>點擊拍攝區域 → 手機相機自動開啟</li>
+                    <li>拍下名片 → 自動上傳至伺服器</li>
+                    <li>OCR 辨識（中/英/日/韓）</li>
+                    <li>自動擷取：姓名、公司、職稱、Email、電話、地址</li>
+                    <li>自動建立聯絡人（若偵測到新公司也會自動建立）</li>
+                    <li>跳轉到聯絡人詳情頁供確認</li>
+                </ol>
+            </div>
+
+            <div class="scan-alt">
+                <p>也可以使用其他方式匯入：</p>
+                <div class="btn-group">
+                    <a href="index.html" role="button" class="btn-secondary btn-sm">返回預覽首頁</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <a href="#" class="fab-scan" title="拍名片建檔">📷</a>
+
+    <footer style="text-align: center; padding: 1rem; color: #6c757d; font-size: 0.85rem;">
+        <p>人脈管理系統 &copy; 2026</p>
+    </footer>
+</body>
+</html>
