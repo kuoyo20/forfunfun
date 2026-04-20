@@ -23,6 +23,7 @@
         <a href="/gifts">送禮清單</a>
         <a href="/reminders">提醒</a>
         <a href="/graph">關係圖</a>
+        <a href="/scan" class="nav-scan">📷 拍名片</a>
         <a href="/import">匯入</a>
         <a href="/export/csv">匯出</a>
         <form class="nav-search" action="/search" method="get">
@@ -49,6 +50,10 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    {% if user and can_edit is defined and can_edit %}
+    <a href="/scan" class="fab-scan" title="拍名片建檔">📷</a>
+    {% endif %}
 
     <footer>
         <p>人脈管理系統 &copy; 2026</p>

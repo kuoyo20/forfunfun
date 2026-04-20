@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}拍名片 - 人脈管理系統{% endblock %}
+{% block content %}
+<div class="scan-page">
+    <h2>拍名片自動建檔</h2>
+    <p class="text-muted">拍攝或選擇名片照片，系統將自動辨識並建立聯絡人</p>
+
+    <form id="scan-form" method="post" action="/scan/auto" enctype="multipart/form-data">
+        <div class="scan-area" id="scan-area" onclick="document.getElementById('camera-input').click()">
+            <div class="scan-icon" id="scan-icon">📷</div>
+            <div class="scan-text" id="scan-text">點擊拍攝名片</div>
+            <div class="scan-hint">支援中文、英文、日文、韓文名片</div>
+            <img id="preview-img" class="scan-preview" style="display:none;" alt="預覽">
+        </div>
+        <input type="file" id="camera-input" name="file" accept="image/*" capture="environment" style="display:none;">
+    </form>
+
+    <div id="loading-overlay" class="loading-overlay" style="display:none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">正在辨識名片...</div>
+            <div class="loading-hint">OCR 處理中，請稍候</div>
+        </div>
+    </div>
+
+    <div class="scan-tips card">
+        <h3>拍攝技巧</h3>
+        <ul>
+            <li>將名片平放在光線充足的地方</li>
+            <li>盡量讓名片填滿畫面</li>
+            <li>避免反光和陰影</li>
+            <li>確保文字清晰可辨</li>
+        </ul>
+    </div>
+
+    <div class="scan-alt">
+        <p>也可以使用其他方式匯入：</p>
+        <div class="btn-group">
+            <a href="/import" role="button" class="btn-secondary btn-sm">CSV/Excel 匯入</a>
+            <a href="/persons/new" role="button" class="btn-secondary btn-sm">手動新增</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const input = document.getElementById('camera-input');
+const form = document.getElementById('scan-form');
+const scanArea = document.getElementById('scan-area');
+const scanIcon = document.getElementById('scan-icon');
+const scanText = document.getElementById('scan-text');
+const previewImg = document.getElementById('preview-img');
+const loadingOverlay = document.getElementById('loading-overlay');
+
+input.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        const file = this.files[0];
+        if (file.size > 10 * 1024 * 1024) {
+            alert('圖片太大，請選擇 10MB 以下的圖片');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = 'block';
+            scanIcon.style.display = 'none';
+            scanText.textContent = '辨識中...';
+            scanArea.classList.add('processing');
+        };
+        reader.readAsDataURL(file);
+
+        loadingOverlay.style.display = 'flex';
+        form.submit();
+    }
+});
+</script>
+{% endblock %}

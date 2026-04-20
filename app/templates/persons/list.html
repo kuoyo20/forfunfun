@@ -4,6 +4,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <h2>聯絡人列表 ({{ total }}){% if current_tag %} <span class="tag">{{ current_tag }}</span>{% endif %}{% if current_company %} <span class="tag">{{ current_company }}</span>{% endif %}</h2>
     <div class="btn-group">
+        {% if can_edit %}<a href="/scan" role="button" style="background:var(--success);border-color:var(--success);">📷 拍名片建檔</a>{% endif %}
         {% if can_edit %}<a href="/persons/new" role="button">新增聯絡人</a>{% endif %}
         <a href="/export/csv" role="button" class="btn-secondary btn-sm">匯出 CSV</a>
     </div>
