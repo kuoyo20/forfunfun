@@ -3,6 +3,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import QuestionGenerator from "./pages/QuestionGenerator.tsx";
 import ClientsList from "./pages/ClientsList.tsx";
@@ -17,13 +20,16 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/generator" element={<QuestionGenerator />} />
-          <Route path="/clients" element={<ClientsList />} />
-          <Route path="/clients/:id" element={<ClientDetail />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/generator" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><ClientsList /></ProtectedRoute>} />
+            <Route path="/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
