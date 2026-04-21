@@ -6,6 +6,8 @@ import CandidateInterview from "@/pages/CandidateInterview";
 import InterviewReport from "@/pages/InterviewReport";
 import Practice from "@/pages/Practice";
 import SupplementUpload from "@/pages/SupplementUpload";
+import BulkCreate from "@/pages/BulkCreate";
+import Compare from "@/pages/Compare";
 
 export default function App() {
   return (
@@ -20,6 +22,8 @@ export default function App() {
             <Route path="/report/:id" element={<InterviewReport />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/supplement/:token" element={<SupplementUpload />} />
+            <Route path="/bulk" element={<BulkCreate />} />
+            <Route path="/compare" element={<Compare />} />
           </Routes>
         </div>
       </div>

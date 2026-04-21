@@ -33,3 +33,14 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
 }
+
+@media print {
+  @page { margin: 1.5cm; }
+  body { background: white; }
+  .print\:hidden { display: none !important; }
+  /* 列印時讓背景色印出來 */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

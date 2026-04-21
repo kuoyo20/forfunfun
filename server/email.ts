@@ -96,3 +96,62 @@ export async function sendHRNotification(params: {
     </div>
   `);
 }
+
+// ──────── 通過通知（候選人）────────
+
+export async function sendPassNotification(params: {
+  to: string;
+  candidateName: string;
+  position: string;
+  companyName?: string;
+}): Promise<boolean> {
+  const company = params.companyName ?? "我們";
+  return sendMail(params.to, `關於您應徵 ${params.position} 的好消息`, `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.7;">
+      <p>${params.candidateName} 您好，</p>
+
+      <p>首先，感謝您撥空參加 <strong>${params.position}</strong> 職位的線上面試。</p>
+
+      <p>很開心通知您，在這次的面試中，您的表現讓${company}印象深刻，我們想邀請您進入下一階段的面試。</p>
+
+      <p>我們的 HR 夥伴將會在近期主動與您聯繫，討論下一輪面試的時間與形式。如果您有任何時間上的偏好或考量，屆時也歡迎跟我們分享。</p>
+
+      <p>再次感謝您的用心準備，期待很快與您再次交流。</p>
+
+      <p style="margin-top: 32px;">
+        祝 順心<br>
+        <span style="color: #666;">${company} 人資團隊 敬上</span>
+      </p>
+    </div>
+  `);
+}
+
+// ──────── 不通過通知（候選人）────────
+
+export async function sendFailNotification(params: {
+  to: string;
+  candidateName: string;
+  position: string;
+  companyName?: string;
+}): Promise<boolean> {
+  const company = params.companyName ?? "我們";
+  return sendMail(params.to, `關於您應徵 ${params.position} 的回覆`, `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.7;">
+      <p>${params.candidateName} 您好，</p>
+
+      <p>首先，感謝您撥空參加 <strong>${params.position}</strong> 職位的線上面試，也謝謝您在面試中誠懇地分享您的經驗與想法。</p>
+
+      <p>經過內部審慎的討論，我們在多方考量後，這次很遺憾無法進入下一階段的合作。這個決定並不容易，也絕非對您能力的否定 — 每次徵才都會綜合評估當下團隊需求、職位的特定要求與整體契合度，這次很可惜在這些面向上沒能找到最剛好的交集。</p>
+
+      <p>我們由衷欣賞您投入的時間與準備，也相信您的經驗與專業在其他機會中會有很好的發揮。未來如果${company}有更適合您的職缺，也歡迎您再次嘗試，我們會很樂意再次認識您。</p>
+
+      <p>祝福您在接下來的求職路上一切順利，很快找到真正適合的舞台。</p>
+
+      <p style="margin-top: 32px;">
+        祝 順心<br>
+        <span style="color: #666;">${company} 人資團隊 敬上</span>
+      </p>
+    </div>
+  `);
+}
+

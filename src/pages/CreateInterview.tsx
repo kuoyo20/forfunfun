@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Copy, Check, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Copy, Check, Send, Loader2, BookmarkPlus, Trash2 } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
+import { loadTemplates, saveTemplate, deleteTemplate, type InterviewTemplate } from "@/lib/templates";
+import { toast } from "sonner";
 
 import { API } from "@/lib/config";
 
@@ -34,6 +36,51 @@ export default function CreateInterview() {
   const [copied, setCopied] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [templates, setTemplates] = useState<InterviewTemplate[]>([]);
+  const [templateName, setTemplateName] = useState("");
+  const [showSaveTpl, setShowSaveTpl] = useState(false);
+
+  useEffect(() => { setTemplates(loadTemplates()); }, []);
+
+  const applyTemplate = (tpl: InterviewTemplate) => {
+    setPosition(tpl.position);
+    setDifficulty(tpl.difficulty);
+    setMaxQuestions(tpl.maxQuestions);
+    setTimeLimitMin(tpl.timeLimitMin);
+    setPerQuestionSec(tpl.perQuestionSec);
+    setLinkValidDays(tpl.linkValidDays);
+    setSelectedTopics(tpl.topics);
+    if (tpl.jdText) setJdData({ fileName: "套用範本", text: tpl.jdText });
+    toast.success(`已套用範本「${tpl.name}」`);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!templateName.trim() || !position.trim()) {
+      toast.error("請先填寫職位與範本名稱");
+      return;
+    }
+    saveTemplate({
+      name: templateName.trim(),
+      position: position.trim(),
+      difficulty,
+      topics: selectedTopics,
+      maxQuestions,
+      timeLimitMin,
+      perQuestionSec,
+      linkValidDays,
+      jdText: jdData?.text,
+    });
+    setTemplates(loadTemplates());
+    setTemplateName("");
+    setShowSaveTpl(false);
+    toast.success("範本已儲存");
+  };
+
+  const removeTemplate = (id: string) => {
+    deleteTemplate(id);
+    setTemplates(loadTemplates());
+    toast.success("範本已刪除");
+  };
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -171,15 +218,45 @@ export default function CreateInterview() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link to="/" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">建立面試</h1>
-          <p className="text-sm text-muted-foreground">上傳履歷與職缺說明，建立面試連結</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link to="/" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">建立面試</h1>
+            <p className="text-sm text-muted-foreground">上傳履歷與職缺說明，建立面試連結</p>
+          </div>
         </div>
+        <Link to="/bulk" className="text-sm text-primary hover:underline">批量建立 &rarr;</Link>
       </div>
+
+      {/* 範本選單 */}
+      {templates.length > 0 && (
+        <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">套用已儲存的範本</div>
+          <div className="flex flex-wrap gap-2">
+            {templates.map((tpl) => (
+              <div key={tpl.id} className="group flex items-center gap-1 rounded-full border bg-card pl-3 pr-1 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => applyTemplate(tpl)}
+                  className="text-xs hover:text-primary transition-colors"
+                >
+                  {tpl.name}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeTemplate(tpl.id)}
+                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleCreate} className="space-y-6">
         {/* 候選人資訊 */}
@@ -298,7 +375,56 @@ export default function CreateInterview() {
         >
           {creating ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "建立面試連結"}
         </button>
+
+        <button
+          type="button"
+          onClick={() => setShowSaveTpl(true)}
+          disabled={!position.trim() || selectedTopics.length === 0}
+          className={cn(
+            "w-full flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm transition-colors",
+            position.trim() && selectedTopics.length > 0
+              ? "hover:bg-accent"
+              : "text-muted-foreground cursor-not-allowed opacity-60"
+          )}
+        >
+          <BookmarkPlus className="h-4 w-4" />
+          儲存為範本
+        </button>
       </form>
+
+      {/* 儲存範本對話框 */}
+      {showSaveTpl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-xl border bg-card p-6 shadow-lg max-w-sm w-full mx-4 space-y-4">
+            <h3 className="text-lg font-semibold">儲存範本</h3>
+            <input
+              type="text"
+              placeholder="例如：資深前端（React）"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              autoFocus
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setShowSaveTpl(false); setTemplateName(""); }}
+                className="rounded-lg border px-4 py-2 text-sm hover:bg-accent transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSaveTemplate}
+                disabled={!templateName.trim()}
+                className={cn("rounded-lg px-4 py-2 text-sm font-medium",
+                  templateName.trim() ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground"
+                )}
+              >
+                儲存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

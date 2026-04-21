@@ -3,7 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { extractText } from "./parse.js";
-import { sendInterviewInvite, sendHRNotification } from "./email.js";
+import { sendInterviewInvite, sendHRNotification, sendPassNotification, sendFailNotification } from "./email.js";
 import { askInterviewer, generateAIReport } from "./ai.js";
 
 const prisma = new PrismaClient();
@@ -299,16 +299,106 @@ app.post("/api/ai/report", async (req, res) => {
 // ──────────────── HR 決策 ────────────────
 
 app.post("/api/interviews/:id/decision", async (req, res) => {
-  const { decision } = req.body; // "pass" | "fail" | "pending"
+  const { decision, sendEmail = true } = req.body; // "pass" | "fail" | "pending"
   if (!["pass", "fail", "pending"].includes(decision)) {
     res.status(400).json({ error: "無效的決策值" });
     return;
   }
+
+  const existing = await prisma.interview.findUnique({ where: { id: req.params.id } });
+  if (!existing) {
+    res.status(404).json({ error: "找不到面試" });
+    return;
+  }
+
   const interview = await prisma.interview.update({
     where: { id: req.params.id },
     data: { decision },
   });
-  res.json({ ok: true, decision: interview.decision });
+
+  // 自動寄通知給候選人：限 pass/fail，且尚未通知過，且有 email
+  let emailSent = false;
+  if (
+    sendEmail &&
+    (decision === "pass" || decision === "fail") &&
+    !existing.candidateNotifiedAt &&
+    interview.candidateEmail
+  ) {
+    const emailFn = decision === "pass" ? sendPassNotification : sendFailNotification;
+    emailSent = await emailFn({
+      to: interview.candidateEmail,
+      candidateName: interview.candidateName ?? "您",
+      position: interview.position,
+      companyName: process.env.COMPANY_NAME,
+    });
+
+    if (emailSent) {
+      await prisma.interview.update({
+        where: { id: req.params.id },
+        data: {
+          candidateNotifiedAt: new Date(),
+          candidateNotifiedDecision: decision,
+        },
+      });
+    }
+  }
+
+  res.json({
+    ok: true,
+    decision: interview.decision,
+    emailSent,
+    alreadyNotified: !!existing.candidateNotifiedAt,
+  });
+});
+
+// ──────── 手動重新寄送結果通知 ────────
+
+app.post("/api/interviews/:id/resend-notification", async (req, res) => {
+  const interview = await prisma.interview.findUnique({ where: { id: req.params.id } });
+  if (!interview) {
+    res.status(404).json({ error: "找不到面試" });
+    return;
+  }
+  if (!interview.decision || interview.decision === "pending") {
+    res.status(400).json({ error: "尚未做出通過/不通過決策" });
+    return;
+  }
+  if (!interview.candidateEmail) {
+    res.status(400).json({ error: "候選人沒有 email" });
+    return;
+  }
+
+  const emailFn = interview.decision === "pass" ? sendPassNotification : sendFailNotification;
+  const sent = await emailFn({
+    to: interview.candidateEmail,
+    candidateName: interview.candidateName ?? "您",
+    position: interview.position,
+    companyName: process.env.COMPANY_NAME,
+  });
+
+  if (sent) {
+    await prisma.interview.update({
+      where: { id: req.params.id },
+      data: {
+        candidateNotifiedAt: new Date(),
+        candidateNotifiedDecision: interview.decision,
+      },
+    });
+    res.json({ ok: true });
+  } else {
+    res.status(500).json({ error: "寄送失敗（可能未設定 SMTP）" });
+  }
+});
+
+// ──────── HR 備註 ────────
+
+app.put("/api/interviews/:id/note", async (req, res) => {
+  const { hrNote } = req.body;
+  await prisma.interview.update({
+    where: { id: req.params.id },
+    data: { hrNote: hrNote ?? null },
+  });
+  res.json({ ok: true });
 });
 
 // ──────────────── 候選人補件上傳 ────────────────

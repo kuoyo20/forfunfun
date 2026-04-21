@@ -29,6 +29,9 @@ model Interview {
   report         String?  // JSON object
   durationSec    Int?
   emailSent      Boolean  @default(false)
+  candidateNotifiedAt DateTime?
+  candidateNotifiedDecision String?
+  hrNote         String?
   createdAt      DateTime @default(now())
   expiresAt      DateTime?  // 連結過期時間
   completedAt    DateTime?
