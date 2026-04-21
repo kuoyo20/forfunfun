@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Message, MessageMetadata } from "@/types/interview";
 import { cn } from "@/lib/utils";
-import { Send, StopCircle, Loader2, ShieldAlert } from "lucide-react";
+import { Send, StopCircle, Loader2, ShieldAlert, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 interface InterviewChatProps {
   messages: Message[];
@@ -30,6 +31,7 @@ export default function InterviewChat({
   questionCount, startTime,
 }: InterviewChatProps) {
   const [input, setInput] = useState("");
+  const [interim, setInterim] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [perQElapsed, setPerQElapsed] = useState(0);
@@ -38,13 +40,49 @@ export default function InterviewChat({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasAutoEnded = useRef(false);
 
-  // 打字行為追蹤
+  // 行為追蹤
   const firstKeystrokeRef = useRef<number | null>(null);
   const pasteCountRef = useRef(0);
+  const voiceUsedRef = useRef(false);
   const perQStartRef = useRef<number | null>(null);
   const hasAutoSubmittedThisQRef = useRef(false);
   const inputRef = useRef("");
   inputRef.current = input;
+
+  // 語音輸入
+  const handleFinalTranscript = useCallback((text: string) => {
+    voiceUsedRef.current = true;
+    setInput((prev) => {
+      const next = prev ? `${prev}${text}` : text;
+      inputRef.current = next;
+      return next;
+    });
+    setInterim("");
+    // 重設 textarea 高度
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (el) {
+        el.style.height = "auto";
+        el.style.height = Math.min(el.scrollHeight, 150) + "px";
+      }
+    });
+  }, []);
+
+  const handleInterimTranscript = useCallback((text: string) => {
+    setInterim(text);
+  }, []);
+
+  const voice = useVoiceInput({
+    language: "zh-TW",
+    onFinalTranscript: handleFinalTranscript,
+    onInterimTranscript: handleInterimTranscript,
+  });
+
+  useEffect(() => {
+    if (voice.error) {
+      toast.error(voice.error);
+    }
+  }, [voice.error]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isAiThinking]);
 
@@ -64,17 +102,19 @@ export default function InterviewChat({
     if (isTimeUp && !hasAutoEnded.current) { hasAutoEnded.current = true; onEndInterview(); }
   }, [isTimeUp, onEndInterview]);
 
-  // 每題倒數：在每次收到新的 AI 訊息時重設
+  // 每題倒數：新 AI 訊息到達時重設
   const lastAssistantId = messages.length > 0 ? messages[messages.length - 1]?.role === "assistant" ? messages[messages.length - 1]?.id : null : null;
   useEffect(() => {
     if (!lastAssistantId) return;
-    // 新題目到達，重設計時器與行為追蹤
     perQStartRef.current = Date.now();
     setPerQElapsed(0);
     firstKeystrokeRef.current = null;
     pasteCountRef.current = 0;
+    voiceUsedRef.current = false;
     hasAutoSubmittedThisQRef.current = false;
-  }, [lastAssistantId]);
+    // 若正在錄音，停止
+    if (voice.isListening) voice.stop();
+  }, [lastAssistantId, voice]);
 
   useEffect(() => {
     if (!perQStartRef.current) return;
@@ -96,13 +136,15 @@ export default function InterviewChat({
     const typingMs = first ? now - first : 0;
     const chars = inputRef.current.length;
     const charsPerSec = typingMs > 0 ? (chars / (typingMs / 1000)) : 0;
-    const suspiciousFast = chars > 100 && charsPerSec > CHARS_PER_SEC_THRESHOLD;
+    // 語音輸入時不判定為「打字異常快」
+    const suspiciousFast = !voiceUsedRef.current && chars > 100 && charsPerSec > CHARS_PER_SEC_THRESHOLD;
     return {
       typingMs,
       charsPerSec: Math.round(charsPerSec * 10) / 10,
       pasteAttempts: pasteCountRef.current,
       suspiciousFast,
       autoSubmitted,
+      voiceUsed: voiceUsedRef.current,
     };
   }, []);
 
@@ -114,8 +156,9 @@ export default function InterviewChat({
   }, []);
 
   const submitCore = useCallback((text: string, autoSubmitted = false) => {
+    if (voice.isListening) voice.stop();
+
     if (!text.trim() || isAiThinking) {
-      // 超時但沒寫東西：送出一個空回答
       if (autoSubmitted) {
         onSend("（時間到，未作答）", buildMetadata(true));
       }
@@ -123,8 +166,9 @@ export default function InterviewChat({
     }
     onSend(text.trim(), buildMetadata(autoSubmitted));
     setInput("");
+    setInterim("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-  }, [isAiThinking, onSend, buildMetadata]);
+  }, [isAiThinking, onSend, buildMetadata, voice]);
 
   // 每題超時自動送出
   useEffect(() => {
@@ -164,6 +208,7 @@ export default function InterviewChat({
 
   const isAtMaxQuestions = questionCount >= maxQuestions;
   const disabled = isAiThinking || isAtMaxQuestions || perQUp;
+  const showMic = voice.isSupported;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -203,12 +248,23 @@ export default function InterviewChat({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 本題倒數 */}
+      {/* 本題倒數 + 狀態列 */}
       {lastAssistantId && !isAtMaxQuestions && (
         <div className="flex items-center justify-between px-4 py-2 border-x text-xs bg-muted/30">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <ShieldAlert className="h-3 w-3" />
-            禁止貼上，請親自輸入
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <ShieldAlert className="h-3 w-3" />
+              禁止貼上
+            </div>
+            {voice.isListening && (
+              <div className="flex items-center gap-1.5 text-red-600 font-medium">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                錄音中
+              </div>
+            )}
           </div>
           <div className={cn("font-mono", perQLow ? "text-destructive font-semibold" : "text-muted-foreground")}>
             本題 {formatTime(perQRemaining)}
@@ -218,7 +274,7 @@ export default function InterviewChat({
 
       {/* 輸入區 */}
       <form onSubmit={handleSubmit} className="flex items-end gap-2 rounded-b-xl border bg-card px-4 py-3">
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
             value={input}
@@ -227,12 +283,37 @@ export default function InterviewChat({
             onPaste={handlePaste}
             onCopy={handleCopyCut}
             onCut={handleCopyCut}
-            placeholder={isAtMaxQuestions ? "已達最大題數 — 請結束面試查看報告" : "輸入你的回答...（Enter 送出，Shift+Enter 換行）"}
+            placeholder={isAtMaxQuestions
+              ? "已達最大題數 — 請結束面試查看報告"
+              : showMic
+                ? "輸入文字或按麥克風說話...（Enter 送出）"
+                : "輸入你的回答...（Enter 送出，Shift+Enter 換行）"}
             disabled={disabled}
             rows={1}
             className="w-full resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none leading-relaxed py-1"
           />
+          {voice.isListening && interim && (
+            <div className="text-xs text-muted-foreground italic mt-1">
+              <span className="text-red-500">•</span> {interim}
+            </div>
+          )}
         </div>
+        {showMic && (
+          <button
+            type="button"
+            onClick={voice.toggle}
+            disabled={disabled}
+            title={voice.isListening ? "停止錄音" : "開始語音輸入"}
+            className={cn(
+              "rounded-lg p-2 transition-colors shrink-0 border",
+              voice.isListening
+                ? "bg-red-500 text-white border-red-500 hover:bg-red-600 animate-pulse"
+                : "border-border text-muted-foreground hover:bg-accent"
+            )}
+          >
+            {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </button>
+        )}
         <button type="submit" disabled={!input.trim() || disabled} className={cn("rounded-lg p-2 transition-colors shrink-0", input.trim() && !disabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}>
           <Send className="h-4 w-4" />
         </button>

@@ -13,6 +13,7 @@ export interface MessageMetadata {
   pasteAttempts?: number;
   suspiciousFast?: boolean;
   autoSubmitted?: boolean;
+  voiceUsed?: boolean;
 }
 
 export interface Message {

@@ -1,6 +1,6 @@
 import type { InterviewReport, Message, MessageMetadata } from "@/types/interview";
 import { cn } from "@/lib/utils";
-import { RotateCcw, Loader2, ChevronDown, ChevronUp, AlertTriangle, Clipboard, Clock } from "lucide-react";
+import { RotateCcw, Loader2, ChevronDown, ChevronUp, AlertTriangle, Clipboard, Clock, Mic } from "lucide-react";
 import { useState } from "react";
 
 interface ReportViewProps {
@@ -50,6 +50,13 @@ function IntegrityFlags({ metadata }: { metadata?: MessageMetadata }) {
       color: "text-yellow-700 bg-yellow-50",
     });
   }
+  if (metadata.voiceUsed) {
+    flags.push({
+      icon: <Mic className="h-3 w-3" />,
+      label: "使用語音輸入",
+      color: "text-blue-700 bg-blue-50",
+    });
+  }
 
   if (flags.length === 0) return null;
 
@@ -76,7 +83,8 @@ function QuestionDetail({
   const hasFlags = answerMetadata && (
     (answerMetadata.pasteAttempts ?? 0) > 0 ||
     answerMetadata.suspiciousFast ||
-    answerMetadata.autoSubmitted
+    answerMetadata.autoSubmitted ||
+    answerMetadata.voiceUsed
   );
 
   return (
