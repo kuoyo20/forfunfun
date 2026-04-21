@@ -5,6 +5,7 @@ import CreateInterview from "@/pages/CreateInterview";
 import CandidateInterview from "@/pages/CandidateInterview";
 import InterviewReport from "@/pages/InterviewReport";
 import Practice from "@/pages/Practice";
+import SupplementUpload from "@/pages/SupplementUpload";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/interview/:token" element={<CandidateInterview />} />
             <Route path="/report/:id" element={<InterviewReport />} />
             <Route path="/practice" element={<Practice />} />
+            <Route path="/supplement/:token" element={<SupplementUpload />} />
           </Routes>
         </div>
       </div>

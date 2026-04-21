@@ -203,7 +203,7 @@ export default function CandidateInterview() {
 
   if (phase === "report") {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8">
+      <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
         <ReportView
           report={report}
           isGenerating={isGeneratingReport}
@@ -211,6 +211,19 @@ export default function CandidateInterview() {
           messages={messages}
           position={interviewData.position}
         />
+        {!isGeneratingReport && token && (
+          <div className="rounded-xl border bg-card p-5 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              如果你有想補充的資料（作品集、專案說明等），可以在面試完成後 12 小時內上傳。
+            </p>
+            <a
+              href={`/supplement/${token}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90 transition-colors"
+            >
+              上傳補充資料
+            </a>
+          </div>
+        )}
       </div>
     );
   }

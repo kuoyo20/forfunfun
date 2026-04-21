@@ -16,11 +16,17 @@ interface Interview {
   emailSent: boolean;
   topics: string[];
   report: { overallScore: number } | null;
+  decision: string | null;
   createdAt: string;
   completedAt: string | null;
 }
 
 const DIFFICULTY_LABELS: Record<string, string> = { junior: "初階", mid: "中階", senior: "資深" };
+const DECISION_LABELS: Record<string, { label: string; color: string }> = {
+  pass: { label: "✓ 通過", color: "bg-green-100 text-green-700" },
+  fail: { label: "✗ 不通過", color: "bg-red-100 text-red-700" },
+  pending: { label: "⏳ 待定", color: "bg-yellow-100 text-yellow-700" },
+};
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "等待中", color: "bg-yellow-100 text-yellow-700" },
   in_progress: { label: "進行中", color: "bg-blue-100 text-blue-700" },
@@ -129,11 +135,16 @@ export default function HRDashboard() {
               <div key={interview.id} className="rounded-xl border bg-card p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-sm font-semibold">{interview.position}</h3>
                       <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", st.color)}>
                         {st.label}
                       </span>
+                      {interview.decision && DECISION_LABELS[interview.decision] && (
+                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", DECISION_LABELS[interview.decision].color)}>
+                          {DECISION_LABELS[interview.decision].label}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {interview.candidateName ?? "未填姓名"}

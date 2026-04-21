@@ -3,7 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { extractText } from "./parse.js";
-import { sendInterviewInvite } from "./email.js";
+import { sendInterviewInvite, sendHRNotification } from "./email.js";
 import { askInterviewer, generateAIReport } from "./ai.js";
 
 const prisma = new PrismaClient();
@@ -276,11 +276,110 @@ app.post("/api/ai/report", async (req, res) => {
       },
     });
 
+    // 自動寄報告通知給 HR（背景執行，不阻擋回應）
+    const hrEmail = process.env.HR_NOTIFICATION_EMAIL;
+    if (hrEmail) {
+      const baseUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      sendHRNotification({
+        hrEmail,
+        candidateName: interview.candidateName ?? "候選人",
+        position: interview.position,
+        score: report.overallScore,
+        reportLink: `${baseUrl}/report/${interviewId}`,
+      }).catch(() => {});
+    }
+
     res.json(report);
   } catch (err) {
     console.error("AI report error:", err);
     res.status(500).json({ error: "報告產生失敗" });
   }
+});
+
+// ──────────────── HR 決策 ────────────────
+
+app.post("/api/interviews/:id/decision", async (req, res) => {
+  const { decision } = req.body; // "pass" | "fail" | "pending"
+  if (!["pass", "fail", "pending"].includes(decision)) {
+    res.status(400).json({ error: "無效的決策值" });
+    return;
+  }
+  const interview = await prisma.interview.update({
+    where: { id: req.params.id },
+    data: { decision },
+  });
+  res.json({ ok: true, decision: interview.decision });
+});
+
+// ──────────────── 候選人補件上傳 ────────────────
+
+app.post("/api/interview/:token/supplement", upload.single("file"), async (req, res) => {
+  const interview = await prisma.interview.findUnique({
+    where: { token: req.params.token },
+  });
+  if (!interview) {
+    res.status(404).json({ error: "無效的面試連結" });
+    return;
+  }
+  if (interview.status !== "completed") {
+    res.status(400).json({ error: "面試尚未完成，無法補件" });
+    return;
+  }
+
+  // 檢查 12 小時內
+  const completedAt = interview.completedAt?.getTime() ?? 0;
+  const twelveHours = 12 * 60 * 60 * 1000;
+  if (Date.now() - completedAt > twelveHours) {
+    res.status(410).json({ error: "補件期限已過（完成面試後 12 小時內）" });
+    return;
+  }
+
+  if (!req.file) {
+    res.status(400).json({ error: "未上傳檔案" });
+    return;
+  }
+
+  const text = await extractText(req.file.buffer, req.file.originalname);
+
+  // 把補充資料存入 supplementText 欄位（附加，不覆蓋）
+  const existing = interview.resumeText ?? "";
+  const supplementNote = `\n\n--- 補充資料：${req.file.originalname} ---\n${text}`;
+
+  await prisma.interview.update({
+    where: { id: interview.id },
+    data: { resumeText: existing + supplementNote },
+  });
+
+  res.json({
+    ok: true,
+    fileName: req.file.originalname,
+    message: "補充資料已上傳",
+  });
+});
+
+// ──────────────── 候選人補件頁面資料 ────────────────
+
+app.get("/api/interview/:token/supplement-status", async (req, res) => {
+  const interview = await prisma.interview.findUnique({
+    where: { token: req.params.token },
+  });
+  if (!interview) {
+    res.status(404).json({ error: "無效的面試連結" });
+    return;
+  }
+
+  const completedAt = interview.completedAt?.getTime() ?? 0;
+  const twelveHours = 12 * 60 * 60 * 1000;
+  const deadline = completedAt + twelveHours;
+  const canSupplement = interview.status === "completed" && Date.now() < deadline;
+
+  res.json({
+    position: interview.position,
+    candidateName: interview.candidateName,
+    status: interview.status,
+    canSupplement,
+    deadline: canSupplement ? new Date(deadline).toISOString() : null,
+  });
 });
 
 export default app;
