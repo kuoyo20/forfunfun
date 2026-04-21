@@ -32,6 +32,7 @@ export default function SetupForm({ onStart, onViewHistory }: SetupFormProps) {
   const [difficulty, setDifficulty] = useState<InterviewConfig["difficulty"]>("mid");
   const [maxQuestions, setMaxQuestions] = useState(10);
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(15);
+  const [perQuestionSec, setPerQuestionSec] = useState(180);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
@@ -50,6 +51,7 @@ export default function SetupForm({ onStart, onViewHistory }: SetupFormProps) {
       difficulty,
       maxQuestions,
       timeLimitMinutes,
+      perQuestionSec,
       topics: selectedTopics,
     });
   };
@@ -141,9 +143,17 @@ export default function SetupForm({ onStart, onViewHistory }: SetupFormProps) {
               </select>
             </div>
             <div className="space-y-2">
-              <label htmlFor="timeLimit" className="text-sm font-medium">時間限制</label>
+              <label htmlFor="timeLimit" className="text-sm font-medium">整場時間</label>
               <select id="timeLimit" value={timeLimitMinutes} onChange={(e) => setTimeLimitMinutes(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
                 {[10, 15, 20, 30, 45, 60].map((n) => (<option key={n} value={n}>{n} 分鐘</option>))}
+              </select>
+            </div>
+            <div className="space-y-2 col-span-2">
+              <label htmlFor="perQ" className="text-sm font-medium">每題作答時限</label>
+              <select id="perQ" value={perQuestionSec} onChange={(e) => setPerQuestionSec(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                {[60, 120, 180, 240, 300, 420, 600].map((n) => (
+                  <option key={n} value={n}>{n >= 60 ? `${n / 60} 分鐘` : `${n} 秒`}</option>
+                ))}
               </select>
             </div>
           </div>

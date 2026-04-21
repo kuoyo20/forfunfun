@@ -22,6 +22,8 @@ export default function CreateInterview() {
   const [difficulty, setDifficulty] = useState("mid");
   const [maxQuestions, setMaxQuestions] = useState(10);
   const [timeLimitMin, setTimeLimitMin] = useState(15);
+  const [perQuestionSec, setPerQuestionSec] = useState(180);
+  const [linkValidDays, setLinkValidDays] = useState(7);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [candidateName, setCandidateName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
@@ -53,6 +55,8 @@ export default function CreateInterview() {
           difficulty,
           maxQuestions,
           timeLimitMin,
+          perQuestionSec,
+          linkValidDays,
           topics: selectedTopics,
           candidateName: candidateName.trim() || null,
           candidateEmail: candidateEmail.trim() || null,
@@ -262,9 +266,23 @@ export default function CreateInterview() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">時間限制</label>
+              <label className="text-sm font-medium">整場時間</label>
               <select value={timeLimitMin} onChange={(e) => setTimeLimitMin(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
                 {[10, 15, 20, 30, 45, 60].map((n) => (<option key={n} value={n}>{n} 分鐘</option>))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">每題作答時限</label>
+              <select value={perQuestionSec} onChange={(e) => setPerQuestionSec(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                {[60, 120, 180, 240, 300, 420, 600].map((n) => (
+                  <option key={n} value={n}>{n >= 60 ? `${n / 60} 分鐘` : `${n} 秒`}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">連結有效期限</label>
+              <select value={linkValidDays} onChange={(e) => setLinkValidDays(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                {[1, 3, 7, 14, 30].map((n) => (<option key={n} value={n}>{n} 天內有效</option>))}
               </select>
             </div>
           </div>

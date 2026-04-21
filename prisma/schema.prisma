@@ -13,6 +13,8 @@ model Interview {
   difficulty     String
   maxQuestions   Int
   timeLimitMin   Int
+  perQuestionSec Int      @default(180)  // 每題作答時限（秒）
+  linkValidDays  Int      @default(7)    // 連結有效天數
   topics         String   // JSON array
   resumeText     String?
   jdText         String?
@@ -21,11 +23,13 @@ model Interview {
   candidateName  String?
   candidateEmail String?
   token          String   @unique @default(cuid())
-  status         String   @default("pending") // pending, in_progress, completed
-  messages       String?  // JSON array
+  status         String   @default("pending") // pending, in_progress, completed, expired
+  decision       String?  // pass, fail, pending (HR 決策)
+  messages       String?  // JSON array（含 metadata：打字速度、貼上次數等）
   report         String?  // JSON object
   durationSec    Int?
   emailSent      Boolean  @default(false)
   createdAt      DateTime @default(now())
+  expiresAt      DateTime?  // 連結過期時間
   completedAt    DateTime?
 }

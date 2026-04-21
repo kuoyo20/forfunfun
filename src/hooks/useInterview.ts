@@ -4,6 +4,7 @@ import type {
   InterviewPhase,
   InterviewReport,
   Message,
+  MessageMetadata,
 } from "@/types/interview";
 import {
   buildGreeting,
@@ -17,8 +18,8 @@ function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function makeMessage(role: Message["role"], content: string): Message {
-  return { id: generateId(), role, content, timestamp: Date.now() };
+function makeMessage(role: Message["role"], content: string, metadata?: MessageMetadata): Message {
+  return { id: generateId(), role, content, timestamp: Date.now(), metadata };
 }
 
 export function useInterview() {
@@ -97,10 +98,10 @@ export function useInterview() {
     }
   }, []);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, metadata?: MessageMetadata) => {
     if (isEndedRef.current) return;
 
-    const userMessage = makeMessage("user", content);
+    const userMessage = makeMessage("user", content, metadata);
     setMessages((prev) => {
       const next = [...prev, userMessage];
       messagesRef.current = next;

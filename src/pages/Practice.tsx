@@ -33,7 +33,9 @@ export default function Practice() {
       {phase === "interview" && (
         <InterviewChat messages={messages} isAiThinking={isAiThinking} onSend={sendMessage}
           onEndInterview={endInterview} maxQuestions={config?.maxQuestions ?? 10}
-          timeLimitMinutes={config?.timeLimitMinutes ?? 15} questionCount={questionCount} startTime={startTime} />
+          timeLimitMinutes={config?.timeLimitMinutes ?? 15}
+          perQuestionSec={config?.perQuestionSec ?? 180}
+          questionCount={questionCount} startTime={startTime} />
       )}
       {phase === "report" && (
         <ReportView report={report} isGenerating={isGeneratingReport} onReset={reset}

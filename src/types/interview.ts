@@ -3,7 +3,16 @@ export interface InterviewConfig {
   difficulty: "junior" | "mid" | "senior";
   maxQuestions: number;
   timeLimitMinutes: number;
+  perQuestionSec?: number;
   topics: string[];
+}
+
+export interface MessageMetadata {
+  typingMs?: number;
+  charsPerSec?: number;
+  pasteAttempts?: number;
+  suspiciousFast?: boolean;
+  autoSubmitted?: boolean;
 }
 
 export interface Message {
@@ -11,6 +20,7 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  metadata?: MessageMetadata;
 }
 
 export type InterviewPhase = "setup" | "interview" | "report" | "history";

@@ -42,10 +42,13 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
 app.post("/api/interviews", async (req, res) => {
   const {
-    position, difficulty, maxQuestions, timeLimitMin, topics,
+    position, difficulty, maxQuestions, timeLimitMin, perQuestionSec, linkValidDays, topics,
     resumeText, jdText, resumeFileName, jdFileName,
     candidateName, candidateEmail,
   } = req.body;
+
+  const validDays = linkValidDays ?? 7;
+  const expiresAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000);
 
   const interview = await prisma.interview.create({
     data: {
@@ -53,6 +56,8 @@ app.post("/api/interviews", async (req, res) => {
       difficulty,
       maxQuestions: maxQuestions ?? 10,
       timeLimitMin: timeLimitMin ?? 15,
+      perQuestionSec: perQuestionSec ?? 180,
+      linkValidDays: validDays,
       topics: JSON.stringify(topics ?? []),
       resumeText: resumeText ?? null,
       jdText: jdText ?? null,
@@ -60,6 +65,7 @@ app.post("/api/interviews", async (req, res) => {
       jdFileName: jdFileName ?? null,
       candidateName: candidateName ?? null,
       candidateEmail: candidateEmail ?? null,
+      expiresAt,
     },
   });
 
@@ -109,12 +115,27 @@ app.get("/api/interview/:token", async (req, res) => {
     res.status(404).json({ error: "無效的面試連結" });
     return;
   }
+
+  // 檢查是否已過期
+  if (interview.expiresAt && interview.expiresAt.getTime() < Date.now()) {
+    // 自動將狀態更新為 expired（如果尚未完成）
+    if (interview.status !== "completed" && interview.status !== "expired") {
+      await prisma.interview.update({
+        where: { id: interview.id },
+        data: { status: "expired" },
+      });
+    }
+    res.status(410).json({ error: "此面試連結已過期" });
+    return;
+  }
+
   res.json({
     id: interview.id,
     position: interview.position,
     difficulty: interview.difficulty,
     maxQuestions: interview.maxQuestions,
     timeLimitMin: interview.timeLimitMin,
+    perQuestionSec: interview.perQuestionSec,
     topics: JSON.parse(interview.topics),
     status: interview.status,
     candidateName: interview.candidateName,

@@ -3,32 +3,34 @@ import { useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import InterviewChat from "@/components/InterviewChat";
 import ReportView from "@/components/ReportView";
-import type { InterviewReport, Message } from "@/types/interview";
-
+import type { InterviewReport, Message, MessageMetadata } from "@/types/interview";
 import { API } from "@/lib/config";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function makeMessage(role: Message["role"], content: string): Message {
-  return { id: generateId(), role, content, timestamp: Date.now() };
+function makeMessage(role: Message["role"], content: string, metadata?: MessageMetadata): Message {
+  return { id: generateId(), role, content, timestamp: Date.now(), metadata };
+}
+
+interface InterviewData {
+  id: string;
+  position: string;
+  difficulty: string;
+  maxQuestions: number;
+  timeLimitMin: number;
+  perQuestionSec?: number;
+  topics: string[];
+  status: string;
+  candidateName: string | null;
 }
 
 export default function CandidateInterview() {
   const { token } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [interviewData, setInterviewData] = useState<{
-    id: string;
-    position: string;
-    difficulty: string;
-    maxQuestions: number;
-    timeLimitMin: number;
-    topics: string[];
-    status: string;
-    candidateName: string | null;
-  } | null>(null);
+  const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
 
   const [phase, setPhase] = useState<"loading" | "interview" | "report">("loading");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -44,12 +46,17 @@ export default function CandidateInterview() {
   const isEndedRef = useRef(false);
   const interviewIdRef = useRef<string | null>(null);
 
-  // Fetch interview data & get first AI greeting
+  // 取得面試資料 + AI 第一句招呼
   useEffect(() => {
     fetch(`${API}/api/interview/${token}`)
-      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(async (data) => {
+      .then(async (r) => {
+        if (r.status === 410) { setError("此面試連結已過期，請聯繫 HR。"); throw new Error("expired"); }
+        if (!r.ok) throw new Error("not_found");
+        return r.json();
+      })
+      .then(async (data: InterviewData) => {
         if (data.status === "completed") { setError("此面試已經完成。"); return; }
+        if (data.status === "expired") { setError("此面試連結已過期，請聯繫 HR。"); return; }
 
         setInterviewData(data);
         interviewIdRef.current = data.id;
@@ -61,14 +68,12 @@ export default function CandidateInterview() {
         setQuestionCount(1);
         questionCountRef.current = 1;
 
-        // Mark as in_progress
         fetch(`${API}/api/interviews/${data.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "in_progress" }),
         });
 
-        // Get AI greeting
         setIsAiThinking(true);
         setPhase("interview");
 
@@ -95,7 +100,9 @@ export default function CandidateInterview() {
           setIsAiThinking(false);
         }
       })
-      .catch(() => setError("無效的面試連結"))
+      .catch((e) => {
+        if (e?.message !== "expired") setError((prev) => prev ?? "無效的面試連結");
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -115,7 +122,8 @@ export default function CandidateInterview() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           interviewId: interviewIdRef.current,
-          messages: msgs.map((m) => ({ role: m.role, content: m.content })),
+          // 送完整 message（包含 metadata）給後端儲存，但 AI 只需要 role/content
+          messages: msgs,
           durationSec,
         }),
       });
@@ -132,10 +140,10 @@ export default function CandidateInterview() {
     }
   }, []);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, metadata?: MessageMetadata) => {
     if (isEndedRef.current || !interviewIdRef.current) return;
 
-    const userMsg = makeMessage("user", content);
+    const userMsg = makeMessage("user", content, metadata);
     setMessages((prev) => { const next = [...prev, userMsg]; messagesRef.current = next; return next; });
     setIsAiThinking(true);
 
@@ -221,6 +229,7 @@ export default function CandidateInterview() {
         onEndInterview={endInterview}
         maxQuestions={interviewData.maxQuestions}
         timeLimitMinutes={interviewData.timeLimitMin}
+        perQuestionSec={interviewData.perQuestionSec}
         questionCount={questionCount}
         startTime={startTime}
       />
