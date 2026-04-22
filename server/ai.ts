@@ -2,6 +2,127 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
 
+// ──────── 從履歷 / JD 自動抽取結構化資料 ────────
+
+export async function extractFromDocs(params: {
+  resumeText?: string | null;
+  jdText?: string | null;
+}): Promise<{
+  candidateName?: string;
+  candidateEmail?: string;
+  position?: string;
+  suggestedDifficulty?: "junior" | "mid" | "senior";
+  suggestedTopics?: string[];
+  roleCategory?: string;
+}> {
+  const { resumeText, jdText } = params;
+  if (!resumeText && !jdText) return {};
+
+  const systemPrompt = `你是一個 HR 助手，負責從履歷和職位說明書中萃取結構化資訊，並建議面試主題。
+
+回傳嚴格的 JSON 格式（不要加 markdown code block）：
+{
+  "candidateName": "候選人姓名（若找不到用 null）",
+  "candidateEmail": "候選人 email（若找不到用 null）",
+  "position": "職位名稱（以 JD 優先，若無從履歷推測）",
+  "suggestedDifficulty": "junior | mid | senior（根據經驗年資或 JD 要求）",
+  "roleCategory": "engineering | design | marketing | sales | product | finance | hr | general",
+  "suggestedTopics": ["主題1", "主題2", ...]
+}
+
+主題建議規則：
+- 列出 5-8 個具體面試主題
+- 要貼合這個職位真正會問的內容
+- 例如：前端工程師 → ["React", "JavaScript", "CSS", "效能優化", "跨瀏覽器相容"]
+- 例如：行銷經理 → ["品牌策略", "數據分析", "活動企劃", "KPI 管理", "跨部門溝通"]
+- 例如：業務 → ["客戶開發", "談判技巧", "CRM 系統", "產業知識"]
+- 不要只列技術/工具，也要涵蓋軟實力
+- 用繁體中文`;
+
+  let userPrompt = "";
+  if (resumeText) userPrompt += `【履歷】\n${resumeText.slice(0, 4000)}\n\n`;
+  if (jdText) userPrompt += `【職位說明書】\n${jdText.slice(0, 4000)}`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+
+    const block = response.content[0];
+    if (block.type !== "text") return {};
+
+    let text = block.text.trim();
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    }
+    const parsed = JSON.parse(text);
+
+    return {
+      candidateName: parsed.candidateName || undefined,
+      candidateEmail: parsed.candidateEmail || undefined,
+      position: parsed.position || undefined,
+      suggestedDifficulty: parsed.suggestedDifficulty || undefined,
+      roleCategory: parsed.roleCategory || undefined,
+      suggestedTopics: Array.isArray(parsed.suggestedTopics) ? parsed.suggestedTopics : undefined,
+    };
+  } catch (err) {
+    console.error("extractFromDocs failed:", err);
+    return {};
+  }
+}
+
+// ──────── 根據面試設定，預覽會出的問題 ────────
+
+export async function previewQuestions(params: {
+  position: string;
+  difficulty: string;
+  topics: string[];
+  resumeText?: string | null;
+  jdText?: string | null;
+  count?: number;
+}): Promise<string[]> {
+  const { position, difficulty, topics, resumeText, jdText, count = 5 } = params;
+  const diffLabel = difficulty === "junior" ? "初階" : difficulty === "mid" ? "中階" : "資深";
+
+  const systemPrompt = `你是專業面試官，針對「${position}」（${diffLabel}）職位，產出 ${count} 題有代表性的面試題目。
+
+主題：${topics.join("、") || "依據職位判斷"}
+
+規則：
+- 只回傳 JSON array，例如 ["題目1", "題目2", ...]
+- 不要加 markdown code block
+- 題目要真正能評估該職位所需能力，而不是泛泛之問
+- 用繁體中文
+- 每題應該是一個完整的問題，15-50 字
+
+${resumeText ? `【履歷參考】\n${resumeText.slice(0, 2000)}\n\n` : ""}${jdText ? `【JD 參考】\n${jdText.slice(0, 2000)}\n` : ""}`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: `請產出 ${count} 題面試題。` }],
+    });
+
+    const block = response.content[0];
+    if (block.type !== "text") return [];
+
+    let text = block.text.trim();
+    if (text.startsWith("```")) {
+      text = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    }
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("previewQuestions failed:", err);
+    return [];
+  }
+}
+
 interface AskParams {
   config: {
     position: string;
@@ -53,7 +174,7 @@ export async function askInterviewer(params: AskParams): Promise<string> {
   }));
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 1024,
     system: systemPrompt,
     messages: apiMessages,
@@ -124,7 +245,7 @@ ${params.jdText ? `\nJD 摘要：${params.jdText.slice(0, 1500)}` : ""}
 - 0-49：嚴重不足`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 4096,
     system: systemPrompt,
     messages: [{ role: "user", content: qaText || "（無對話紀錄）" }],

@@ -4,7 +4,7 @@ import multer from "multer";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { extractText } from "./parse.js";
 import { sendInterviewInvite, sendHRNotification, sendPassNotification, sendFailNotification } from "./email.js";
-import { askInterviewer, generateAIReport } from "./ai.js";
+import { askInterviewer, generateAIReport, extractFromDocs, previewQuestions } from "./ai.js";
 
 const prisma = new PrismaClient();
 const app = express();
@@ -470,6 +470,43 @@ app.get("/api/interview/:token/supplement-status", async (req, res) => {
     canSupplement,
     deadline: canSupplement ? new Date(deadline).toISOString() : null,
   });
+});
+
+// ──────── AI 抽取履歷 / JD 關鍵資訊 ────────
+
+app.post("/api/ai/extract", async (req, res) => {
+  const { resumeText, jdText } = req.body;
+  try {
+    const result = await extractFromDocs({ resumeText, jdText });
+    res.json(result);
+  } catch (err) {
+    console.error("AI extract error:", err);
+    res.status(500).json({ error: "抽取失敗" });
+  }
+});
+
+// ──────── AI 預覽面試題目 ────────
+
+app.post("/api/ai/preview", async (req, res) => {
+  const { position, difficulty, topics, resumeText, jdText, count } = req.body;
+  if (!position || !difficulty) {
+    res.status(400).json({ error: "缺少必要欄位" });
+    return;
+  }
+  try {
+    const questions = await previewQuestions({
+      position,
+      difficulty,
+      topics: topics ?? [],
+      resumeText,
+      jdText,
+      count: count ?? 5,
+    });
+    res.json({ questions });
+  } catch (err) {
+    console.error("AI preview error:", err);
+    res.status(500).json({ error: "預覽失敗" });
+  }
 });
 
 export default app;

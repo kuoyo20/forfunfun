@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Eye, Send, Trash2, Copy, Check, Loader2, Search, BarChart3, Scale, Users } from "lucide-react";
+import { Plus, Eye, Send, Trash2, Copy, Check, Loader2, Search, BarChart3, Users } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/lib/config";
 
@@ -161,22 +161,15 @@ export default function HRDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">HR 面試管理</h1>
-          <p className="text-sm text-muted-foreground">管理所有面試，查看結果</p>
+          <h1 className="text-3xl font-bold tracking-tight">總覽</h1>
+          <p className="text-sm text-muted-foreground mt-1">管理所有面試，查看結果</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Link to="/compare" className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm hover:bg-accent transition-colors">
-            <Scale className="h-4 w-4" />
-            比較排名
-          </Link>
-          <Link to="/practice" className="rounded-lg border px-3 py-2 text-sm hover:bg-accent transition-colors">
-            自主練習
-          </Link>
           <Link to="/bulk" className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm hover:bg-accent transition-colors">
             <Users className="h-4 w-4" />
             批量建立
           </Link>
-          <Link to="/create" className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90 transition-colors">
+          <Link to="/create" className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm shadow-sm hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" />
             建立面試
           </Link>
