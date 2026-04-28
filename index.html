@@ -1,18 +1,991 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>苗林行業務關鍵提問生成器</title>
-    <meta name="description" content="苗林行業務關鍵提問生成器 — 讓品味與食俱進">
-    <meta name="author" content="Miaolin Foods" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="苗林行業務關鍵提問生成器">
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="og:description" content="苗林行業務關鍵提問生成器 — 讓品味與食俱進">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>郭佑內容創作中心 v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#c9a84c;--gold-d:#a07d2e;--gold-l:rgba(201,168,76,.08);--gold-b:rgba(201,168,76,.25);--gold-glow:rgba(201,168,76,.15);
+  --bg:#09090b;--bg2:#0f0f12;--surface:#18181b;--surface2:#1f1f23;--surface3:#27272a;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.10);--border3:rgba(255,255,255,.15);
+  --text:#fafaf9;--text2:#a8a29e;--text3:#78716c;
+  --serif:'Noto Serif TC',serif;--sans:'Noto Sans TC',sans-serif;
+  --r:10px;--rl:16px;--rxl:20px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 1px 3px rgba(0,0,0,.2);
+  --shadow-md:0 4px 6px rgba(0,0,0,.3),0 2px 4px rgba(0,0,0,.2);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.4),0 4px 6px rgba(0,0,0,.3);
+  --shadow-gold:0 0 20px rgba(201,168,76,.1),0 0 40px rgba(201,168,76,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.6;background-image:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.04),transparent 70%)}
+::-webkit-scrollbar{width:6px;background:var(--bg2)}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.02);border-radius:6px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--gold-b),var(--gold-d));border-radius:6px}
+.app{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+.sidebar{background:linear-gradient(180deg,var(--bg2) 0%,rgba(15,15,18,.95) 100%);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-hd{padding:26px 20px 18px;border-bottom:1px solid var(--border2);background:linear-gradient(180deg,rgba(201,168,76,.03),transparent)}
+.logo{display:flex;align-items:center;gap:13px;margin-bottom:10px}
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-d));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;font-family:var(--serif);flex-shrink:0;box-shadow:0 0 0 3px rgba(201,168,76,.2),0 0 16px rgba(201,168,76,.15);transition:box-shadow .3s cubic-bezier(.4,0,.2,1)}
+.av:hover{box-shadow:0 0 0 3px rgba(201,168,76,.3),0 0 24px rgba(201,168,76,.25)}
+.bname{font-size:16px;font-weight:700;color:var(--text);letter-spacing:.02em}
+.bsub{font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.08em}
+.vbadge{display:inline-flex;align-items:center;font-size:10px;padding:4px 11px;border-radius:20px;background:var(--gold-l);color:var(--gold);border:1px solid var(--gold-b);margin-top:8px;box-shadow:var(--shadow-gold);letter-spacing:.03em}
+.sb-body{padding:18px 16px;flex:1}
+.sec{margin-bottom:18px}
+.slbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;display:flex;align-items:center;gap:6px;font-weight:500}
+.slbl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+.mtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:18px}
+.mtab{padding:10px 6px;border:1px solid var(--border);border-radius:var(--rl);background:transparent;cursor:pointer;text-align:center;transition:all .2s cubic-bezier(.4,0,.2,1);color:var(--text3);position:relative;overflow:hidden}
+.mtab:hover{border-color:var(--border2);color:var(--text2);transform:scale(1.02);background:rgba(255,255,255,.02)}
+.mtab.on{border-color:var(--gold);background:var(--gold-l);color:var(--gold);box-shadow:var(--shadow-gold),inset 0 -2px 0 var(--gold)}
+.mtab .ti{font-size:18px;display:block;margin-bottom:4px}
+.mtab .tl{font-size:11px;font-weight:600;letter-spacing:.02em}
+.mtab .ts{font-size:9px;color:var(--text3);margin-top:3px}
+.mtab.on .ts{color:var(--gold-d)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.ob{padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;text-align:left;transition:all .2s cubic-bezier(.4,0,.2,1);width:100%;position:relative}
+.ob:hover{border-color:var(--border2);background:var(--surface2);box-shadow:var(--shadow-sm)}
+.ob.on{border-color:var(--gold);background:var(--gold-l);border-left:3px solid var(--gold);box-shadow:var(--shadow-gold)}
+.ob .ol{font-size:12px;font-weight:600;color:var(--text);display:block;letter-spacing:.01em}
+.ob.on .ol{color:var(--gold)}
+.ob .od{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.tag{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:10px;color:var(--text3);cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);white-space:nowrap}
+.tag:hover{border-color:var(--border2);color:var(--text2);transform:scale(1.04);background:var(--surface2)}
+.tag.on{border-color:var(--gold);color:#fff;background:linear-gradient(135deg,var(--gold),var(--gold-d));box-shadow:0 2px 8px rgba(201,168,76,.25)}
+input,textarea,select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:12px;font-family:var(--sans);outline:none;transition:all .2s cubic-bezier(.4,0,.2,1)}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1),0 0 12px rgba(201,168,76,.06)}
+input:hover,textarea:hover,select:hover{background:var(--surface2)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+.togrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.tog{width:36px;height:20px;border-radius:10px;background:var(--border2);position:relative;cursor:pointer;flex-shrink:0;transition:all .25s cubic-bezier(.4,0,.2,1)}
+.tog.on{background:linear-gradient(135deg,var(--gold),var(--gold-d));box-shadow:0 0 10px rgba(201,168,76,.3)}
+.tth{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .25s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-sm)}
+.tog.on .tth{left:19px}
+.tlb{font-size:11px;color:var(--text2);line-height:1.5}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.genbtn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-d));border:none;border-radius:var(--rl);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-family:var(--sans);letter-spacing:.05em;margin-top:8px;box-shadow:0 4px 14px rgba(201,168,76,.25),0 1px 3px rgba(0,0,0,.3);position:relative;overflow:hidden}
+.genbtn::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);background-size:200% 100%;animation:shimmer 3s ease-in-out infinite}
+.genbtn:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,.35),0 2px 6px rgba(0,0,0,.3)}
+.genbtn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(201,168,76,.2)}
+.genbtn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none}
+.genbtn:disabled::after{animation:none}
+.main{background:var(--bg);padding:32px 40px 60px;display:flex;flex-direction:column;gap:20px;max-width:960px}
+.mh{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.mh h1{font-size:20px;font-weight:700;color:var(--text);font-family:var(--serif);letter-spacing:.02em}
+.mh p{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.6}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.bdg{font-size:10px;padding:3px 10px;border-radius:20px;background:var(--surface);border:1px solid var(--border2);color:var(--text2);letter-spacing:.02em}
+.bdg.g{background:var(--gold-l);border-color:var(--gold-b);color:var(--gold);box-shadow:var(--shadow-gold)}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:70px 40px;gap:18px;min-height:50vh}
+.wi{font-size:60px;opacity:.15;margin-bottom:4px;filter:sepia(.3) saturate(.6) hue-rotate(10deg)}
+.welcome h2{font-size:24px;font-family:var(--serif);color:var(--text2);font-weight:400;letter-spacing:.04em}
+.welcome p{font-size:14px;color:var(--text3);max-width:400px;line-height:1.9}
+.qblock{border-left:3px solid transparent;border-image:linear-gradient(180deg,var(--gold),var(--gold-d)) 1;padding:14px 18px;background:var(--gold-l);border-radius:0 var(--r) var(--r) 0;text-align:left;box-shadow:var(--shadow-gold)}
+.qblock p{font-size:13px;color:var(--gold);font-style:italic;line-height:1.8;font-family:var(--serif)}
+.ocard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;animation:fadeIn .35s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-lg)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.ocard-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--bg2),rgba(15,15,18,.6))}
+.ocard-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.12em}
+.oacts{display:flex;gap:6px;flex-wrap:wrap}
+.abtn{padding:6px 14px;border:1px solid var(--border2);border-radius:var(--r);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-family:var(--sans);letter-spacing:.02em}
+.abtn:hover{background:var(--surface2);color:var(--text);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.abtn.p{background:linear-gradient(135deg,var(--gold),var(--gold-d));border-color:var(--gold);color:#fff;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.2);box-shadow:0 2px 8px rgba(201,168,76,.25)}
+.abtn.p:hover{opacity:.9;box-shadow:0 4px 12px rgba(201,168,76,.35);transform:translateY(-1px)}
+.ocard-body{padding:22px}
+.mta{width:100%;min-height:360px;background:transparent;border:none;color:var(--text);font-size:15px;line-height:2.0;font-family:var(--serif);resize:vertical;outline:none;white-space:pre-wrap;letter-spacing:.01em}
+.sind{display:none;align-items:center;gap:8px;font-size:12px;color:#4ade80;margin-bottom:14px;letter-spacing:.02em}
+.sind.show{display:flex}
+.pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 1s infinite;box-shadow:0 0 8px rgba(74,222,128,.4)}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(74,222,128,.4)}50%{opacity:.2;box-shadow:0 0 2px rgba(74,222,128,.1)}}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border2)}
+.pcard:nth-child(1) .pcard-hd{border-left:3px solid #1877f2}
+.pcard:nth-child(2) .pcard-hd{border-left:3px solid #e1306c}
+.pcard:nth-child(3) .pcard-hd{border-left:3px solid #a8a29e}
+.pcard-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--bg2),rgba(15,15,18,.5))}
+.pname{font-size:12px;font-weight:700;color:var(--text);letter-spacing:.02em}
+.psub{font-size:9px;color:var(--text3);margin-top:2px}
+.pbody{padding:14px;font-size:12px;color:var(--text2);line-height:1.8;min-height:110px;font-family:var(--serif);white-space:pre-wrap}
+.csm{font-size:10px;padding:4px 9px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text3);cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);font-family:var(--sans)}
+.csm:hover{background:var(--surface2);color:var(--text2);transform:scale(1.04)}
+.pinfo-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.pinfo{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;transition:all .2s}
+.pinfo:hover{border-color:var(--border2)}
+.pinfo-name{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px}
+.pinfo-desc{font-size:10px;color:var(--text3);line-height:1.6}
+.bchap{border:1px solid var(--border);border-radius:var(--rl);margin-bottom:10px;background:var(--surface);overflow:hidden;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.bchap:hover{border-color:var(--border2);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.bhead{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.bnum{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(201,168,76,.25)}
+.btitle{font-size:14px;font-weight:600;color:var(--text);letter-spacing:.01em}
+.bbody{padding:10px 16px 14px 56px;border-top:1px solid var(--border)}
+.mitem{margin-bottom:8px}
+.mlbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px;font-weight:500}
+.mval{font-size:12px;color:var(--text2);line-height:1.6}
+.errbox{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:var(--r);padding:16px 18px;font-size:12px;color:#fca5a5;line-height:1.8;white-space:pre-wrap;box-shadow:0 0 20px rgba(220,38,38,.05)}
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rxl);padding:28px;max-width:520px;width:100%;box-shadow:var(--shadow-lg),0 0 40px rgba(201,168,76,.04);animation:fadeIn .25s cubic-bezier(.4,0,.2,1)}
+.modal h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-hd">
+    <div class="logo">
+      <div class="av">郭</div>
+      <div>
+        <div class="bname">郭佑內容創作中心</div>
+        <div class="bsub">Kuo Young · Content Studio</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+      <div class="vbadge">✦ v5 · 完整平台風格對接</div>
+      <button onclick="openKeyModal()" id="keyBtn" style="font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s" title="設定 API Key">⚙ API Key</button>
+    </div>
+    <div id="keyStatus" style="display:none;margin-top:6px;font-size:10px;padding:3px 9px;border-radius:20px;background:rgba(90,158,90,.12);border:1px solid rgba(90,158,90,.3);color:#5a9e5a">✓ API Key 已設定</div>
+  </div>
+
+  <div class="sb-body">
+    <div class="sec">
+      <div class="slbl">選擇模式</div>
+      <div class="mtabs" id="modeG" style="grid-template-columns:repeat(4,1fr)">
+        <button class="mtab on" data-v="personal"><span class="ti">✍</span><span class="tl">個人寫作</span><div class="ts">FB·IG·Threads</div></button>
+        <button class="mtab" data-v="column"><span class="ti">📰</span><span class="tl">專欄代筆</span><div class="ts">天下·品牌</div></button>
+        <button class="mtab" data-v="book"><span class="ti">📚</span><span class="tl">寫書架構</span><div class="ts">章節規劃</div></button>
+        <button class="mtab" data-v="url"><span class="ti">🔗</span><span class="tl">讀網址</span><div class="ts">轉郭佑觀點</div></button>
+      </div>
+    </div>
+
+    <!-- PERSONAL -->
+    <div id="pCfg">
+      <div class="sec">
+        <div class="slbl">文章類型</div>
+        <div class="g2" id="typeG">
+          <button class="ob on" data-v="fb_long"><span class="ol">FB 長文</span><span class="od">思想型・創業觀察</span></button>
+          <button class="ob" data-v="fb_short"><span class="ol">FB 短文</span><span class="od">感悟・轉推評語</span></button>
+          <button class="ob" data-v="bk_ch"><span class="ol">書籍章節</span><span class="od">系統性論述</span></button>
+          <button class="ob" data-v="bk_in"><span class="ol">書籍序言</span><span class="od">個人故事帶入</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">語氣風格</div>
+        <div class="g2" id="toneG">
+          <button class="ob on" data-v="challenge"><span class="ol">挑戰型</span><span class="od">直擊盲點</span></button>
+          <button class="ob" data-v="reflect"><span class="ol">反思型</span><span class="od">溫和但深刻</span></button>
+          <button class="ob" data-v="inspire"><span class="ol">激勵型</span><span class="od">從低谷到轉機</span></button>
+          <button class="ob" data-v="analyze"><span class="ol">分析型</span><span class="od">拆解現象本質</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">融合大師風格（可複選）</div>
+        <div class="g2" id="masterG">
+          <button class="ob" data-v="godin"><span class="ol">Seth Godin</span><span class="od">極簡・範式轉移</span></button>
+          <button class="ob" data-v="graham"><span class="ol">Paul Graham</span><span class="od">思維・反直覺</span></button>
+          <button class="ob" data-v="housel"><span class="ol">Morgan Housel</span><span class="od">故事・長期思維</span></button>
+          <button class="ob" data-v="holiday"><span class="ol">Ryan Holiday</span><span class="od">斯多葛・歷史</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">主題方向</div>
+        <div class="tags" id="themeG">
+          <button class="tag on" data-v="創業方法論">創業方法論</button>
+          <button class="tag" data-v="業務與銷售">業務與銷售</button>
+          <button class="tag" data-v="投資與募資">投資與募資</button>
+          <button class="tag" data-v="人生翻身">人生翻身</button>
+          <button class="tag" data-v="知識輸入輸出">知識輸入輸出</button>
+          <button class="tag" data-v="組織與領導">組織與領導</button>
+          <button class="tag" data-v="台灣農業">台灣農業</button>
+          <button class="tag" data-v="社會企業">社會企業</button>
+          <button class="tag" data-v="個人成長">個人成長</button>
+          <button class="tag" data-v="WorkLife">Work=Life</button>
+        </div>
+        <input id="custT" placeholder="或輸入具體題目...">
+      </div>
+      <div class="sec">
+        <div class="slbl">讀者對象</div>
+        <div class="g3" id="audG">
+          <button class="ob on" data-v="founder"><span class="ol">創業者</span></button>
+          <button class="ob" data-v="pro"><span class="ol">職場中堅</span></button>
+          <button class="ob" data-v="young"><span class="ol">迷惘世代</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">文章長度</div>
+        <div class="g3" id="lenG">
+          <button class="ob" data-v="short"><span class="ol">精簡</span></button>
+          <button class="ob on" data-v="medium"><span class="ol">標準</span></button>
+          <button class="ob" data-v="long"><span class="ol">詳盡</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">進階設定</div>
+        <div class="togrow"><div class="tog on" id="togPer"><div class="tth"></div></div><span class="tlb">融入個人經歷（鮮乳坊、MiracleX、AppWorks）</span></div>
+        <div class="togrow"><div class="tog on" id="togJin"><div class="tth"></div></div><span class="tlb">郭佑金句風格收尾</span></div>
+        <div class="togrow"><div class="tog on" id="togMulti"><div class="tth"></div></div><span class="tlb">同時生成 FB + IG + Threads</span></div>
+      </div>
+    </div>
+
+    <!-- COLUMN -->
+    <div id="colCfg" style="display:none">
+      <div class="sec"><div class="slbl">品牌名稱</div><input id="brandIn" placeholder="輸入品牌名稱..."></div>
+      <div class="sec">
+        <div class="slbl">討論區塊</div>
+        <div class="g2" id="areaG">
+          <button class="ob on" data-v="商業模式"><span class="ol">商業模式</span></button>
+          <button class="ob" data-v="品牌"><span class="ol">品牌</span></button>
+          <button class="ob" data-v="銷售"><span class="ol">銷售</span></button>
+          <button class="ob" data-v="組織"><span class="ol">組織</span></button>
+          <button class="ob" data-v="數位轉型"><span class="ol">數位轉型</span></button>
+          <button class="ob" data-v="資本策略"><span class="ol">資本策略</span></button>
+        </div>
+      </div>
+      <div class="sec"><div class="slbl">溝通切角</div><textarea id="angleIn" rows="2" placeholder="從什麼角度切入？"></textarea></div>
+      <div class="sec">
+        <div class="slbl">專欄風格</div>
+        <div class="g2" id="colStyleG">
+          <button class="ob on" data-v="故事型"><span class="ol">故事型</span><span class="od">吳念真式</span></button>
+          <button class="ob" data-v="商業型"><span class="ol">商業型</span><span class="od">商周式</span></button>
+          <button class="ob" data-v="大師型"><span class="ol">大師型</span><span class="od">架構清晰</span></button>
+          <button class="ob" data-v="批判型"><span class="ol">批判反思型</span><span class="od">挑戰認知</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOK -->
+    <div id="bookCfg" style="display:none">
+      <div class="sec"><div class="slbl">書名／主題</div><input id="bookTitle" placeholder="例：創業前五年，我學到的事"></div>
+      <div class="sec">
+        <div class="slbl">書的類型</div>
+        <div class="g2" id="bookTypeG">
+          <button class="ob on" data-v="memoir"><span class="ol">創業回憶錄</span><span class="od">個人故事</span></button>
+          <button class="ob" data-v="method"><span class="ol">方法論書籍</span><span class="od">系統框架</span></button>
+          <button class="ob" data-v="observation"><span class="ol">產業觀察</span><span class="od">食農消費品</span></button>
+          <button class="ob" data-v="philosophy"><span class="ol">人生哲學</span><span class="od">Work=Life</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">核心讀者</div>
+        <div class="g3" id="bookAudG">
+          <button class="ob on" data-v="entrepreneur"><span class="ol">創業者</span></button>
+          <button class="ob" data-v="career"><span class="ol">職場工作者</span></button>
+          <button class="ob" data-v="general"><span class="ol">一般大眾</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">預計章數</div>
+        <div class="g4" id="chapG">
+          <button class="ob" data-v="6"><span class="ol">6章</span></button>
+          <button class="ob on" data-v="10"><span class="ol">10章</span></button>
+          <button class="ob" data-v="12"><span class="ol">12章</span></button>
+          <button class="ob" data-v="15"><span class="ol">15章</span></button>
+        </div>
+      </div>
+      <div class="sec"><div class="slbl">補充想法</div><textarea id="bookIdeas" rows="2" placeholder="哪些故事一定要放進去？"></textarea></div>
+    </div>
+
+    <!-- URL MODE -->
+    <div id="urlCfg" style="display:none">
+      <div class="sec">
+        <div class="slbl">文章網址</div>
+        <input id="urlInput" placeholder="https://..." style="margin-bottom:6px">
+        <p style="font-size:10px;color:var(--text3);line-height:1.5">貼入任何新聞、專欄或部落格的網址，AI 會先讀取內容，再以郭佑的觀點重新詮釋成一篇文章。</p>
+      </div>
+      <div class="sec">
+        <div class="slbl">輸出類型</div>
+        <div class="g2" id="urlTypeG">
+          <button class="ob on" data-v="response"><span class="ol">觀點回應</span><span class="od">同意/補充/反駁</span></button>
+          <button class="ob" data-v="share"><span class="ol">分享轉貼</span><span class="od">推薦+個人評語</span></button>
+          <button class="ob" data-v="deep"><span class="ol">深度延伸</span><span class="od">借題發揮，寫更深</span></button>
+          <button class="ob" data-v="taiwan"><span class="ol">台灣視角</span><span class="od">把外國案例轉台灣</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">輸出平台</div>
+        <div class="g3" id="urlPlatG">
+          <button class="ob on" data-v="fb"><span class="ol">Facebook</span><span class="od">長文+hashtag</span></button>
+          <button class="ob" data-v="ig"><span class="ol">Instagram</span><span class="od">視覺節奏感</span></button>
+          <button class="ob" data-v="threads"><span class="ol">Threads</span><span class="od">120字以內</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">補充想法（可選）</div>
+        <textarea id="urlNote" rows="2" placeholder="例：我對這件事有不同看法，想強調..."></textarea>
+      </div>
+      <div class="sec">
+        <div class="togrow"><div class="tog on" id="togUrlMulti"><div class="tth"></div></div><span class="tlb">同時生成 FB + IG + Threads 三個版本</span></div>
+      </div>
+    </div>
+
+    <button class="genbtn" id="genBtn" onclick="generate()">✦ 開始生成</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="mh">
+    <div>
+      <h1>郭佑內容創作中心</h1>
+      <p>鮮乳坊共同創辦人 · MiracleX · AppWorks Fellow · 天下/經理人專欄作家</p>
+      <div class="badges">
+        <span class="bdg g">v5 完整版</span>
+        <span class="bdg">風格 DNA</span>
+        <span class="bdg">平台對接</span>
+        <span class="bdg">寫書架構</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome" id="welcomeState">
+    <div class="wi">✍</div>
+    <h2>選擇左側模式，開始生成</h2>
+    <p>整合你的完整背景——鮮乳坊創業史、MiracleX 生態系、AppWorks Fellow——自動生成符合你聲音的文章。</p>
+    <div class="qblock"><p>「流淚撒種的，必歡呼收割。」<br>— 詩篇 126:5 · 郭佑的信仰底蘊</p></div>
+  </div>
+
+  <div id="outputState" style="display:none">
+    <div class="sind" id="streamInd"><div class="pulse"></div><span>AI 生成中...</span></div>
+    <div class="ocard" id="mainCard">
+      <div class="ocard-hd">
+        <div class="ocard-title" id="cardTitle">生成內容</div>
+        <div class="oacts">
+          <button class="abtn" onclick="doCopy('mta',this)">複製全文</button>
+          <button class="abtn" onclick="generate()">重新生成</button>
+          <button class="abtn p" onclick="openRefine()">修改潤飾 →</button>
+        </div>
+      </div>
+      <div class="ocard-body">
+        <textarea class="mta" id="mta" readonly placeholder="文章將在這裡出現..."></textarea>
+      </div>
+    </div>
+    <div class="errbox" id="errBox" style="display:none"></div>
+    <div id="platSection" style="display:none;margin-top:16px">
+      <div class="ocard">
+        <div class="ocard-hd">
+          <div class="ocard-title">多平台版本 — 同一內容，三種語氣</div>
+          <div class="oacts">
+            <button class="abtn" onclick="copyAll()">複製全部三版本</button>
+            <button class="abtn" onclick="regenPlatforms()">重新生成</button>
+          </div>
+        </div>
+        <div class="ocard-body">
+          <div class="pinfo-row">
+            <div class="pinfo"><div class="pinfo-name">Facebook</div><div class="pinfo-desc">長篇敘事 · #hashtag · 結構分明</div></div>
+            <div class="pinfo"><div class="pinfo-name">Instagram</div><div class="pinfo-desc">視覺節奏 · 短段落換行 · 情緒帶動</div></div>
+            <div class="pinfo"><div class="pinfo-name">Threads</div><div class="pinfo-desc">120字以內 · 一句一行 · 對話感</div></div>
+          </div>
+          <div class="pgrid">
+            <div class="pcard">
+              <div class="pcard-hd"><div><div class="pname">Facebook</div><div class="psub">長篇·hashtag·結構</div></div><button class="csm" onclick="doCopyDiv('fbOut',this)">複製</button></div>
+              <div class="pbody" id="fbOut">等待生成...</div>
+            </div>
+            <div class="pcard">
+              <div class="pcard-hd"><div><div class="pname">Instagram</div><div class="psub">視覺·情緒·換行</div></div><button class="csm" onclick="doCopyDiv('igOut',this)">複製</button></div>
+              <div class="pbody" id="igOut">等待生成...</div>
+            </div>
+            <div class="pcard">
+              <div class="pcard-hd"><div><div class="pname">Threads</div><div class="psub">120字·對話感</div></div><button class="csm" onclick="doCopyDiv('thOut',this)">複製</button></div>
+              <div class="pbody" id="thOut">等待生成...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="bookSection" style="display:none">
+      <div class="ocard">
+        <div class="ocard-hd">
+          <div class="ocard-title">書籍章節架構</div>
+          <div class="oacts">
+            <button class="abtn" onclick="copyBookTree()">複製完整架構</button>
+            <button class="abtn p" onclick="expandCh1()">複製第一章展開 Prompt →</button>
+          </div>
+        </div>
+        <div class="ocard-body"><div id="bookTree"></div></div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- REFINE MODAL -->
+<div class="modal-bg" id="refineModal" onclick="if(event.target===this)closeRefine()">
+  <div class="modal">
+    <h3>修改指令</h3>
+    <textarea id="refineInput" rows="3" style="margin-bottom:10px" placeholder="例：把結尾改得更有力、把第二段語氣改更直接、加入更多具體數字..."></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="abtn p" style="flex:1" onclick="submitRefine()">送出修改</button>
+      <button class="abtn" onclick="closeRefine()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-bg" id="keyModal" onclick="if(event.target===this)closeKeyModal()">
+  <div class="modal">
+    <h3 style="margin-bottom:6px">設定 Anthropic API Key</h3>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6">
+      Key 只存在你的瀏覽器，不會傳到任何地方。<br>
+      取得：前往 <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--gold-d)">console.anthropic.com/settings/keys</a> → Create Key
+    </p>
+    <input id="keyInput" type="password" placeholder="sk-ant-..." style="margin-bottom:8px;font-size:13px">
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="abtn p" style="flex:1" onclick="saveKey()">儲存 Key</button>
+      <button class="abtn" onclick="testKey()" style="flex:1">測試連線</button>
+      <button class="abtn" style="color:#e88;border-color:rgba(200,60,60,.3)" onclick="clearKey()">清除</button>
+    </div>
+    <p id="keyMsg" style="font-size:11px;margin-top:4px;display:none;padding:8px;border-radius:6px;background:var(--bg2);white-space:pre-wrap;line-height:1.5"></p>
+    <button class="abtn" style="width:100%;margin-top:6px" onclick="closeKeyModal()">關閉</button>
+  </div>
+</div>
+<script>
+var S = {
+  mode:'personal', type:'fb_long', tone:'challenge',
+  theme:'創業方法論', cust:'', len:'medium',
+  per:true, jin:true, multi:true,
+  aud:'founder', masters:[],
+  brand:'', area:'商業模式', angle:'', colStyle:'故事型',
+  bookTitle:'', bookAud:'entrepreneur', bookType:'memoir',
+  chaps:'10', bookIdeas:'',
+  urlInput:'', urlType:'response', urlPlat:'fb', urlNote:'', urlMulti:true,
+  bookChapters:[], lastMainText:''
+};
+
+function selOne(gid, val) {
+  document.querySelectorAll('#'+gid+' .ob, #'+gid+' .tag').forEach(function(b){
+    b.classList.toggle('on', b.dataset.v === val);
+  });
+}
+function selToggle(arr, val, gid) {
+  var i = arr.indexOf(val);
+  if (i > -1) arr.splice(i, 1); else arr.push(val);
+  document.querySelectorAll('#'+gid+' .ob').forEach(function(b){
+    b.classList.toggle('on', arr.indexOf(b.dataset.v) > -1);
+  });
+}
+document.getElementById('modeG').onclick = function(e){
+  var b = e.target.closest('.mtab'); if (!b) return;
+  S.mode = b.dataset.v;
+  document.querySelectorAll('.mtab').forEach(function(x){ x.classList.toggle('on', x.dataset.v===b.dataset.v); });
+  document.getElementById('pCfg').style.display    = b.dataset.v==='personal' ? 'block' : 'none';
+  document.getElementById('colCfg').style.display  = b.dataset.v==='column'   ? 'block' : 'none';
+  document.getElementById('bookCfg').style.display = b.dataset.v==='book'     ? 'block' : 'none';
+  document.getElementById('urlCfg').style.display  = b.dataset.v==='url'      ? 'block' : 'none';
+};
+document.getElementById('typeG').onclick    = function(e){var b=e.target.closest('.ob');if(b){S.type=b.dataset.v;selOne('typeG',b.dataset.v);}};
+document.getElementById('toneG').onclick    = function(e){var b=e.target.closest('.ob');if(b){S.tone=b.dataset.v;selOne('toneG',b.dataset.v);}};
+document.getElementById('themeG').onclick   = function(e){var b=e.target.closest('.tag');if(b){S.theme=b.dataset.v;selOne('themeG',b.dataset.v);}};
+document.getElementById('audG').onclick     = function(e){var b=e.target.closest('.ob');if(b){S.aud=b.dataset.v;selOne('audG',b.dataset.v);}};
+document.getElementById('lenG').onclick     = function(e){var b=e.target.closest('.ob');if(b){S.len=b.dataset.v;selOne('lenG',b.dataset.v);}};
+document.getElementById('areaG').onclick    = function(e){var b=e.target.closest('.ob');if(b){S.area=b.dataset.v;selOne('areaG',b.dataset.v);}};
+document.getElementById('colStyleG').onclick= function(e){var b=e.target.closest('.ob');if(b){S.colStyle=b.dataset.v;selOne('colStyleG',b.dataset.v);}};
+document.getElementById('bookTypeG').onclick= function(e){var b=e.target.closest('.ob');if(b){S.bookType=b.dataset.v;selOne('bookTypeG',b.dataset.v);}};
+document.getElementById('bookAudG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.bookAud=b.dataset.v;selOne('bookAudG',b.dataset.v);}};
+document.getElementById('chapG').onclick    = function(e){var b=e.target.closest('.ob');if(b){S.chaps=b.dataset.v;selOne('chapG',b.dataset.v);}};
+document.getElementById('masterG').onclick  = function(e){var b=e.target.closest('.ob');if(b) selToggle(S.masters,b.dataset.v,'masterG');};
+document.getElementById('togPer').onclick   = function(){S.per=!S.per;this.classList.toggle('on',S.per);};
+document.getElementById('togJin').onclick   = function(){S.jin=!S.jin;this.classList.toggle('on',S.jin);};
+document.getElementById('togMulti').onclick = function(){S.multi=!S.multi;this.classList.toggle('on',S.multi);};
+document.getElementById('custT').oninput    = function(){S.cust=this.value;};
+document.getElementById('brandIn').oninput  = function(){S.brand=this.value;};
+document.getElementById('angleIn').oninput  = function(){S.angle=this.value;};
+document.getElementById('bookTitle').oninput= function(){S.bookTitle=this.value;};
+document.getElementById('bookIdeas').oninput= function(){S.bookIdeas=this.value;};
+document.getElementById('urlInput').oninput = function(){S.urlInput=this.value;};
+document.getElementById('urlNote').oninput  = function(){S.urlNote=this.value;};
+document.getElementById('urlTypeG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.urlType=b.dataset.v;selOne('urlTypeG',b.dataset.v);}};
+document.getElementById('urlPlatG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.urlPlat=b.dataset.v;selOne('urlPlatG',b.dataset.v);}};
+document.getElementById('togUrlMulti').onclick = function(){S.urlMulti=!S.urlMulti;this.classList.toggle('on',S.urlMulti);};
+var BASE = '你是郭哲佑（郭佑，Kuo Young）的寫作模擬器。\n\n' +
+'【完整身份背景】\n' +
+'鮮乳坊（Better Milk）共同創辦人。2015年以群眾募資起家，帶領公司從0成長至2023年突破10億元營收，進駐全台7,000家通路。創業心法：非典型通路（藥局、彩券行、補習班先試點）、單一乳源、獸醫把關、公平交易收購。\n' +
+'MiracleX 創辦人：F&B與消費品投資/輔導平台，生態系合併營收接近50億。旗下品牌：鮮豆坊（豆豆鮮生）、鮮花坊、鮮米坊（池上多力米）。\n' +
+'AppWorks Fellow（2024起）：協助400+位CEO成長，專注F&B產業。\n' +
+'天下雜誌、經理人月刊專欄作家。\n' +
+'學歷：輔仁大學統計資訊系、政大工商管理碩士（MBA）、NUS EMBA（進行中）。\n' +
+'台南人。曾在雲南偏鄉教書，覺醒後從「只想賺錢」轉向「用商業力量解決社會問題」。\n' +
+'曾創辦17Support（2012），因與投資人衝突被迫離開，累積500張關鍵人脈。\n' +
+'領導理念：Work=Life（工作是生活的一部分）、「地獄列車」管理（執行長在地獄第18層支撐團隊）。\n' +
+'信仰底蘊：「流淚撒種的，必歡呼收割」（詩篇126:5）。\n' +
+'人生格言：「要做一件只有我能做、而且值得花10年投入的事」。\n\n' +
+'【核心寫作風格】\n' +
+'直白、有力，敢說不舒服的真相，出發點是真心希望讀者改變。\n' +
+'善用反問句推進論述，逼讀者面對現實。\n' +
+'用「——」分隔段落節奏，製造呼吸感。\n' +
+'中英混搭自然（Analysis Paralysis、PMF、Secondary Gain、Search Fund、MVA）。\n' +
+'# hashtag 當段落小標，有實質意義不只是SEO。\n' +
+'先承認自己的問題或弱點，再帶出解方（建立信任）。\n' +
+'比喻落地：把抽象概念轉為生活場景（股票、吉他、跑馬拉松、投資停損）。\n' +
+'情緒弧線：開場讓人不舒服→中段憤怒或挫折感→結尾回到溫暖使命感。\n\n' +
+'【禁用詞——絕對不使用】賦能、共創、生態系（改用「圈子」或「系統」）、閉環、賽道（改用「市場」）、乾貨、落地、串聯、鏈結、孵化。\n' +
+'禁用句型：首先/其次/最後、簡單來說、換句話說、我覺得你應該。\n\n' +
+'【金句庫——收尾參考，寫出新句子】\n' +
+'「唯有直面殘酷，才能迎來真實的轉變。」\n' +
+'「與其追著資金跑，不如先讓自己成為值得被投資的人。」\n' +
+'「流淚撒種的，必歡呼收割。」（詩篇126:5）\n' +
+'「錢能撐三個月，只有信念能撐三年。」\n' +
+'「快快做、快快失敗、快快修正。」';
+
+var MASTERS = {
+  godin:'【Seth Godin】每句話問「這句存在的理由是什麼」，砍掉所有防禦性語言。用一個問題重框讀者的世界觀。段落可以極短，一句成段。',
+  graham:'【Paul Graham】像工程師跟聰明朋友說話。一篇只有一個核心論點，其餘全部服務這個論點。多用具體例子。',
+  housel:'【Morgan Housel】用一個意想不到的小故事開場，帶出大道理。不直接說結論，讓讀者自己推導。強調行為和心理。',
+  holiday:'【Ryan Holiday】從歷史人物或斯多葛哲學切入當代課題。情緒克制，文字有力。強調紀律和長期主義。'
+};
+
+var TYPES = {fb_long:'FB長文（思想型/創業觀察）',fb_short:'FB短文（感悟/轉推評語）',bk_ch:'書籍章節（系統性論述）',bk_in:'書籍序言（個人故事帶入）'};
+var TONES = {challenge:'挑戰型（直擊盲點，讓人不舒服但有收穫）',reflect:'反思型（溫和但深刻）',inspire:'激勵型（從低谷到轉機，帶使命感）',analyze:'分析型（條理清晰，拆解本質）'};
+var AUDS  = {founder:'正在創業或考慮創業的創辦人',pro:'職場中堅、想突破瓶頸的專業工作者',young:'20-35歲正在找方向、想翻身的年輕人'};
+var LENS  = {
+  fb_long:{short:'300-500字',medium:'600-900字',long:'1000-1500字'},
+  fb_short:{short:'80-150字',medium:'150-250字',long:'250-400字'},
+  bk_ch:{short:'600-900字',medium:'1000-1500字',long:'1500-2500字'},
+  bk_in:{short:'500-800字',medium:'900-1300字',long:'1300-2000字'}
+};
+var STRUCTS = {
+  fb_long:'文章結構：\n①#hashtag標題（一句話說完主題）\n②問句或現象破題，讓讀者不舒服\n③先承認自己的弱點或過去的錯誤\n④2-4個論點，每個用「——」換行+#hashtag小標分隔，每點後接改善方法\n⑤情緒收束：從不舒服→理解→溫暖使命感\n⑥格言式一句話收尾+3-5個hashtag',
+  fb_short:'文章結構：\n①一句有衝擊力的開場\n②2-4行補充個人觀點\n③自然收尾，有餘韻\n④1-3個hashtag',
+  bk_ch:'章節結構：\n①章節標題（10字以內）\n②核心洞見2-3句\n③親身案例（要有時間地點具體細節）\n④拆解論點（可用「人命關天」「破壞式創新」框架）\n⑤對讀者的反問\n⑥行動指引（具體小步驟）\n⑦收束句（詩意，帶使命感）',
+  bk_in:'序言結構：\n①鮮明開場場景（時間、地點、具體細節）\n②這本書要回答的核心問題\n③作者的掙扎與轉折\n④讀者能帶走什麼\n⑤給讀者的話（溫暖但直接）'
+};
+
+var PLATFORM_RULES = '\n\n【多平台版本規則——嚴格遵守】\n' +
+'Facebook版本：保留完整論點和情緒弧線，字數600-1200字。用#hashtag作段落小標。「——」分隔節奏。結尾加4-6個hashtag（中英夾雜）。\n' +
+'Instagram版本：200-350字，視覺節奏優先。每段落不超過2行，大量換行。前兩行在「查看更多」展開前就要抓住人。最後空一行放10-15個hashtag。\n' +
+'Threads版本：嚴格控制在120字以內。每一行就是一個完整想法。對話感，像跟朋友說話。開頭就要讓人停下來。完全不需要hashtag。結尾可以是邀請回應的問句。';
+function buildPersonalPrompt() {
+  var len = (LENS[S.type]||LENS['fb_long'])[S.len] || '600-900字';
+  var topic = S.cust.trim() || ('主題方向：'+S.theme);
+  var masters = S.masters.length ? '\n\n'+S.masters.map(function(m){return MASTERS[m];}).join('\n\n') : '';
+  var perNote = S.per ? '請自然帶入鮮乳坊、MiracleX、AppWorks等個人真實素材，要有具體數字和故事細節。' : '以思想觀點為主。';
+  var jinNote = S.jin ? '結尾用格言型或行動型收尾，參考金句庫風格，寫出新句子。' : '';
+  return BASE + masters +
+    '\n\n---\n【本次生成任務】\n文章類型：'+TYPES[S.type]+
+    '\n語氣風格：'+TONES[S.tone]+
+    '\n目標讀者：'+AUDS[S.aud]+
+    '\n'+topic+'\n字數目標：'+len+
+    '\n'+perNote+jinNote+
+    '\n\n'+STRUCTS[S.type]+
+    '\n\n繁體中文，保留必要英文術語，直接從內容開始輸出，不要任何前言。';
+}
+function buildMultiPrompt(mainText) {
+  return BASE + PLATFORM_RULES +
+    '\n\n---\n【本次任務】根據以下原文，生成三個平台版本。\n\n原文：\n'+mainText+
+    '\n\n嚴格按照以下格式輸出：\n\n===FB===\n（Facebook版本）\n\n===IG===\n（Instagram版本）\n\n===THREADS===\n（Threads版本）\n\n繁體中文，保留郭佑的語氣。';
+}
+function buildColumnPrompt() {
+  return BASE+'\n\n---\n【專欄任務】\n品牌：'+S.brand+'\n討論區塊：'+S.area+'\n溝通切角：'+S.angle+'\n風格：'+S.colStyle+'\n字數：1200-1800字\n\n' +
+    '文章結構（用[]標記）：\n[標題]有力的專欄標題（15字以內）\n[金句破題]一句點題金句\n[主文]故事切入→問題描述→品牌做法→產業洞見→結論\n[郭佑視角]300字深度解析\n\n繁體中文，直接輸出完整文章。';
+}
+function buildBookPrompt() {
+  var types = {memoir:'創業回憶錄（有情感有掙扎有轉折）',method:'方法論書籍（系統框架可複製）',observation:'台灣食農/消費品產業觀察',philosophy:'人生哲學（Work=Life，價值觀）'};
+  var auds = {entrepreneur:'正在創業或考慮創業的人',career:'職場工作者、想突破的中堅份子',general:'關心台灣農業、食安、創業的一般讀者'};
+  return BASE+'\n\n---\n【寫書任務】\n書名：'+S.bookTitle+'\n類型：'+types[S.bookType]+'\n讀者：'+auds[S.bookAud]+
+    '\n章數：'+S.chaps+'章\n補充：'+(S.bookIdeas||'無')+
+    '\n\n可用素材：鮮乳坊（0到10億）、MiracleX（食農投資）、17Support（被迫離開的挫折）、雲南教書（人生覺醒）、AppWorks（輔導400+CEO）、NUS EMBA、台南背景、MLB球迷、跑馬拉松、信仰底蘊。\n\n' +
+    '請規劃完整的'+S.chaps+'章架構。每章嚴格用以下格式（用|分隔四個欄位，一章一行）：\n' +
+    'CHAPTER_1: 章節標題（10字以內） | 核心問題（25字以內） | 可用素材（20字以內） | 讀者收穫（20字以內）\n\n繁體中文，直接輸出，不要任何前言。';
+}
+function buildRefinePrompt(instruction, currentText) {
+  return BASE+'\n\n---\n【修改任務】\n以下是已生成的文章，請根據修改指令進行潤飾，保持郭佑的寫作風格。\n\n修改指令：'+instruction+'\n\n原文：\n'+currentText+'\n\n請直接輸出修改後的完整文章，不要說明修改了什麼。';
+}
+
+async function fetchUrl(url) {
+  var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+  var res = await fetch(proxyUrl);
+  if (!res.ok) throw new Error('無法抓取網頁，狀態碼：' + res.status);
+  var data = await res.json();
+  if (!data.contents) throw new Error('抓取到空白內容');
+  var html = data.contents;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  ['script','style','nav','footer','header','aside','iframe','form'].forEach(function(tag) {
+    tmp.querySelectorAll(tag).forEach(function(el){ el.remove(); });
+  });
+  var text = tmp.innerText || tmp.textContent || '';
+  text = text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+  if (text.length > 4000) text = text.substring(0, 4000) + '\n\n[...文章過長，已擷取前4000字]';
+  return text;
+}
+
+function buildUrlPrompt(articleText, url) {
+  var typeMap = {
+    response: '觀點回應型：閱讀這篇文章後，以郭佑的立場發表你的觀點。可以同意並補充、可以部分反駁、可以從台灣食農/創業的角度延伸。不要只是摘要，要有你自己的判斷和立場。',
+    share:    '分享轉貼型：以郭佑的口吻推薦這篇文章，說明為什麼值得看、你有哪些個人感受或補充觀點，最後附上讀者可以帶走的一個行動建議。',
+    deep:     '深度延伸型：借這篇文章當跳板，延伸發展出你自己更深、更完整的觀點。文章內容只是引子，主體是郭佑的原創思考和論點。',
+    taiwan:   '台灣視角型：如果這是外國案例或觀點，把它轉換成台灣的語境。對應台灣的食農產業、新創生態、消費品市場，給台灣讀者直接能用的洞見。'
+  };
+  var platMap = {
+    fb:      'Facebook長文：600-900字，用#hashtag小標分段，「——」製造節奏，結尾加hashtag。',
+    ig:      'Instagram：200-300字，視覺節奏優先，每段不超過2行，大量換行，結尾放10個hashtag。',
+    threads: 'Threads：嚴格120字以內，一句一行，對話感，開頭要讓人停下來，不需要hashtag。'
+  };
+  return BASE +
+    '\n\n---\n【讀網址任務】\n' +
+    '你剛讀完以下文章，請根據任務指引，以郭佑的口吻和風格寫出回應文章。\n\n' +
+    '原文來源：' + url + '\n\n' +
+    '原文內容（摘錄）：\n' + articleText + '\n\n' +
+    '任務指引：' + typeMap[S.urlType] + '\n\n' +
+    '輸出格式：' + platMap[S.urlPlat] + '\n\n' +
+    (S.urlNote.trim() ? '郭佑的補充想法：' + S.urlNote + '\n\n' : '') +
+    '繁體中文，直接輸出文章，不要前言或說明。保持郭佑的語氣：直白、有力、有自己的立場。';
+}
+
+function buildUrlMultiPrompt(articleText, url) {
+  return BASE + PLATFORM_RULES +
+    '\n\n---\n【讀網址多平台任務】\n你剛讀完以下文章，請分別用三個平台的風格，以郭佑的口吻寫出觀點回應。\n\n' +
+    '原文來源：' + url + '\n\n原文內容（摘錄）：\n' + articleText + '\n\n' +
+    '任務類型：' + S.urlType + '\n' +
+    (S.urlNote.trim() ? '郭佑補充：' + S.urlNote + '\n' : '') +
+    '\n嚴格按照以下格式輸出：\n\n===FB===\n（Facebook版本）\n\n===IG===\n（Instagram版本）\n\n===THREADS===\n（Threads版本）\n\n繁體中文，保持郭佑語氣。';
+}
+function getCorsHelp() {
+  var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  if (isMac) {
+    return '原因：從 file:// 開啟 HTML 時，瀏覽器會封鎖外部 API 請求（CORS 限制）。\n\n解法：在終端機輸入以下指令，先關掉所有 Chrome 視窗，再執行：\n\nopen -na "Google Chrome" --args --disable-web-security --user-data-dir=/tmp/kuo-writer\n\n執行後，手動在這個特殊 Chrome 視窗裡開啟 HTML 檔案。';
+  } else {
+    return '原因：從 file:// 開啟 HTML 時，瀏覽器會封鎖外部 API 請求（CORS 限制）。\n\n解法（Windows）：開啟命令提示字元，輸入：\n\nchrome.exe --disable-web-security --user-data-dir=C:\\tmp\\kuo-writer\n\n執行後，手動在這個特殊 Chrome 視窗裡開啟 HTML 檔案。\n\n（如果 Chrome 在其他路徑，請調整路徑）';
+  }
+}
+
+function getApiKey() { return localStorage.getItem('kuo_api_key') || ''; }
+function getApiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
+    'x-api-key': getApiKey()
+  };
+}
+
+async function streamToTA(prompt, taId) {
+  var ta = document.getElementById(taId);
+  ta.value = '';
+  var accumulated = '';
+  var key = getApiKey();
+  if (!key) throw new Error('請先設定 API Key（點右上角的 ⚙ 按鈕）');
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+  var res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: getApiHeaders(),
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        stream: true,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    clearTimeout(timeoutId);
+  } catch(fetchErr) {
+    clearTimeout(timeoutId);
+    if (fetchErr.name === 'AbortError') throw new Error('連線超時（10秒無回應）\n\n原因：瀏覽器的 CORS 安全政策擋住了 API 請求。\n\n' + getCorsHelp());
+    if (fetchErr.message && (fetchErr.message.includes('Failed to fetch') || fetchErr.message.includes('fetch'))) throw new Error('無法連線至 Anthropic API\n\n' + getCorsHelp());
+    throw new Error('連線失敗：' + fetchErr.message + '\n\n' + getCorsHelp());
+  }
+  if (!res.ok) {
+    var errJson = await res.json().catch(function(){ return {}; });
+    var msg = errJson.error ? errJson.error.message : res.statusText;
+    if (res.status === 401) throw new Error('API Key 無效（401）\n請確認 Key 是否正確複製，或到 console.anthropic.com/settings/keys 重新建立。');
+    if (res.status === 403) throw new Error('API Key 無存取權限（403）\n請確認帳號有 Messages API 的使用權限。');
+    if (res.status === 429) throw new Error('超過用量限制（429）\n請稍等幾分鐘再試，或確認 Anthropic 帳號有足夠額度。');
+    throw new Error('API 錯誤 ' + res.status + '：' + msg);
+  }
+  var reader = res.body.getReader();
+  var decoder = new TextDecoder();
+  var buffer = '';
+  while (true) {
+    var chunk = await reader.read();
+    if (chunk.done) break;
+    buffer += decoder.decode(chunk.value, { stream: true });
+    var lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line.startsWith('data: ')) continue;
+      var jsonStr = line.slice(6).trim();
+      if (jsonStr === '[DONE]') continue;
+      try {
+        var evt = JSON.parse(jsonStr);
+        if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta' && evt.delta.text) {
+          accumulated += evt.delta.text;
+          ta.value = accumulated;
+          ta.scrollTop = ta.scrollHeight;
+        }
+      } catch(e) {}
+    }
+  }
+  return accumulated;
+}
+
+async function fetchComplete(prompt) {
+  var key = getApiKey();
+  if (!key) throw new Error('請先設定 API Key');
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+  var res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: getApiHeaders(),
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    clearTimeout(timeoutId);
+  } catch(fetchErr) {
+    clearTimeout(timeoutId);
+    if (fetchErr.name === 'AbortError') throw new Error('連線超時\n\n' + getCorsHelp());
+    throw new Error('無法連線：' + fetchErr.message + '\n\n' + getCorsHelp());
+  }
+  if (!res.ok) {
+    var errJson = await res.json().catch(function(){ return {}; });
+    throw new Error('API 錯誤 ' + res.status + ': ' + (errJson.error ? errJson.error.message : res.statusText));
+  }
+  var data = await res.json();
+  if (data.content && data.content.length > 0) {
+    return data.content.filter(function(b){ return b.type === 'text'; }).map(function(b){ return b.text; }).join('');
+  }
+  return '';
+}
+function parseMulti(text) {
+  var fb = text.match(/===FB===([\s\S]*?)(?:===|$)/);
+  var ig = text.match(/===IG===([\s\S]*?)(?:===|$)/);
+  var th = text.match(/===THREADS===([\s\S]*?)(?:===|$)/);
+  return { fb: fb ? fb[1].trim() : '', ig: ig ? ig[1].trim() : '', th: th ? th[1].trim() : '' };
+}
+function parseBook(text) {
+  var chapters = [];
+  var re = /CHAPTER_\d+:\s*([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^\n]+)/g;
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    chapters.push({ title: m[1].trim(), question: m[2].trim(), material: m[3].trim(), takeaway: m[4].trim() });
+  }
+  return chapters;
+}
+
+async function generate() {
+  document.getElementById('welcomeState').style.display = 'none';
+  document.getElementById('outputState').style.display  = 'block';
+  document.getElementById('mainCard').style.display     = 'block';
+  document.getElementById('platSection').style.display  = 'none';
+  document.getElementById('bookSection').style.display  = 'none';
+  document.getElementById('errBox').style.display       = 'none';
+  document.getElementById('genBtn').disabled            = true;
+  document.getElementById('streamInd').classList.add('show');
+  try {
+    if (S.mode === 'personal') {
+      document.getElementById('cardTitle').textContent = '郭佑風格文章';
+      S.lastMainText = await streamToTA(buildPersonalPrompt(), 'mta');
+      if (S.multi && S.lastMainText.length > 100) {
+        document.getElementById('platSection').style.display = 'block';
+        ['fbOut','igOut','thOut'].forEach(function(id){ document.getElementById(id).textContent = '生成中...'; });
+        var multi = await fetchComplete(buildMultiPrompt(S.lastMainText));
+        var p = parseMulti(multi);
+        document.getElementById('fbOut').textContent = p.fb || '解析失敗，請重新生成';
+        document.getElementById('igOut').textContent = p.ig || '解析失敗，請重新生成';
+        document.getElementById('thOut').textContent = p.th || '解析失敗，請重新生成';
+      }
+    } else if (S.mode === 'column') {
+      document.getElementById('cardTitle').textContent = '專欄文章';
+      S.lastMainText = await streamToTA(buildColumnPrompt(), 'mta');
+    } else if (S.mode === 'book') {
+      document.getElementById('mainCard').style.display    = 'none';
+      document.getElementById('bookSection').style.display = 'block';
+      var bookRaw = await fetchComplete(buildBookPrompt());
+      var chs = parseBook(bookRaw);
+      if (chs.length === 0) {
+        document.getElementById('mainCard').style.display    = 'block';
+        document.getElementById('bookSection').style.display = 'none';
+        document.getElementById('cardTitle').textContent     = '書籍架構（原始輸出）';
+        document.getElementById('mta').value                 = bookRaw;
+      } else { renderBook(chs); }
+    } else if (S.mode === 'url') {
+      var url = S.urlInput.trim();
+      if (!url) throw new Error('請先輸入網址');
+      if (!url.startsWith('http')) throw new Error('網址格式不正確，請確認以 http:// 或 https:// 開頭');
+      document.getElementById('cardTitle').textContent = '讀取網頁中...';
+      document.getElementById('mainCard').style.display = 'block';
+      document.getElementById('mta').value = '⏳ 正在抓取網頁內容，請稍候...\n（通常需要 5-15 秒，視網站速度而定）';
+      var articleText = await fetchUrl(url);
+      document.getElementById('mta').value = '✓ 網頁抓取完成（' + articleText.length + ' 字），AI 正在生成郭佑觀點文章...';
+      document.getElementById('cardTitle').textContent = '郭佑觀點文章';
+      if (S.urlMulti) {
+        S.lastMainText = await streamToTA(buildUrlMultiPrompt(articleText, url), 'mta');
+        var pp = parseMulti(S.lastMainText);
+        if (pp.fb || pp.ig || pp.th) {
+          document.getElementById('platSection').style.display = 'block';
+          document.getElementById('fbOut').textContent = pp.fb || '解析失敗，請重新生成';
+          document.getElementById('igOut').textContent = pp.ig || '解析失敗，請重新生成';
+          document.getElementById('thOut').textContent = pp.th || '解析失敗，請重新生成';
+          document.getElementById('mta').value = '【Facebook 版本】\n' + pp.fb + '\n\n【Instagram 版本】\n' + pp.ig + '\n\n【Threads 版本】\n' + pp.th;
+        }
+      } else { S.lastMainText = await streamToTA(buildUrlPrompt(articleText, url), 'mta'); }
+    }
+  } catch(err) {
+    document.getElementById('mainCard').style.display = 'block';
+    document.getElementById('errBox').style.display = 'block';
+    document.getElementById('errBox').textContent   = '⚠ ' + err.message;
+  }
+  document.getElementById('streamInd').classList.remove('show');
+  document.getElementById('genBtn').disabled = false;
+}
+function renderBook(chapters) {
+  S.bookChapters = chapters;
+  var c = document.getElementById('bookTree');
+  c.innerHTML = '';
+  chapters.forEach(function(ch, i) {
+    var d = document.createElement('div');
+    d.className = 'bchap';
+    d.innerHTML =
+      '<div class="bhead"><div class="bnum">'+(i+1)+'</div><div class="btitle">'+esc(ch.title)+'</div></div>' +
+      '<div class="bbody">' +
+        '<div class="mitem"><div class="mlbl">核心問題</div><div class="mval">'+esc(ch.question)+'</div></div>' +
+        '<div class="mitem"><div class="mlbl">可用素材</div><div class="mval">'+esc(ch.material)+'</div></div>' +
+        '<div class="mitem"><div class="mlbl">讀者收穫</div><div class="mval">'+esc(ch.takeaway)+'</div></div>' +
+      '</div>';
+    c.appendChild(d);
+  });
+}
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function doCopy(id, btn) {
+  var el = document.getElementById(id);
+  var t = el.value || el.textContent;
+  if (!t.trim()) return;
+  navigator.clipboard.writeText(t.trim()).then(function() {
+    var orig = btn.textContent; btn.textContent = '✓ 已複製';
+    setTimeout(function(){ btn.textContent = orig; }, 2000);
+  });
+}
+function doCopyDiv(id, btn) {
+  var t = document.getElementById(id).textContent;
+  if (!t.trim()) return;
+  navigator.clipboard.writeText(t.trim()).then(function() {
+    var orig = btn.textContent; btn.textContent = '✓';
+    setTimeout(function(){ btn.textContent = orig; }, 2000);
+  });
+}
+function copyAll() {
+  var all = '【Facebook】\n' + document.getElementById('fbOut').textContent +
+    '\n\n【Instagram】\n' + document.getElementById('igOut').textContent +
+    '\n\n【Threads】\n' + document.getElementById('thOut').textContent;
+  navigator.clipboard.writeText(all).then(function(){ alert('三個版本已複製到剪貼簿！'); });
+}
+async function regenPlatforms() {
+  if (!S.lastMainText || S.lastMainText.length < 50) { alert('請先生成主文章'); return; }
+  ['fbOut','igOut','thOut'].forEach(function(id){ document.getElementById(id).textContent = '重新生成中...'; });
+  try {
+    var multi = await fetchComplete(buildMultiPrompt(S.lastMainText));
+    var p = parseMulti(multi);
+    document.getElementById('fbOut').textContent = p.fb || '解析失敗';
+    document.getElementById('igOut').textContent = p.ig || '解析失敗';
+    document.getElementById('thOut').textContent = p.th || '解析失敗';
+  } catch(e) { alert('重新生成失敗：'+e.message); }
+}
+function copyBookTree() {
+  if (!S.bookChapters.length) return;
+  var t = S.bookChapters.map(function(ch,i){
+    return '第'+(i+1)+'章：'+ch.title+'\n核心問題：'+ch.question+'\n可用素材：'+ch.material+'\n讀者收穫：'+ch.takeaway;
+  }).join('\n\n');
+  navigator.clipboard.writeText(t).then(function(){ alert('書籍架構已複製！'); });
+}
+function expandCh1() {
+  if (!S.bookChapters.length) return;
+  var ch = S.bookChapters[0];
+  var p = '請根據以下章節規劃，展開成1500-2000字書稿，用郭佑的寫作風格，融入鮮乳坊或MiracleX的真實故事：\n\n章節：'+ch.title+'\n核心問題：'+ch.question+'\n可用素材：'+ch.material+'\n讀者收穫：'+ch.takeaway;
+  navigator.clipboard.writeText(p).then(function(){ alert('第一章展開 Prompt 已複製！請貼到 Claude 對話框。'); });
+}
+
+function openRefine() { document.getElementById('refineModal').classList.add('show'); }
+function closeRefine() { document.getElementById('refineModal').classList.remove('show'); }
+async function submitRefine() {
+  var inst = document.getElementById('refineInput').value.trim();
+  if (!inst) return;
+  var curr = document.getElementById('mta').value;
+  if (!curr.trim()) { alert('請先生成文章'); return; }
+  closeRefine();
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('streamInd').classList.add('show');
+  try { S.lastMainText = await streamToTA(buildRefinePrompt(inst, curr), 'mta'); }
+  catch(e) { alert('修改失敗：'+e.message); }
+  document.getElementById('streamInd').classList.remove('show');
+  document.getElementById('genBtn').disabled = false;
+  document.getElementById('refineInput').value = '';
+}
+
+function openKeyModal() {
+  var k = getApiKey();
+  document.getElementById('keyInput').value = k ? k : '';
+  document.getElementById('keyMsg').style.display = 'none';
+  document.getElementById('keyModal').classList.add('show');
+}
+function closeKeyModal() { document.getElementById('keyModal').classList.remove('show'); }
+function saveKey() {
+  var val = document.getElementById('keyInput').value.trim();
+  if (!val) { showKeyMsg('請輸入 API Key', '#e88'); return; }
+  localStorage.setItem('kuo_api_key', val);
+  updateKeyStatus();
+  showKeyMsg('✓ 已儲存！可以點「測試連線」確認是否正常。', '#5a9e5a');
+}
+async function testKey() {
+  var val = document.getElementById('keyInput').value.trim() || getApiKey();
+  if (!val) { showKeyMsg('請先輸入或儲存 API Key', '#e88'); return; }
+  showKeyMsg('⏳ 測試中...', '#b5ad98');
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'x-api-key': val },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 10, messages: [{ role: 'user', content: 'Hi' }] })
+    });
+    if (res.ok) { showKeyMsg('✓ 連線成功！API Key 有效，可以開始生成。', '#5a9e5a'); }
+    else {
+      var err = await res.json().catch(function(){ return {}; });
+      var msg = err.error ? err.error.message : ('HTTP ' + res.status);
+      if (res.status === 401) showKeyMsg('✗ Key 無效或已過期。\n請到 console.anthropic.com/settings/keys 重新建立。\n\n錯誤：' + msg, '#e88');
+      else if (res.status === 403) showKeyMsg('✗ 權限不足。請確認 Key 有 Messages API 的存取權限。\n\n錯誤：' + msg, '#e88');
+      else showKeyMsg('✗ 錯誤 ' + res.status + '：' + msg, '#e88');
+    }
+  } catch(e) {
+    if (e.message && e.message.toLowerCase().includes('cors')) showKeyMsg('✗ CORS 錯誤：瀏覽器阻擋了 API 請求。\n\n解法：在終端機輸入以下指令，用特殊模式開啟瀏覽器：\n\nMac：\nopen -na "Google Chrome" --args --disable-web-security --user-data-dir=/tmp/chrome-test\n\nWindows：\nchrome.exe --disable-web-security --user-data-dir=C:\\tmp', '#e88');
+    else if (e.message && e.message.includes('Failed to fetch')) showKeyMsg('✗ 無法連線 API。\n可能原因：\n1. 網路問題\n2. 瀏覽器 CORS 限制（file:// 開啟時常見）\n\n建議改用終端機指令開啟：\nMac：open -na "Google Chrome" --args --disable-web-security --user-data-dir=/tmp/test\nWindows：chrome --disable-web-security --user-data-dir=C:\\tmp', '#e88');
+    else showKeyMsg('✗ 連線失敗：' + e.message, '#e88');
+  }
+}
+function clearKey() {
+  localStorage.removeItem('kuo_api_key');
+  document.getElementById('keyInput').value = '';
+  updateKeyStatus();
+  showKeyMsg('已清除 API Key', '#7a7260');
+}
+function showKeyMsg(msg, color) {
+  var el = document.getElementById('keyMsg');
+  el.textContent = msg; el.style.color = color; el.style.display = 'block';
+}
+function updateKeyStatus() {
+  var has = !!getApiKey();
+  document.getElementById('keyStatus').style.display = has ? 'block' : 'none';
+  var btn = document.getElementById('keyBtn');
+  btn.style.color      = has ? '#5a9e5a' : '';
+  btn.style.borderColor= has ? 'rgba(90,158,90,.4)' : '';
+  btn.textContent      = has ? '✓ API Key' : '⚙ API Key';
+}
+updateKeyStatus();
+if (!getApiKey()) { setTimeout(function(){ openKeyModal(); }, 600); }
+</script>
+</body>
 </html>
