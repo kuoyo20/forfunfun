@@ -135,6 +135,55 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .modal-bg.show{display:flex}
 .modal{background:#fff;border:1px solid var(--border2);border-radius:var(--rxl);padding:28px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.15),0 4px 20px rgba(0,0,0,.08);animation:fadeIn .25s cubic-bezier(.4,0,.2,1)}
 .modal h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;letter-spacing:.02em}
+
+/* Main Tabs */
+.main-tabs{display:flex;gap:2px;padding:0;border-bottom:1px solid var(--border);margin-bottom:20px;background:var(--bg2);border-radius:var(--r) var(--r) 0 0;overflow:hidden}
+.main-tab{padding:10px 20px;background:transparent;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--text3);font-family:var(--sans);transition:all .2s;letter-spacing:.02em;position:relative}
+.main-tab:hover{color:var(--text2);background:var(--surface2)}
+.main-tab.on{color:var(--gold-d);background:var(--bg)}
+.main-tab.on::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold)}
+.main-tab .tab-count{font-size:10px;background:var(--gold-l);color:var(--gold-d);padding:1px 6px;border-radius:10px;margin-left:5px}
+
+/* Review Queue */
+.review-card{border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:10px;background:var(--surface);transition:all .2s}
+.review-card:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.review-card-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.review-title{font-size:13px;font-weight:600;color:var(--text)}
+.review-meta{font-size:10px;color:var(--text3);margin-bottom:8px}
+.review-preview{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px;max-height:60px;overflow:hidden;font-family:var(--serif);white-space:pre-wrap}
+.review-actions{display:flex;gap:6px}
+.review-status{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600}
+.review-status.pending{background:rgba(234,179,8,.1);color:#b45309;border:1px solid rgba(234,179,8,.2)}
+.review-status.approved{background:rgba(22,163,74,.08);color:#16a34a;border:1px solid rgba(22,163,74,.2)}
+.review-status.rejected{background:rgba(220,38,38,.06);color:#dc2626;border:1px solid rgba(220,38,38,.15)}
+
+/* History */
+.history-card{border:1px solid var(--border);border-radius:var(--rl);padding:14px;margin-bottom:8px;background:var(--surface);transition:all .2s}
+.history-card:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.history-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.history-title{font-size:12px;font-weight:600;color:var(--text)}
+.history-meta{font-size:10px;color:var(--text3)}
+.history-preview{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:8px;max-height:40px;overflow:hidden}
+
+/* Word Count Bar */
+.wc-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);margin-top:8px}
+.wc-count{font-size:11px;color:var(--text3);font-weight:500}
+.wc-actions{display:flex;gap:6px}
+
+/* Title Testing */
+.title-card{border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;margin-bottom:8px;background:var(--surface);cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center}
+.title-card:hover{border-color:var(--gold);background:var(--gold-l);box-shadow:var(--shadow-sm)}
+.title-text{font-size:14px;font-weight:600;color:var(--text);font-family:var(--serif)}
+.title-num{font-size:11px;color:var(--text3);margin-right:10px;font-weight:700}
+
+/* Expanded chapter */
+.bbody-expanded{padding:14px 16px 14px 56px;border-top:1px solid var(--border);background:var(--bg2);font-size:13px;color:var(--text2);line-height:1.9;font-family:var(--serif);white-space:pre-wrap}
+.expand-btn{font-size:10px;padding:4px 10px;border:1px solid var(--gold-b);border-radius:var(--r);background:var(--gold-l);color:var(--gold-d);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.expand-btn:hover{background:var(--gold);color:#fff}
+
+/* Empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.empty-state .empty-icon{font-size:36px;opacity:.3;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -347,6 +396,16 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
     </div>
   </div>
 
+  <!-- MAIN TAB BAR -->
+  <div class="main-tabs" id="mainTabs">
+    <button class="main-tab on" data-tab="tabGenerate" onclick="switchMainTab('tabGenerate')">生成</button>
+    <button class="main-tab" data-tab="tabReview" onclick="switchMainTab('tabReview')">審核<span class="tab-count" id="reviewCount" style="display:none">0</span></button>
+    <button class="main-tab" data-tab="tabHistory" onclick="switchMainTab('tabHistory')">歷史</button>
+    <button class="main-tab" data-tab="tabTitles" onclick="switchMainTab('tabTitles')">標題</button>
+  </div>
+
+  <!-- TAB: Generate -->
+  <div id="tabGenerate">
   <div class="welcome" id="welcomeState">
     <div class="wi">✍</div>
     <h2>選擇左側模式，開始生成</h2>
@@ -363,10 +422,18 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
           <button class="abtn" onclick="doCopy('mta',this)">複製全文</button>
           <button class="abtn" onclick="generate()">重新生成</button>
           <button class="abtn p" onclick="openRefine()">修改潤飾 →</button>
+          <button class="abtn" onclick="submitForReview()" style="border-color:var(--gold-b);color:var(--gold-d)">送審</button>
         </div>
       </div>
       <div class="ocard-body">
         <textarea class="mta" id="mta" readonly placeholder="文章將在這裡出現..."></textarea>
+        <div class="wc-bar">
+          <span class="wc-count" id="wcCount">共 0 字</span>
+          <div class="wc-actions">
+            <button class="abtn" onclick="downloadFile('txt')">下載 .txt</button>
+            <button class="abtn" onclick="downloadFile('md')">下載 .md</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="errbox" id="errBox" style="display:none"></div>
@@ -412,6 +479,51 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
           </div>
         </div>
         <div class="ocard-body"><div id="bookTree"></div></div>
+      </div>
+    </div>
+  </div>
+  </div><!-- /tabGenerate -->
+
+  <!-- TAB: Review -->
+  <div id="tabReview" style="display:none">
+    <div class="ocard">
+      <div class="ocard-hd">
+        <div class="ocard-title">審核佇列</div>
+      </div>
+      <div class="ocard-body" id="reviewList">
+        <div class="empty-state" id="reviewEmpty"><div class="empty-icon">📋</div><p>尚無待審稿件</p><p style="font-size:11px;margin-top:6px">生成文章後，點擊「送審」即可加入佇列</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: History -->
+  <div id="tabHistory" style="display:none">
+    <div class="ocard">
+      <div class="ocard-hd">
+        <div class="ocard-title">歷史文章</div>
+        <div class="oacts"><button class="abtn" onclick="clearHistory()">清除全部</button></div>
+      </div>
+      <div class="ocard-body" id="historyList">
+        <div class="empty-state" id="historyEmpty"><div class="empty-icon">📁</div><p>尚無歷史文章</p><p style="font-size:11px;margin-top:6px">生成的文章會自動儲存到這裡</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Titles -->
+  <div id="tabTitles" style="display:none">
+    <div class="ocard">
+      <div class="ocard-hd">
+        <div class="ocard-title">A/B 標題測試</div>
+      </div>
+      <div class="ocard-body">
+        <div style="margin-bottom:16px">
+          <div class="slbl">主題 / 方向</div>
+          <input id="titleTopicInput" placeholder="輸入你想生成標題的主題...">
+        </div>
+        <button class="genbtn" id="titleGenBtn" onclick="generateTitles()" style="margin-top:0;margin-bottom:16px">✦ 生成 5 個標題</button>
+        <div id="titleResults">
+          <div class="empty-state" id="titleEmpty"><div class="empty-icon">💡</div><p>輸入主題後點擊生成，取得 5 個標題選項</p></div>
+        </div>
       </div>
     </div>
   </div>
@@ -838,6 +950,11 @@ async function generate() {
         }
       } else { S.lastMainText = await streamToTA(buildUrlPrompt(articleText, url), 'mta'); }
     }
+    // Auto-save to history
+    if (S.lastMainText && S.lastMainText.trim().length > 0) {
+      saveToHistory();
+    }
+    updateWordCount();
   } catch(err) {
     document.getElementById('mainCard').style.display = 'block';
     document.getElementById('errBox').style.display = 'block';
@@ -845,6 +962,7 @@ async function generate() {
   }
   document.getElementById('streamInd').classList.remove('show');
   document.getElementById('genBtn').disabled = false;
+  updateWordCount();
 }
 function renderBook(chapters) {
   S.bookChapters = chapters;
@@ -853,8 +971,9 @@ function renderBook(chapters) {
   chapters.forEach(function(ch, i) {
     var d = document.createElement('div');
     d.className = 'bchap';
+    d.id = 'bchap_' + i;
     d.innerHTML =
-      '<div class="bhead"><div class="bnum">'+(i+1)+'</div><div class="btitle">'+esc(ch.title)+'</div></div>' +
+      '<div class="bhead"><div class="bnum">'+(i+1)+'</div><div class="btitle">'+esc(ch.title)+'</div><button class="expand-btn" id="expandBtn_'+i+'" onclick="expandChapter('+i+')" style="margin-left:auto">展開此章</button></div>' +
       '<div class="bbody">' +
         '<div class="mitem"><div class="mlbl">核心問題</div><div class="mval">'+esc(ch.question)+'</div></div>' +
         '<div class="mitem"><div class="mlbl">可用素材</div><div class="mval">'+esc(ch.material)+'</div></div>' +
@@ -988,6 +1107,351 @@ function updateKeyStatus() {
 }
 updateKeyStatus();
 if (!getApiKey()) { setTimeout(function(){ openKeyModal(); }, 600); }
+
+/* ===== MAIN TAB NAVIGATION ===== */
+function switchMainTab(tabId) {
+  ['tabGenerate','tabReview','tabHistory','tabTitles'].forEach(function(id) {
+    document.getElementById(id).style.display = (id === tabId) ? 'block' : 'none';
+  });
+  document.querySelectorAll('#mainTabs .main-tab').forEach(function(btn) {
+    btn.classList.toggle('on', btn.dataset.tab === tabId);
+  });
+  if (tabId === 'tabReview') renderReview();
+  if (tabId === 'tabHistory') renderHistory();
+}
+
+/* ===== REVIEW QUEUE ===== */
+function getReviewQueue() {
+  try { return JSON.parse(localStorage.getItem('kuo_review_queue') || '[]'); } catch(e) { return []; }
+}
+function saveReviewQueue(queue) {
+  localStorage.setItem('kuo_review_queue', JSON.stringify(queue));
+  updateReviewCount();
+}
+function updateReviewCount() {
+  var queue = getReviewQueue();
+  var pending = queue.filter(function(item) { return item.status === 'pending'; });
+  var el = document.getElementById('reviewCount');
+  if (pending.length > 0) {
+    el.textContent = pending.length;
+    el.style.display = 'inline';
+  } else {
+    el.style.display = 'none';
+  }
+}
+function submitForReview() {
+  var text = document.getElementById('mta').value.trim();
+  if (!text) { alert('尚無內容可送審'); return; }
+  var topic = S.cust.trim() || S.theme || S.brand || S.bookTitle || '未命名';
+  var item = {
+    id: Date.now(),
+    title: topic,
+    mode: S.mode,
+    content: text,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    note: ''
+  };
+  var queue = getReviewQueue();
+  queue.unshift(item);
+  saveReviewQueue(queue);
+  alert('已送審！');
+}
+function renderReview() {
+  var queue = getReviewQueue();
+  var container = document.getElementById('reviewList');
+  var empty = document.getElementById('reviewEmpty');
+  if (queue.length === 0) {
+    container.innerHTML = '';
+    container.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  var modeMap = { personal: '個人寫作', column: '專欄代筆', book: '寫書架構', url: '讀網址' };
+  var statusMap = { pending: '待審', approved: '已審', rejected: '退回' };
+  var html = '';
+  queue.forEach(function(item) {
+    var statusClass = item.status;
+    var statusText = statusMap[item.status] || item.status;
+    var date = new Date(item.createdAt);
+    var dateStr = date.getFullYear() + '/' + (date.getMonth()+1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + String(date.getMinutes()).padStart(2,'0');
+    var preview = item.content.substring(0, 100).replace(/</g, '&lt;');
+    html += '<div class="review-card">' +
+      '<div class="review-card-hd">' +
+        '<span class="review-title">' + esc(item.title) + '</span>' +
+        '<span class="review-status ' + statusClass + '">' + statusText + '</span>' +
+      '</div>' +
+      '<div class="review-meta">' + (modeMap[item.mode] || item.mode) + ' · ' + dateStr + '</div>' +
+      '<div class="review-preview">' + preview + '...</div>' +
+      (item.note ? '<div style="font-size:10px;color:#dc2626;margin-bottom:8px">退回備註：' + esc(item.note) + '</div>' : '') +
+      '<div class="review-actions">' +
+        (item.status === 'pending' ? '<button class="abtn" style="color:#16a34a;border-color:rgba(22,163,74,.3)" onclick="approveReview(' + item.id + ')">&#10003; 核准</button>' +
+        '<button class="abtn" onclick="editReview(' + item.id + ')">&#9998; 編輯</button>' +
+        '<button class="abtn" style="color:#dc2626;border-color:rgba(220,38,38,.2)" onclick="rejectReview(' + item.id + ')">&#10007; 退回</button>' : '') +
+        (item.status !== 'pending' ? '<button class="abtn" onclick="deleteReview(' + item.id + ')">刪除</button>' : '') +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+function approveReview(id) {
+  var queue = getReviewQueue();
+  var item = queue.find(function(x) { return x.id === id; });
+  if (!item) return;
+  item.status = 'approved';
+  saveReviewQueue(queue);
+  // Also save to history
+  var history = getHistory();
+  history.unshift({
+    id: Date.now(),
+    title: item.title,
+    mode: item.mode,
+    content: item.content,
+    wordCount: item.content.length,
+    createdAt: item.createdAt
+  });
+  localStorage.setItem('kuo_history', JSON.stringify(history));
+  renderReview();
+}
+function editReview(id) {
+  var queue = getReviewQueue();
+  var item = queue.find(function(x) { return x.id === id; });
+  if (!item) return;
+  // Switch to generate tab and load content into editor
+  switchMainTab('tabGenerate');
+  document.getElementById('welcomeState').style.display = 'none';
+  document.getElementById('outputState').style.display = 'block';
+  document.getElementById('mainCard').style.display = 'block';
+  document.getElementById('mta').value = item.content;
+  document.getElementById('mta').removeAttribute('readonly');
+  document.getElementById('cardTitle').textContent = '編輯審核稿件：' + item.title;
+  S.lastMainText = item.content;
+  updateWordCount();
+}
+function rejectReview(id) {
+  var note = prompt('請輸入退回原因（可留空）：') || '';
+  var queue = getReviewQueue();
+  var item = queue.find(function(x) { return x.id === id; });
+  if (!item) return;
+  item.status = 'rejected';
+  item.note = note;
+  saveReviewQueue(queue);
+  renderReview();
+}
+function deleteReview(id) {
+  if (!confirm('確定刪除此審核項目？')) return;
+  var queue = getReviewQueue().filter(function(x) { return x.id !== id; });
+  saveReviewQueue(queue);
+  renderReview();
+}
+
+/* ===== HISTORY/ARCHIVE ===== */
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('kuo_history') || '[]'); } catch(e) { return []; }
+}
+function saveToHistory() {
+  var text = S.lastMainText || document.getElementById('mta').value;
+  if (!text || !text.trim()) return;
+  var topic = S.cust.trim() || S.theme || S.brand || S.bookTitle || '未命名';
+  var item = {
+    id: Date.now(),
+    title: topic,
+    mode: S.mode,
+    content: text,
+    wordCount: text.length,
+    createdAt: new Date().toISOString()
+  };
+  var history = getHistory();
+  history.unshift(item);
+  localStorage.setItem('kuo_history', JSON.stringify(history));
+}
+function renderHistory() {
+  var history = getHistory();
+  var container = document.getElementById('historyList');
+  var empty = document.getElementById('historyEmpty');
+  if (history.length === 0) {
+    container.innerHTML = '';
+    container.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  var modeMap = { personal: '個人寫作', column: '專欄代筆', book: '寫書架構', url: '讀網址' };
+  var html = '';
+  history.forEach(function(item) {
+    var date = new Date(item.createdAt);
+    var dateStr = date.getFullYear() + '/' + (date.getMonth()+1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + String(date.getMinutes()).padStart(2,'0');
+    var preview = item.content.substring(0, 100).replace(/</g, '&lt;');
+    html += '<div class="history-card">' +
+      '<div class="history-hd">' +
+        '<span class="history-title">' + esc(item.title) + '</span>' +
+        '<span class="history-meta">' + (modeMap[item.mode] || item.mode) + ' · ' + dateStr + ' · ' + item.wordCount + '字</span>' +
+      '</div>' +
+      '<div class="history-preview">' + preview + '...</div>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button class="abtn" onclick="copyHistoryItem(' + item.id + ')">複製</button>' +
+        '<button class="abtn" onclick="editHistoryItem(' + item.id + ')">編輯</button>' +
+        '<button class="abtn" style="color:#dc2626;border-color:rgba(220,38,38,.2)" onclick="deleteHistoryItem(' + item.id + ')">刪除</button>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+function copyHistoryItem(id) {
+  var history = getHistory();
+  var item = history.find(function(x) { return x.id === id; });
+  if (!item) return;
+  navigator.clipboard.writeText(item.content).then(function() { alert('已複製到剪貼簿！'); });
+}
+function editHistoryItem(id) {
+  var history = getHistory();
+  var item = history.find(function(x) { return x.id === id; });
+  if (!item) return;
+  switchMainTab('tabGenerate');
+  document.getElementById('welcomeState').style.display = 'none';
+  document.getElementById('outputState').style.display = 'block';
+  document.getElementById('mainCard').style.display = 'block';
+  document.getElementById('mta').value = item.content;
+  document.getElementById('mta').removeAttribute('readonly');
+  document.getElementById('cardTitle').textContent = '編輯歷史文章：' + item.title;
+  S.lastMainText = item.content;
+  updateWordCount();
+}
+function deleteHistoryItem(id) {
+  if (!confirm('確定刪除此歷史文章？')) return;
+  var history = getHistory().filter(function(x) { return x.id !== id; });
+  localStorage.setItem('kuo_history', JSON.stringify(history));
+  renderHistory();
+}
+function clearHistory() {
+  if (!confirm('確定清除所有歷史文章？此操作無法復原。')) return;
+  localStorage.removeItem('kuo_history');
+  renderHistory();
+}
+
+/* ===== WORD COUNT + EXPORT ===== */
+function updateWordCount() {
+  var text = document.getElementById('mta').value || '';
+  var count = text.replace(/\s/g, '').length;
+  document.getElementById('wcCount').textContent = '共 ' + count + ' 字';
+}
+document.getElementById('mta').addEventListener('input', updateWordCount);
+
+function downloadFile(format) {
+  var text = document.getElementById('mta').value.trim();
+  if (!text) { alert('尚無內容可下載'); return; }
+  var topic = S.cust.trim() || S.theme || S.brand || S.bookTitle || '文章';
+  var date = new Date();
+  var dateStr = date.getFullYear() + (date.getMonth()+1).toString().padStart(2,'0') + date.getDate().toString().padStart(2,'0');
+  var filename = '郭佑_' + topic + '_' + dateStr + '.' + format;
+  var content = text;
+  if (format === 'md') {
+    // Add a markdown header
+    content = '# ' + topic + '\n\n' + text;
+  }
+  var blob = new Blob([content], { type: format === 'md' ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ===== A/B TITLE TESTING ===== */
+async function generateTitles() {
+  var topic = document.getElementById('titleTopicInput').value.trim();
+  if (!topic) { alert('請先輸入主題'); return; }
+  var btn = document.getElementById('titleGenBtn');
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  document.getElementById('titleEmpty').style.display = 'none';
+  document.getElementById('titleResults').innerHTML = '<div class="empty-state"><div class="pulse" style="margin:0 auto 10px"></div><p>AI 正在生成標題選項...</p></div>';
+  var prompt = BASE + '\n\n---\n【標題生成任務】\n主題：' + topic + '\n\n請為這個主題生成5個不同風格的標題選項。每個標題要：\n1. 15字以內\n2. 有力、直接、讓人想點進來\n3. 符合郭佑的風格（直白、挑戰性、有觀點）\n\n格式：一行一個標題，前面加編號（1. 2. 3. 4. 5.），不要任何其他說明。';
+  try {
+    var result = await fetchComplete(prompt);
+    var lines = result.split('\n').filter(function(l) { return l.trim().match(/^\d+[\.\)、]/); });
+    if (lines.length === 0) {
+      // Fallback: just split by newlines and take non-empty
+      lines = result.split('\n').filter(function(l) { return l.trim().length > 0; }).slice(0, 5);
+    }
+    var html = '';
+    lines.forEach(function(line, i) {
+      var titleText = line.replace(/^\d+[\.\)、]\s*/, '').trim();
+      html += '<div class="title-card" onclick="useTitleOption(this)">' +
+        '<div style="display:flex;align-items:center">' +
+          '<span class="title-num">' + (i+1) + '.</span>' +
+          '<span class="title-text">' + esc(titleText) + '</span>' +
+        '</div>' +
+        '<button class="abtn" onclick="event.stopPropagation();useTitle(\'' + esc(titleText).replace(/'/g, "\\'") + '\')">使用此標題</button>' +
+      '</div>';
+    });
+    document.getElementById('titleResults').innerHTML = html;
+  } catch(e) {
+    document.getElementById('titleResults').innerHTML = '<div class="errbox">標題生成失敗：' + esc(e.message) + '</div>';
+  }
+  btn.disabled = false;
+  btn.textContent = '✦ 生成 5 個標題';
+}
+function useTitle(title) {
+  document.getElementById('custT').value = title;
+  S.cust = title;
+  switchMainTab('tabGenerate');
+  alert('已將標題設為主題：' + title);
+}
+function useTitleOption(el) {
+  document.querySelectorAll('.title-card').forEach(function(c) { c.style.borderColor = ''; c.style.background = ''; });
+  el.style.borderColor = 'var(--gold)';
+  el.style.background = 'var(--gold-l)';
+}
+
+/* ===== EXPAND CHAPTER ===== */
+async function expandChapter(index) {
+  var ch = S.bookChapters[index];
+  if (!ch) return;
+  var btn = document.getElementById('expandBtn_' + index);
+  var chapEl = document.getElementById('bchap_' + index);
+  // Check if already expanded
+  var existing = chapEl.querySelector('.bbody-expanded');
+  if (existing) {
+    existing.style.display = existing.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+  btn.textContent = '展開中...';
+  btn.disabled = true;
+  var expandPrompt = BASE + '\n\n---\n【展開章節任務】\n請根據以下章節規劃，展開成1500-2000字的書稿。\n用郭佑的寫作風格，融入鮮乳坊、MiracleX、AppWorks等真實故事和具體數字。\n\n書名：' + S.bookTitle + '\n章節：' + ch.title + '\n核心問題：' + ch.question + '\n可用素材：' + ch.material + '\n讀者收穫：' + ch.takeaway + '\n\n繁體中文，直接輸出完整章節內容。';
+  try {
+    var content = await fetchComplete(expandPrompt);
+    var expandedDiv = document.createElement('div');
+    expandedDiv.className = 'bbody-expanded';
+    expandedDiv.innerHTML = esc(content) + '<div style="margin-top:12px"><button class="abtn" onclick="copyExpandedChapter(' + index + ',this)">複製本章</button></div>';
+    chapEl.appendChild(expandedDiv);
+    btn.textContent = '收合';
+    btn.disabled = false;
+  } catch(e) {
+    alert('展開失敗：' + e.message);
+    btn.textContent = '展開此章';
+    btn.disabled = false;
+  }
+}
+function copyExpandedChapter(index, btn) {
+  var chapEl = document.getElementById('bchap_' + index);
+  var expandedDiv = chapEl.querySelector('.bbody-expanded');
+  if (!expandedDiv) return;
+  // Get text content excluding the button
+  var text = expandedDiv.textContent.replace('複製本章', '').trim();
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = '✓ 已複製';
+    setTimeout(function() { btn.textContent = orig; }, 2000);
+  });
+}
+
+/* ===== INIT ===== */
+updateReviewCount();
 </script>
 </body>
 </html>
