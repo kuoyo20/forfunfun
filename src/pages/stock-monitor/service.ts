@@ -1,18 +1,33 @@
 import { MOCK_SNAPSHOT } from "./mock";
+import { fetchSnapshotFinMind } from "./finmind";
 import type { StockSnapshot } from "./types";
 
-const PROVIDER = (import.meta.env.VITE_STOCK_PROVIDER as string | undefined) ?? "mock";
+const PROVIDER = ((import.meta.env.VITE_STOCK_PROVIDER as string | undefined) ?? "finmind").toLowerCase();
 
-export async function fetchSnapshot(symbol: string): Promise<StockSnapshot> {
-  if (PROVIDER === "finmind") {
-    return fetchFromFinMind(symbol);
+export interface SnapshotResult {
+  snapshot: StockSnapshot;
+  source: "finmind" | "mock";
+  warning?: string;
+}
+
+export async function fetchSnapshot(symbol: string): Promise<SnapshotResult> {
+  if (PROVIDER === "mock") {
+    return { snapshot: tweakMock(symbol), source: "mock" };
   }
-  await sleep(120);
-  // Slightly perturb price each poll to simulate live ticking.
+  try {
+    const snap = await fetchSnapshotFinMind(symbol);
+    return { snapshot: snap, source: "finmind" };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "未知錯誤";
+    return { snapshot: tweakMock(symbol), source: "mock", warning: `FinMind 失敗：${msg}` };
+  }
+}
+
+function tweakMock(symbol: string): StockSnapshot {
   const jitter = (Math.random() - 0.5) * 4;
   const price = round(MOCK_SNAPSHOT.quote.price + jitter);
-  const change = round(price - (MOCK_SNAPSHOT.quote.price - MOCK_SNAPSHOT.quote.change));
   const base = MOCK_SNAPSHOT.quote.price - MOCK_SNAPSHOT.quote.change;
+  const change = round(price - base);
   return {
     ...MOCK_SNAPSHOT,
     quote: {
@@ -26,16 +41,4 @@ export async function fetchSnapshot(symbol: string): Promise<StockSnapshot> {
   };
 }
 
-async function fetchFromFinMind(symbol: string): Promise<StockSnapshot> {
-  // Stub for real provider; falls back to mock until wired up.
-  console.warn("[stock-monitor] FinMind provider not implemented; using mock.", symbol);
-  return MOCK_SNAPSHOT;
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function round(n: number) {
-  return Math.round(n * 100) / 100;
-}
+function round(n: number) { return Math.round(n * 100) / 100; }

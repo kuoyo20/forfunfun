@@ -9,16 +9,16 @@ const COLOR: Record<NextDayScenario["type"], { border: string; bg: string; text:
 
 export function PlaybookPanel({ scenarios, date }: { scenarios: NextDayScenario[]; date: string }) {
   return (
-    <Panel title="隔日操作劇本" badge={`(${date})`}>
+    <Panel title="隔日情境模擬" badge={`(${date})`}>
       <div className="grid grid-cols-3 gap-2">
         {scenarios.map((s) => {
           const c = COLOR[s.type];
           return (
             <div key={s.type} className={`rounded border ${c.border} ${c.bg} p-2`}>
               <div className={`text-center font-bold ${c.text} text-[12px] mb-1.5`}>{c.idx} {s.label}</div>
-              <Row k="進場價" v={`${s.entryLow.toFixed(0)} ~ ${s.entryHigh.toFixed(0)}`} cls={c.text} />
-              <Row k="停損價" v={s.stopLoss.toFixed(0)} cls="text-slate-200" />
-              <Row k="目標價" v={`${s.target1.toFixed(0)} / ${s.target2.toFixed(0)}`} cls="text-yellow-200" />
+              <Row k="觀察區間" v={`${s.entryLow.toFixed(0)} ~ ${s.entryHigh.toFixed(0)}`} cls={c.text} />
+              <Row k="風險底線" v={s.stopLoss.toFixed(0)} cls="text-slate-200" />
+              <Row k="情境參考" v={`${s.target1.toFixed(0)} / ${s.target2.toFixed(0)}`} cls="text-yellow-200" />
             </div>
           );
         })}
