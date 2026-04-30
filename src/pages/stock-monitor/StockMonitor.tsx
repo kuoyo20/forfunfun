@@ -25,6 +25,7 @@ import {
 import { KPatternTable, MultiPeriodPanel, PatternAnalysisPanel } from "./components/PatternPanels";
 import { PlaybookPanel } from "./components/PlaybookPanel";
 import { Disclaimer, SourceBadge } from "./components/Disclaimer";
+import { useWatchlist } from "./useWatchlist";
 
 const POLL_MS = 5 * 60 * 1000;
 
@@ -42,6 +43,7 @@ const PRESETS: { symbol: string; name: string }[] = [
 export default function StockMonitor() {
   const [symbol, setSymbol] = useState("3583");
   const [input, setInput] = useState("3583");
+  const watchlist = useWatchlist();
 
   const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["stock-snapshot", symbol],
@@ -110,9 +112,45 @@ export default function StockMonitor() {
               >
                 {isFetching ? "更新中…" : "↻ 重新整理"}
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (watchlist.has(symbol)) watchlist.remove(symbol);
+                  else watchlist.add({ symbol, name: data?.snapshot.quote.name });
+                }}
+                className={`rounded border px-2 py-1 text-xs ${watchlist.has(symbol) ? "border-yellow-400 bg-yellow-500/20 text-yellow-200" : "border-slate-500 text-slate-300 hover:bg-slate-700"}`}
+                title={watchlist.has(symbol) ? "從自選股移除" : "加入自選股"}
+              >
+                {watchlist.has(symbol) ? "★ 已加自選" : "☆ 加入自選"}
+              </button>
             </form>
           </div>
         </div>
+
+        {watchlist.list.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-2 py-1.5">
+            <span className="text-[11px] font-bold text-yellow-300 mr-1">★ 我的自選</span>
+            {watchlist.list.map((w) => (
+              <span key={w.symbol} className={`group inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] ${symbol === w.symbol ? "border-yellow-400 bg-yellow-500/30 text-yellow-100" : "border-yellow-500/40 bg-slate-900/40 text-yellow-200"}`}>
+                <button
+                  type="button"
+                  onClick={() => { setInput(w.symbol); setSymbol(w.symbol); }}
+                  className="hover:text-yellow-100"
+                >
+                  {w.symbol}{w.name ? ` ${w.name}` : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => watchlist.remove(w.symbol)}
+                  className="opacity-50 hover:opacity-100 hover:text-red-300"
+                  title="移除"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         <Disclaimer />
 
