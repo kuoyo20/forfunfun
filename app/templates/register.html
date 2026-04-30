@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 {% block title %}註冊 - 人脈管理系統{% endblock %}
 {% block content %}
-<article style="max-width: 400px; margin: 3rem auto; padding: 2rem;">
-    <h2 style="text-align: center;">註冊新帳號</h2>
+<div class="auth-card">
+    <h2>註冊新帳號</h2>
     <form method="post" action="/register">
         <label>帳號
-            <input type="text" name="username" required autofocus>
+            <input type="text" name="username" required autofocus placeholder="請輸入帳號">
         </label>
         <label>Email
-            <input type="email" name="email" required>
+            <input type="email" name="email" required placeholder="your@email.com">
         </label>
         <label>顯示名稱
             <input type="text" name="display_name" placeholder="選填">
         </label>
         <label>密碼
-            <input type="password" name="password" required minlength="6">
+            <input type="password" name="password" required minlength="6" placeholder="至少 6 個字元">
         </label>
         <label>確認密碼
-            <input type="password" name="password_confirm" required>
+            <input type="password" name="password_confirm" required placeholder="再輸入一次密碼">
         </label>
         <label>安全問題
             <select name="security_question" required>
@@ -32,10 +32,10 @@
         <label>安全問題答案
             <input type="text" name="security_answer" required placeholder="忘記密碼時需要回答">
         </label>
-        <button type="submit" style="width: 100%;">註冊</button>
+        <button type="submit" style="width: 100%; margin-top: 0.5rem;">註冊</button>
     </form>
-    <p style="text-align: center; margin-top: 1rem;">
+    <div class="auth-footer">
         已有帳號？ <a href="/login">登入</a>
-    </p>
-</article>
+    </div>
+</div>
 {% endblock %}
