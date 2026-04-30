@@ -17,9 +17,36 @@ def init_db():
     with open(SCHEMA_PATH) as f:
         conn.executescript(f.read())
 
-    # Migrations for existing databases
     _migrate(conn)
+    _seed_users(conn)
     conn.close()
+
+
+def _seed_users(conn):
+    """Create default team accounts if no users exist yet."""
+    existing = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    if existing > 0:
+        return
+
+    import bcrypt
+    def _hash(pw):
+        return bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode()
+
+    default_pw = _hash("66446236")
+    team = [
+        ("kuoyo", "kuoyo@miraclex.com.tw", "老闆", "admin"),
+        ("wendy", "wendy.tseng@miraclex.com.tw", "溫蒂（大特助）", "admin"),
+        ("melody", "melody.cheng@bettermilk.com.tw", "小美（鮮乳坊特助）", "editor"),
+        ("huda", "huda.huang@miraclex.com.tw", "Huda（專案型特助）", "editor"),
+        ("anna", "anna.chen@miaolin.com.tw", "Anna（苗林行特助）", "editor"),
+        ("lianlian", "booking@miraclex.com.tw", "連連（私人秘書）", "editor"),
+    ]
+    for username, email, display_name, role in team:
+        conn.execute(
+            "INSERT INTO users (username, password_hash, email, display_name, role) VALUES (?,?,?,?,?)",
+            (username, default_pw, email, display_name, role),
+        )
+    conn.commit()
 
 
 def _migrate(conn):
