@@ -184,6 +184,24 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 /* Empty state */
 .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
 .empty-state .empty-icon{font-size:36px;opacity:.3;margin-bottom:10px}
+.role-card{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--border);border-radius:var(--rl);background:var(--surface);cursor:pointer;transition:all .2s;width:100%;text-align:left;font-family:var(--sans)}
+.role-card:hover{border-color:var(--gold);background:var(--gold-l);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.role-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;font-family:var(--serif)}
+.role-info{flex:1}
+.role-name{font-size:14px;font-weight:700;color:var(--text)}
+.role-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.role-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:8px;padding:6px 10px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border)}
+.role-indicator .ri-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.role-indicator .ri-name{font-weight:600}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;color:var(--gold-d);font-family:var(--serif)}
+.stat-label{font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.template-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:all .2s;width:100%;text-align:left;margin-bottom:6px;font-family:var(--sans)}
+.template-card:hover{border-color:var(--gold);background:var(--gold-l);box-shadow:var(--shadow-sm)}
+.template-icon{font-size:18px}
+.template-name{font-size:12px;font-weight:600;color:var(--text)}
+.template-desc{font-size:10px;color:var(--text3);margin-top:1px}
 </style>
 </head>
 <body>
@@ -204,6 +222,11 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <button onclick="openKeyModal()" id="keyBtn" style="font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s" title="設定 API Key">⚙ API Key</button>
     </div>
     <div id="keyStatus" style="display:none;margin-top:6px;font-size:10px;padding:3px 9px;border-radius:20px;background:rgba(90,158,90,.12);border:1px solid rgba(90,158,90,.3);color:#5a9e5a">✓ API Key 已設定</div>
+    <div class="role-indicator" id="roleIndicator" style="display:none">
+      <div class="ri-dot" id="roleDot"></div>
+      <span><span class="ri-name" id="roleName"></span> · <span id="roleLabel"></span></span>
+      <button onclick="openRoleModal()" style="margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer">切換</button>
+    </div>
   </div>
 
   <div class="sb-body">
@@ -377,7 +400,32 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       </div>
     </div>
 
+    <div class="sec">
+      <div class="slbl">進階設定</div>
+      <div class="togrow" id="togAutoSubmitRow" style="display:none"><div class="tog on" id="togAutoSubmit"><div class="tth"></div></div><span class="tlb">生成完自動送審</span></div>
+    </div>
+
     <button class="genbtn" id="genBtn" onclick="generate()">✦ 開始生成</button>
+
+    <div id="templateSection" style="display:none;margin-top:12px">
+      <div class="slbl">快速模板</div>
+      <button class="template-card" onclick="applyTemplate('weekly_fb')">
+        <div class="template-icon">📝</div>
+        <div><div class="template-name">每週 FB 創業文</div><div class="template-desc">FB長文 · 挑戰型 · 創業方法論</div></div>
+      </button>
+      <button class="template-card" onclick="applyTemplate('ig_inspire')">
+        <div class="template-icon">✨</div>
+        <div><div class="template-name">IG 激勵短文</div><div class="template-desc">FB短文 · 激勵型 · 人生翻身</div></div>
+      </button>
+      <button class="template-card" onclick="applyTemplate('column_brand')">
+        <div class="template-icon">📰</div>
+        <div><div class="template-name">品牌專欄稿</div><div class="template-desc">專欄代筆 · 故事型 · 品牌</div></div>
+      </button>
+      <button class="template-card" onclick="applyTemplate('thread_quick')">
+        <div class="template-icon">⚡</div>
+        <div><div class="template-name">Threads 快評</div><div class="template-desc">FB短文 · 分析型 · 精簡</div></div>
+      </button>
+    </div>
   </div>
 </aside>
 
@@ -486,9 +534,19 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
   <!-- TAB: Review -->
   <div id="tabReview" style="display:none">
+    <div id="reviewStats" style="display:none;margin-bottom:16px">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">本週生成</div></div>
+        <div class="stat-card"><div class="stat-num" id="statApproved">0</div><div class="stat-label">已核准</div></div>
+        <div class="stat-card"><div class="stat-num" id="statRate">0%</div><div class="stat-label">核准率</div></div>
+      </div>
+    </div>
     <div class="ocard">
       <div class="ocard-hd">
         <div class="ocard-title">審核佇列</div>
+        <div class="oacts">
+          <button class="abtn p" id="batchApproveBtn" onclick="batchApprove()" style="display:none">全部核准</button>
+        </div>
       </div>
       <div class="ocard-body" id="reviewList">
         <div class="empty-state" id="reviewEmpty"><div class="empty-icon">📋</div><p>尚無待審稿件</p><p style="font-size:11px;margin-top:6px">生成文章後，點擊「送審」即可加入佇列</p></div>
@@ -560,6 +618,28 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
     <button class="abtn" style="width:100%;margin-top:6px" onclick="closeKeyModal()">關閉</button>
   </div>
 </div>
+<!-- ROLE MODAL -->
+<div class="modal-bg" id="roleModal">
+  <div class="modal" style="max-width:480px">
+    <h3 style="text-align:center;font-size:16px;margin-bottom:4px;font-family:var(--serif)">歡迎使用郭佑內容創作中心</h3>
+    <p style="text-align:center;font-size:12px;color:var(--text3);margin-bottom:16px">請選擇你的身份</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="role-card" onclick="selectRole('郭佑','admin')">
+        <div class="role-avatar" style="background:linear-gradient(135deg,var(--gold),var(--gold-d))">郭</div>
+        <div class="role-info"><div class="role-name">郭佑</div><div class="role-desc">管理人 · 審核文章 · 最終決定</div></div>
+      </button>
+      <button class="role-card" onclick="selectRole('小美','assistant')">
+        <div class="role-avatar" style="background:linear-gradient(135deg,#e1306c,#c13584)">美</div>
+        <div class="role-info"><div class="role-name">小美</div><div class="role-desc">助理 · 內容生成 · 送審</div></div>
+      </button>
+      <button class="role-card" onclick="selectRole('溫蒂','assistant')">
+        <div class="role-avatar" style="background:linear-gradient(135deg,#1877f2,#0d65d9)">溫</div>
+        <div class="role-info"><div class="role-name">溫蒂</div><div class="role-desc">助理 · 內容生成 · 送審</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 var S = {
   mode:'personal', type:'fb_long', tone:'challenge',
@@ -570,7 +650,8 @@ var S = {
   bookTitle:'', bookAud:'entrepreneur', bookType:'memoir',
   chaps:'10', bookIdeas:'',
   urlInput:'', urlType:'response', urlPlat:'fb', urlNote:'', urlMulti:true,
-  bookChapters:[], lastMainText:''
+  bookChapters:[], lastMainText:'',
+  autoSubmit:true
 };
 
 function selOne(gid, val) {
@@ -618,6 +699,7 @@ document.getElementById('urlNote').oninput  = function(){S.urlNote=this.value;};
 document.getElementById('urlTypeG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.urlType=b.dataset.v;selOne('urlTypeG',b.dataset.v);}};
 document.getElementById('urlPlatG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.urlPlat=b.dataset.v;selOne('urlPlatG',b.dataset.v);}};
 document.getElementById('togUrlMulti').onclick = function(){S.urlMulti=!S.urlMulti;this.classList.toggle('on',S.urlMulti);};
+document.getElementById('togAutoSubmit').onclick = function(){S.autoSubmit=!S.autoSubmit;this.classList.toggle('on',S.autoSubmit);};
 var BASE = '你是郭哲佑（郭佑，Kuo Young）的寫作模擬器。\n\n' +
 '【完整身份背景】\n' +
 '鮮乳坊（Better Milk）共同創辦人。2015年以群眾募資起家，帶領公司從0成長至2023年突破10億元營收，進駐全台7,000家通路。創業心法：非典型通路（藥局、彩券行、補習班先試點）、單一乳源、獸醫把關、公平交易收購。\n' +
@@ -953,6 +1035,9 @@ async function generate() {
     // Auto-save to history
     if (S.lastMainText && S.lastMainText.trim().length > 0) {
       saveToHistory();
+      if (S.autoSubmit && localStorage.getItem('kuo_user_role') === 'assistant') {
+        submitForReview();
+      }
     }
     updateWordCount();
   } catch(err) {
@@ -1105,9 +1190,6 @@ function updateKeyStatus() {
   btn.style.borderColor= has ? 'rgba(90,158,90,.4)' : '';
   btn.textContent      = has ? '✓ API Key' : '⚙ API Key';
 }
-updateKeyStatus();
-if (!getApiKey()) { setTimeout(function(){ openKeyModal(); }, 600); }
-
 /* ===== MAIN TAB NAVIGATION ===== */
 function switchMainTab(tabId) {
   ['tabGenerate','tabReview','tabHistory','tabTitles'].forEach(function(id) {
@@ -1150,6 +1232,7 @@ function submitForReview() {
     content: text,
     status: 'pending',
     createdAt: new Date().toISOString(),
+    submitter: localStorage.getItem('kuo_user_name') || '未知',
     note: ''
   };
   var queue = getReviewQueue();
@@ -1158,6 +1241,7 @@ function submitForReview() {
   alert('已送審！');
 }
 function renderReview() {
+  updateStats();
   var queue = getReviewQueue();
   var container = document.getElementById('reviewList');
   var empty = document.getElementById('reviewEmpty');
@@ -1182,9 +1266,11 @@ function renderReview() {
         '<span class="review-title">' + esc(item.title) + '</span>' +
         '<span class="review-status ' + statusClass + '">' + statusText + '</span>' +
       '</div>' +
-      '<div class="review-meta">' + (modeMap[item.mode] || item.mode) + ' · ' + dateStr + '</div>' +
+      '<div class="review-meta">' + (modeMap[item.mode] || item.mode) + ' · ' + dateStr + ' · 提交人：' + esc(item.submitter || '未知') + '</div>' +
       '<div class="review-preview">' + preview + '...</div>' +
       (item.note ? '<div style="font-size:10px;color:#dc2626;margin-bottom:8px">退回備註：' + esc(item.note) + '</div>' : '') +
+      (item.status === 'approved' && item.reviewedBy ? '<div style="font-size:10px;color:#16a34a;margin-bottom:8px">&#10003; 已由 ' + esc(item.reviewedBy) + ' 核准 · ' + (item.reviewedAt ? new Date(item.reviewedAt).toLocaleString('zh-TW') : '') + '</div>' : '') +
+      (item.status === 'rejected' && item.reviewedBy ? '<div style="font-size:10px;color:#dc2626;margin-bottom:8px">&#10007; 退回 by ' + esc(item.reviewedBy) + (item.note ? '：' + esc(item.note) : '') + ' · ' + (item.reviewedAt ? new Date(item.reviewedAt).toLocaleString('zh-TW') : '') + '</div>' : '') +
       '<div class="review-actions">' +
         (item.status === 'pending' ? '<button class="abtn" style="color:#16a34a;border-color:rgba(22,163,74,.3)" onclick="approveReview(' + item.id + ')">&#10003; 核准</button>' +
         '<button class="abtn" onclick="editReview(' + item.id + ')">&#9998; 編輯</button>' +
@@ -1200,6 +1286,8 @@ function approveReview(id) {
   var item = queue.find(function(x) { return x.id === id; });
   if (!item) return;
   item.status = 'approved';
+  item.reviewedBy = localStorage.getItem('kuo_user_name') || '管理人';
+  item.reviewedAt = new Date().toISOString();
   saveReviewQueue(queue);
   // Also save to history
   var history = getHistory();
@@ -1236,6 +1324,8 @@ function rejectReview(id) {
   if (!item) return;
   item.status = 'rejected';
   item.note = note;
+  item.reviewedBy = localStorage.getItem('kuo_user_name') || '管理人';
+  item.reviewedAt = new Date().toISOString();
   saveReviewQueue(queue);
   renderReview();
 }
@@ -1450,8 +1540,113 @@ function copyExpandedChapter(index, btn) {
   });
 }
 
+/* ===== ROLE MANAGEMENT ===== */
+function selectRole(name, role) {
+  localStorage.setItem('kuo_user_name', name);
+  localStorage.setItem('kuo_user_role', role);
+  document.getElementById('roleModal').classList.remove('show');
+  applyRole();
+  if (!getApiKey()) { setTimeout(function(){ openKeyModal(); }, 400); }
+}
+function openRoleModal() {
+  document.getElementById('roleModal').classList.add('show');
+}
+function applyRole() {
+  var name = localStorage.getItem('kuo_user_name') || '';
+  var role = localStorage.getItem('kuo_user_role') || '';
+  if (!name) return;
+  // Show role indicator
+  var indicator = document.getElementById('roleIndicator');
+  indicator.style.display = 'flex';
+  document.getElementById('roleName').textContent = name;
+  document.getElementById('roleLabel').textContent = role === 'admin' ? '管理人' : '助理';
+  var dot = document.getElementById('roleDot');
+  dot.style.background = role === 'admin' ? 'var(--gold)' : '#1877f2';
+  // Role-based UI
+  if (role === 'admin') {
+    // Admin sees everything, show stats and batch approve
+    document.getElementById('reviewStats').style.display = 'block';
+    document.getElementById('batchApproveBtn').style.display = '';
+    document.getElementById('templateSection').style.display = 'none';
+    document.getElementById('togAutoSubmitRow').style.display = 'none';
+  } else {
+    // Assistant: show templates, auto-submit, hide admin review controls
+    document.getElementById('templateSection').style.display = 'block';
+    document.getElementById('togAutoSubmitRow').style.display = 'flex';
+    document.getElementById('reviewStats').style.display = 'none';
+    document.getElementById('batchApproveBtn').style.display = 'none';
+  }
+}
+
+/* ===== TEMPLATES ===== */
+function applyTemplate(id) {
+  var templates = {
+    'weekly_fb': { mode:'personal', type:'fb_long', tone:'challenge', theme:'創業方法論', aud:'founder', len:'medium' },
+    'ig_inspire': { mode:'personal', type:'fb_short', tone:'inspire', theme:'人生翻身', aud:'young', len:'short' },
+    'column_brand': { mode:'column', area:'品牌', colStyle:'故事型' },
+    'thread_quick': { mode:'personal', type:'fb_short', tone:'analyze', theme:'創業方法論', aud:'founder', len:'short' }
+  };
+  var t = templates[id];
+  if (!t) return;
+  if (t.mode) { S.mode = t.mode; }
+  if (t.type) { S.type = t.type; selOne('typeG', t.type); }
+  if (t.tone) { S.tone = t.tone; selOne('toneG', t.tone); }
+  if (t.theme) { S.theme = t.theme; selOne('themeG', t.theme); }
+  if (t.aud) { S.aud = t.aud; selOne('audG', t.aud); }
+  if (t.len) { S.len = t.len; selOne('lenG', t.len); }
+  if (t.area) { S.area = t.area; selOne('areaG', t.area); }
+  if (t.colStyle) { S.colStyle = t.colStyle; selOne('colStyleG', t.colStyle); }
+  document.querySelectorAll('.mtab').forEach(function(x){ x.classList.toggle('on', x.dataset.v === S.mode); });
+  document.getElementById('pCfg').style.display = S.mode==='personal' ? 'block' : 'none';
+  document.getElementById('colCfg').style.display = S.mode==='column' ? 'block' : 'none';
+  document.getElementById('bookCfg').style.display = S.mode==='book' ? 'block' : 'none';
+  document.getElementById('urlCfg').style.display = S.mode==='url' ? 'block' : 'none';
+}
+
+/* ===== STATS ===== */
+function updateStats() {
+  var queue = getReviewQueue();
+  var now = new Date();
+  var weekAgo = new Date(now - 7*24*60*60*1000);
+  var weekItems = queue.filter(function(r){ return new Date(r.createdAt) > weekAgo; });
+  var approved = weekItems.filter(function(r){ return r.status === 'approved'; });
+  document.getElementById('statTotal').textContent = weekItems.length;
+  document.getElementById('statApproved').textContent = approved.length;
+  document.getElementById('statRate').textContent = weekItems.length > 0 ? Math.round(approved.length / weekItems.length * 100) + '%' : '—';
+}
+
+/* ===== BATCH APPROVE ===== */
+function batchApprove() {
+  var queue = getReviewQueue();
+  var pending = queue.filter(function(r){ return r.status === 'pending'; });
+  if (!pending.length) { alert('沒有待審稿件'); return; }
+  if (!confirm('確定要核准全部 ' + pending.length + ' 篇待審稿件？')) return;
+  var history = getHistory();
+  pending.forEach(function(r) {
+    r.status = 'approved';
+    r.reviewedBy = localStorage.getItem('kuo_user_name') || '管理人';
+    r.reviewedAt = new Date().toISOString();
+    history.unshift({ id: r.id, title: r.title, mode: r.mode, content: r.content, wordCount: r.content.length, createdAt: r.createdAt });
+  });
+  saveReviewQueue(queue);
+  localStorage.setItem('kuo_history', JSON.stringify(history));
+  renderReview();
+  updateReviewCount();
+}
+
 /* ===== INIT ===== */
-updateReviewCount();
+function initApp() {
+  updateKeyStatus();
+  updateReviewCount();
+  var userName = localStorage.getItem('kuo_user_name');
+  if (!userName) {
+    setTimeout(function(){ document.getElementById('roleModal').classList.add('show'); }, 300);
+  } else {
+    applyRole();
+    if (!getApiKey()) { setTimeout(function(){ openKeyModal(); }, 600); }
+  }
+}
+initApp();
 </script>
 </body>
 </html>
