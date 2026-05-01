@@ -1,0 +1,20 @@
+{
+  "name": "家庭看盤儀表板",
+  "short_name": "看盤",
+  "description": "家庭用即時看盤儀表板，純研究工具，非投資建議",
+  "start_url": "/stock-monitor.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#0891b2",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSnapshot } from "./service";
 import {
@@ -29,7 +29,35 @@ import { ValuationPanel } from "./components/ValuationPanel";
 import { RevenuePanel } from "./components/RevenuePanel";
 import { PublicLinksPanel } from "./components/PublicLinksPanel";
 import { FinalDisclaimer } from "./components/FinalDisclaimer";
+import { SkeletonDashboard } from "./components/Skeleton";
+import { SectionNav } from "./components/SectionNav";
 import { useWatchlist } from "./useWatchlist";
+
+function readSymbolFromUrl(): string {
+  if (typeof window === "undefined") return "3583";
+  const p = new URLSearchParams(window.location.search);
+  const s = p.get("s")?.trim();
+  return s && /^[A-Za-z0-9]{2,8}$/.test(s) ? s : "3583";
+}
+
+function syncSymbolToUrl(symbol: string) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("s", symbol);
+  window.history.replaceState({}, "", url.toString());
+}
+
+async function copyShareLink(symbol: string): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  const url = new URL(window.location.href);
+  url.searchParams.set("s", symbol);
+  try {
+    await navigator.clipboard.writeText(url.toString());
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const POLL_MS = 5 * 60 * 1000;
 
@@ -45,9 +73,15 @@ const PRESETS: { symbol: string; name: string }[] = [
 ];
 
 export default function StockMonitor() {
-  const [symbol, setSymbol] = useState("3583");
-  const [input, setInput] = useState("3583");
+  const initial = readSymbolFromUrl();
+  const [symbol, setSymbol] = useState(initial);
+  const [input, setInput] = useState(initial);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const watchlist = useWatchlist();
+
+  useEffect(() => {
+    syncSymbolToUrl(symbol);
+  }, [symbol]);
 
   const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["stock-snapshot", symbol],
@@ -117,6 +151,18 @@ export default function StockMonitor() {
               >
                 {watchlist.has(symbol) ? "★" : "☆"}
               </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const ok = await copyShareLink(symbol);
+                  setShareToast(ok ? "已複製分享連結 ✓" : "複製失敗，請手動複製網址");
+                  setTimeout(() => setShareToast(null), 2000);
+                }}
+                className="rounded border border-cyan-500/40 px-2.5 py-1.5 text-xs text-cyan-200 hover:bg-cyan-500/20"
+                title="複製這檔股票的分享連結"
+              >
+                🔗
+              </button>
             </form>
           </div>
           <div className="-mx-2 sm:mx-0 overflow-x-auto sm:overflow-visible">
@@ -161,16 +207,21 @@ export default function StockMonitor() {
 
         <Disclaimer />
 
-        {isLoading || !data || !derived ? (
-          <div className="rounded border border-cyan-500/30 bg-slate-900/60 px-4 py-12 text-center text-cyan-300">
-            {error ? `資料讀取失敗：${(error as Error).message}` : "載入中... (首次抓取 FinMind 資料約需 1-3 秒)"}
+        {error ? (
+          <div className="rounded border border-red-500/30 bg-red-900/20 px-4 py-6 text-center text-red-200">
+            資料讀取失敗：{(error as Error).message}
           </div>
+        ) : isLoading || !data || !derived ? (
+          <SkeletonDashboard />
         ) : (
           <>
+            <SectionNav />
             <SourceBadge source={data.source} time={updatedAt} warning={data.warning} />
-            <HeaderQuote quote={derived.snap.quote} />
+            <div id="sec-quote" className="scroll-mt-12">
+              <HeaderQuote quote={derived.snap.quote} />
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3">
+            <div id="sec-kline" className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 scroll-mt-12">
               <div className="lg:col-span-7 rounded-md border border-cyan-500/30 bg-slate-950/60 p-2">
                 <KLineChart
                   bars={derived.barsMA}
@@ -188,7 +239,7 @@ export default function StockMonitor() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-2 sm:gap-3">
+            <div id="sec-tech" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-2 sm:gap-3 scroll-mt-12">
               <div className="lg:col-span-2"><MainForceAlertPanel alert={derived.alert} /></div>
               <div className="lg:col-span-2"><WinRateGauge rate={derived.snap.shortTermWinRate} /></div>
               <div className="lg:col-span-2"><KeyPriceLevelsPanel levels={derived.levels} /></div>
@@ -196,14 +247,14 @@ export default function StockMonitor() {
               <div className="sm:col-span-2 md:col-span-3 lg:col-span-3"><InOutStructPanel inner={derived.snap.quote.innerVolume} outer={derived.snap.quote.outerVolume} /></div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div id="sec-pattern" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 scroll-mt-12">
               <KPatternTable patterns={derived.patterns} />
               <PatternAnalysisPanel wm={derived.wm} />
               <MultiPeriodPanel rows={derived.multi} />
               <PlaybookPanel scenarios={derived.playbook} date={derived.nextDate} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3">
+            <div id="sec-valuation" className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 scroll-mt-12">
               <div className="lg:col-span-5">
                 <ValuationPanel valuation={derived.snap.valuation} currentPrice={derived.snap.quote.price} />
               </div>
@@ -215,7 +266,7 @@ export default function StockMonitor() {
               </div>
             </div>
 
-            <div className="rounded-md border border-cyan-500/40 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 px-4 py-3">
+            <div id="sec-conclusion" className="rounded-md border border-cyan-500/40 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 px-4 py-3 scroll-mt-12">
               <div className="flex items-center gap-3">
                 <span className="rounded bg-cyan-500/30 px-2 py-0.5 text-xs font-bold tracking-widest text-cyan-200">演算法觀察</span>
                 <p className="text-sm font-bold text-cyan-100">{derived.conclusion}</p>
@@ -229,6 +280,11 @@ export default function StockMonitor() {
           </>
         )}
       </div>
+      {shareToast && (
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-cyan-400 bg-slate-900/90 px-4 py-2 text-sm text-cyan-100 shadow-lg">
+          {shareToast}
+        </div>
+      )}
     </div>
   );
 }
