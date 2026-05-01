@@ -25,6 +25,10 @@ import {
 import { KPatternTable, MultiPeriodPanel, PatternAnalysisPanel } from "./components/PatternPanels";
 import { PlaybookPanel } from "./components/PlaybookPanel";
 import { Disclaimer, SourceBadge } from "./components/Disclaimer";
+import { ValuationPanel } from "./components/ValuationPanel";
+import { RevenuePanel } from "./components/RevenuePanel";
+import { PublicLinksPanel } from "./components/PublicLinksPanel";
+import { FinalDisclaimer } from "./components/FinalDisclaimer";
 import { useWatchlist } from "./useWatchlist";
 
 const POLL_MS = 5 * 60 * 1000;
@@ -196,6 +200,18 @@ export default function StockMonitor() {
               <div className="lg:col-span-3"><PlaybookPanel scenarios={derived.playbook} date={derived.nextDate} /></div>
             </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+              <div className="lg:col-span-5">
+                <ValuationPanel valuation={derived.snap.valuation} currentPrice={derived.snap.quote.price} />
+              </div>
+              <div className="lg:col-span-4">
+                <RevenuePanel revenues={derived.snap.revenues} />
+              </div>
+              <div className="lg:col-span-3">
+                <PublicLinksPanel symbol={symbol} />
+              </div>
+            </div>
+
             <div className="rounded-md border border-cyan-500/40 bg-gradient-to-r from-slate-900 via-cyan-950/40 to-slate-900 px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className="rounded bg-cyan-500/30 px-2 py-0.5 text-xs font-bold tracking-widest text-cyan-200">演算法觀察</span>
@@ -205,6 +221,8 @@ export default function StockMonitor() {
                 ※ 上述為純規則演算法輸出，<b>非投資建議、非選股推薦</b>。家人看盤娛樂用，請勿據此買賣。
               </p>
             </div>
+
+            <FinalDisclaimer />
           </>
         )}
       </div>

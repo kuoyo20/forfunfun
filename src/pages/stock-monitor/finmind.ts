@@ -1,4 +1,6 @@
-import type { ChipFlow, IndustryInfo, KBar, Quote, StockSnapshot } from "./types";
+import type {
+  ChipFlow, IndustryInfo, KBar, MonthRevenuePoint, Quote, StockSnapshot, ValuationStats,
+} from "./types";
 
 const BASE = "https://api.finmindtrade.com/api/v4/data";
 const TOKEN = (import.meta.env.VITE_FINMIND_TOKEN as string | undefined) ?? "";
@@ -193,14 +195,103 @@ function shortTermWinRate(bars: KBar[]): number {
   return wins * 10;
 }
 
+interface FmPerRow {
+  date: string;
+  stock_id: string;
+  PER: number;
+  PBR: number;
+  dividend_yield: number;
+}
+
+interface FmRevenueRow {
+  date: string;
+  stock_id: string;
+  revenue: number;
+  revenue_year: number;
+  revenue_month: number;
+}
+
+async function fetchValuation(symbol: string): Promise<ValuationStats> {
+  try {
+    const rows = await fm<FmPerRow>("TaiwanStockPER", {
+      data_id: symbol,
+      start_date: daysAgo(365 * 3 + 30),
+    });
+    const valid = rows.filter((r) => r.PER > 0 && r.PER < 200);
+    if (valid.length === 0) return emptyValuation();
+
+    const pers = valid.map((r) => r.PER).sort((a, b) => a - b);
+    const pbrs = valid.map((r) => r.PBR).filter((v) => v > 0).sort((a, b) => a - b);
+    const last = valid[valid.length - 1];
+    const currentPer = last.PER;
+    const belowCount = pers.filter((p) => p <= currentPer).length;
+
+    return {
+      current: {
+        date: last.date,
+        per: round(last.PER),
+        pbr: round(last.PBR),
+        dividendYield: round(last.dividend_yield),
+      },
+      perMin: round(pers[0]),
+      perMax: round(pers[pers.length - 1]),
+      perMedian: round(quantile(pers, 0.5)),
+      perQ1: round(quantile(pers, 0.25)),
+      perQ3: round(quantile(pers, 0.75)),
+      perPercentile: Math.round((belowCount / pers.length) * 100),
+      pbrMin: pbrs.length ? round(pbrs[0]) : 0,
+      pbrMax: pbrs.length ? round(pbrs[pbrs.length - 1]) : 0,
+      pbrMedian: pbrs.length ? round(quantile(pbrs, 0.5)) : 0,
+      samples: pers.length,
+    };
+  } catch (e) {
+    console.warn("[finmind] PER failed", e);
+    return emptyValuation();
+  }
+}
+
+async function fetchRevenue(symbol: string): Promise<MonthRevenuePoint[]> {
+  try {
+    const rows = await fm<FmRevenueRow>("TaiwanStockMonthRevenue", {
+      data_id: symbol,
+      start_date: daysAgo(800),
+    });
+    const sorted = [...rows].sort((a, b) =>
+      a.revenue_year !== b.revenue_year ? a.revenue_year - b.revenue_year : a.revenue_month - b.revenue_month,
+    );
+    const byKey = new Map<string, FmRevenueRow>();
+    for (const r of sorted) {
+      byKey.set(`${r.revenue_year}-${String(r.revenue_month).padStart(2, "0")}`, r);
+    }
+    const points: MonthRevenuePoint[] = sorted.map((r) => {
+      const yearMonth = `${r.revenue_year}-${String(r.revenue_month).padStart(2, "0")}`;
+      const yoyKey = `${r.revenue_year - 1}-${String(r.revenue_month).padStart(2, "0")}`;
+      const prevYear = byKey.get(yoyKey);
+      const prevMonth = byKey.get(prevMonthKey(r.revenue_year, r.revenue_month));
+      return {
+        yearMonth,
+        revenue: r.revenue,
+        yoy: prevYear && prevYear.revenue ? round(((r.revenue - prevYear.revenue) / prevYear.revenue) * 100) : null,
+        mom: prevMonth && prevMonth.revenue ? round(((r.revenue - prevMonth.revenue) / prevMonth.revenue) * 100) : null,
+      };
+    });
+    return points.slice(-12);
+  } catch (e) {
+    console.warn("[finmind] revenue failed", e);
+    return [];
+  }
+}
+
 export async function fetchSnapshotFinMind(symbol: string): Promise<StockSnapshot> {
-  const [info, bars, inst] = await Promise.all([
+  const [info, bars, inst, valuation, revenues] = await Promise.all([
     fetchInfo(symbol),
     fetchPrice(symbol),
     fetchInst(symbol).catch((e) => {
       console.warn("[finmind] inst failed", e);
       return [] as FmInstRow[];
     }),
+    fetchValuation(symbol),
+    fetchRevenue(symbol),
   ]);
   if (bars.length === 0) {
     throw new Error(`找不到 ${symbol} 的歷史資料，請確認代號是否正確`);
@@ -212,7 +303,31 @@ export async function fetchSnapshotFinMind(symbol: string): Promise<StockSnapsho
     chip: buildChipFlow(inst),
     industry: buildIndustryInfo(info),
     shortTermWinRate: shortTermWinRate(bars),
+    valuation,
+    revenues,
   };
+}
+
+function emptyValuation(): ValuationStats {
+  return {
+    current: null,
+    perMin: 0, perMax: 0, perMedian: 0, perQ1: 0, perQ3: 0, perPercentile: 0,
+    pbrMin: 0, pbrMax: 0, pbrMedian: 0, samples: 0,
+  };
+}
+
+function quantile(sorted: number[], q: number): number {
+  if (sorted.length === 0) return 0;
+  const pos = (sorted.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sorted[base + 1] !== undefined) return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+  return sorted[base];
+}
+
+function prevMonthKey(year: number, month: number): string {
+  if (month === 1) return `${year - 1}-12`;
+  return `${year}-${String(month - 1).padStart(2, "0")}`;
 }
 
 function round(n: number) { return Math.round(n * 100) / 100; }

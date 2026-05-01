@@ -92,10 +92,40 @@ export interface IndustryInfo {
   company: string[];
 }
 
+export interface ValuationPoint {
+  date: string;
+  per: number;
+  pbr: number;
+  dividendYield: number;
+}
+
+export interface ValuationStats {
+  current: ValuationPoint | null;
+  perMin: number;
+  perMax: number;
+  perMedian: number;
+  perQ1: number;
+  perQ3: number;
+  perPercentile: number;
+  pbrMin: number;
+  pbrMax: number;
+  pbrMedian: number;
+  samples: number;
+}
+
+export interface MonthRevenuePoint {
+  yearMonth: string;
+  revenue: number;
+  yoy: number | null;
+  mom: number | null;
+}
+
 export interface StockSnapshot {
   quote: Quote;
   kbars: KBar[];
   chip: ChipFlow;
   industry: IndustryInfo;
   shortTermWinRate: number;
+  valuation: ValuationStats;
+  revenues: MonthRevenuePoint[];
 }
