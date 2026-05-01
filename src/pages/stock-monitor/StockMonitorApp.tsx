@@ -5,6 +5,8 @@ import { MarketView } from "./MarketView";
 
 type View = "monitor" | "compare" | "market";
 
+const TUTOR_KEY = "stock-monitor:tutor";
+
 const TABS: { key: View; label: string }[] = [
   { key: "monitor", label: "個股" },
   { key: "compare", label: "對比" },
@@ -19,12 +21,21 @@ function readView(): View {
 
 export function StockMonitorApp() {
   const [view, setView] = useState<View>(readView());
+  const [tutor, setTutor] = useState<boolean>(() => {
+    try { return localStorage.getItem(TUTOR_KEY) === "1"; } catch { return false; }
+  });
 
   useEffect(() => {
     const onHash = () => setView(readView());
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
+  const toggleTutor = () => {
+    const next = !tutor;
+    setTutor(next);
+    try { localStorage.setItem(TUTOR_KEY, next ? "1" : "0"); } catch { /* ignore */ }
+  };
 
   const switchView = (v: View) => {
     setView(v);
@@ -62,9 +73,22 @@ export function StockMonitorApp() {
               {t.label}
             </button>
           ))}
+          <div className="ml-auto">
+            <button
+              onClick={toggleTutor}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-bold transition-colors ${
+                tutor
+                  ? "bg-yellow-500/20 text-yellow-200 ring-1 ring-yellow-400"
+                  : "text-slate-400 hover:bg-slate-800 hover:text-yellow-200"
+              }`}
+              title="顯示看盤名詞速查"
+            >
+              📖 新手
+            </button>
+          </div>
         </div>
       </div>
-      {view === "monitor" && <StockMonitor />}
+      {view === "monitor" && <StockMonitor tutor={tutor} />}
       {view === "compare" && (
         <div className="mx-auto max-w-[1480px] px-2 py-2 sm:px-3 sm:py-3">
           <CompareView onPick={switchToMonitor} />

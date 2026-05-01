@@ -31,6 +31,7 @@ import { PublicLinksPanel } from "./components/PublicLinksPanel";
 import { FinalDisclaimer } from "./components/FinalDisclaimer";
 import { SkeletonDashboard } from "./components/Skeleton";
 import { SectionNav } from "./components/SectionNav";
+import { Glossary } from "./components/Glossary";
 import { useWatchlist } from "./useWatchlist";
 
 function readSymbolFromUrl(): string {
@@ -72,7 +73,7 @@ const PRESETS: { symbol: string; name: string }[] = [
   { symbol: "0056", name: "元大高股息" },
 ];
 
-export default function StockMonitor() {
+export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}) {
   const initial = readSymbolFromUrl();
   const [symbol, setSymbol] = useState(initial);
   const [input, setInput] = useState(initial);
@@ -206,6 +207,7 @@ export default function StockMonitor() {
         )}
 
         <Disclaimer />
+        {tutor && <Glossary />}
 
         {error ? (
           <div className="rounded border border-red-500/30 bg-red-900/20 px-4 py-6 text-center text-red-200">
