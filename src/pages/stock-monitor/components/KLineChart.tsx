@@ -38,13 +38,14 @@ export function KLineChart({ bars, recentHigh, supportUpper, supportLower }: Pro
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-4 text-xs px-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] sm:text-xs px-1 sm:px-2">
         <span className="text-cyan-300 font-bold">日K線圖</span>
         <span className="text-yellow-300">MA5 {fmt(last?.ma5)}</span>
         <span className="text-cyan-300">MA20 {fmt(last?.ma20)}</span>
         <span className="text-fuchsia-400">MA60 {fmt(last?.ma60)}</span>
       </div>
-      <ResponsiveContainer width="100%" height={260}>
+      <div className="h-[200px] sm:h-[240px] md:h-[260px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 8, right: 36, left: 0, bottom: 0 }}>
           <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 10 }} interval={Math.floor(data.length / 8)} />
           <YAxis
@@ -66,7 +67,9 @@ export function KLineChart({ bars, recentHigh, supportUpper, supportLower }: Pro
           <Line yAxisId="price" type="monotone" dataKey="ma60" stroke="#e879f9" dot={false} strokeWidth={1.2} />
         </ComposedChart>
       </ResponsiveContainer>
-      <ResponsiveContainer width="100%" height={70}>
+      </div>
+      <div className="h-[60px] sm:h-[70px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 4, right: 36, left: 0, bottom: 0 }}>
           <XAxis dataKey="date" hide />
           <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} orientation="right" width={36} />
@@ -74,6 +77,7 @@ export function KLineChart({ bars, recentHigh, supportUpper, supportLower }: Pro
           <Bar dataKey="volume" shape={<VolBar />} />
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

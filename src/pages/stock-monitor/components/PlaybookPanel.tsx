@@ -10,7 +10,7 @@ const COLOR: Record<NextDayScenario["type"], { border: string; bg: string; text:
 export function PlaybookPanel({ scenarios, date }: { scenarios: NextDayScenario[]; date: string }) {
   return (
     <Panel title="隔日情境模擬" badge={`(${date})`}>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {scenarios.map((s) => {
           const c = COLOR[s.type];
           return (

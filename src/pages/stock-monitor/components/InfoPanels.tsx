@@ -101,8 +101,8 @@ export function WinRateGauge({ rate }: { rate: number }) {
   const angle = -90 + (rate / 100) * 180;
   return (
     <Panel title="短線勝率" badge="(近10日)">
-      <div className="relative mx-auto h-[120px] w-[200px]">
-        <svg viewBox="0 0 200 110" className="h-full w-full">
+      <div className="relative mx-auto w-full max-w-[220px] aspect-[200/110]">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid meet" className="h-full w-full">
           <defs>
             <linearGradient id="gauge" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#ef4444" />
