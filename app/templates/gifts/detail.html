@@ -5,6 +5,7 @@
     <div>
         <h2 style="margin-bottom: 0.25rem;">{{ gift_list.name }}</h2>
         {% if gift_list.occasion %}<span class="badge">{{ gift_list.occasion }}</span>{% endif %}
+        {% if gift_list.gift_item %}<span class="badge" style="background:var(--primary);color:#fff;">{{ gift_list.gift_item }}</span>{% endif %}
         {% if gift_list.notes %}<p class="text-muted">{{ gift_list.notes }}</p>{% endif %}
     </div>
     <div class="btn-group">
@@ -24,7 +25,11 @@
         <div class="stat-label">總人數</div>
     </div>
     <div class="stat-card">
-        <div class="stat-number">${{ "%.0f"|format(total_planned) }}</div>
+        <div class="stat-number">${{ "%.0f"|format(gift_list.budget_per_person or 0) }}</div>
+        <div class="stat-label">每人預算</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">${{ "%.0f"|format((gift_list.budget_per_person or 0) * items|length) }}</div>
         <div class="stat-label">預算總額</div>
     </div>
     <div class="stat-card">
@@ -40,21 +45,15 @@
 <!-- Add person -->
 {% if can_edit and all_persons %}
 <div class="card">
-    <h3>新增人員</h3>
+    <h3>手動加入人員</h3>
     <form method="post" action="/gifts/{{ gift_list.id }}/add" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: end;">
-        <label style="flex: 1; min-width: 150px;">聯絡人
+        <label style="flex: 1; min-width: 200px;">聯絡人
             <select name="person_id" required>
                 <option value="">-- 選擇 --</option>
                 {% for p in all_persons %}
-                <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }}{% if p.gift_tier %} ({{ p.gift_tier }}){% endif %}</option>
+                <option value="{{ p.id }}">{{ p.first_name }}{% if p.gift_tier %} ({{ p.gift_tier }}){% endif %}</option>
                 {% endfor %}
             </select>
-        </label>
-        <label style="flex: 1; min-width: 150px;">禮品
-            <input type="text" name="planned_item" placeholder="例：紅酒禮盒">
-        </label>
-        <label style="width: 120px;">金額
-            <input type="number" name="planned_amount" step="1" min="0" placeholder="0">
         </label>
         <button type="submit" class="btn-sm">加入</button>
     </form>
@@ -70,8 +69,6 @@
             <th>層級</th>
             <th>姓名</th>
             <th>喜好 / 備註</th>
-            <th>禮品</th>
-            <th>金額</th>
             <th>狀態</th>
             {% if can_edit %}<th>操作</th>{% endif %}
         </tr>
@@ -80,25 +77,13 @@
         {% for item in items %}
         <tr>
             <td>{% if item.gift_tier %}<span class="badge gift-{{ item.gift_tier|lower }}">{{ item.gift_tier }}</span>{% endif %}</td>
-            <td><a href="/persons/{{ item.person_id }}">{{ item.first_name }} {{ item.last_name }}</a></td>
+            <td><a href="/persons/{{ item.person_id }}">{{ item.first_name }}</a></td>
             <td class="text-muted">{{ item.preferences[:30] if item.preferences else '' }}{{ '...' if item.preferences and item.preferences|length > 30 else '' }}</td>
             <td>
                 {% if can_edit %}
                 <form method="post" action="/gifts/{{ gift_list.id }}/item/{{ item.id }}/update" style="display:flex; gap:0.25rem; align-items:center;">
-                    <input type="text" name="planned_item" value="{{ item.planned_item or '' }}" placeholder="禮品" style="margin:0; padding:0.2rem 0.4rem; width:120px;">
-                {% else %}
-                    {{ item.planned_item or '-' }}
-                {% endif %}
-            </td>
-            <td>
-                {% if can_edit %}
-                    <input type="number" name="planned_amount" value="{{ item.planned_amount or 0 }}" step="1" min="0" style="margin:0; padding:0.2rem 0.4rem; width:80px;">
-                {% else %}
-                    ${{ "%.0f"|format(item.planned_amount or 0) }}
-                {% endif %}
-            </td>
-            <td>
-                {% if can_edit %}
+                    <input type="hidden" name="planned_item" value="">
+                    <input type="hidden" name="planned_amount" value="0">
                     <select name="status" style="margin:0; padding:0.2rem; font-size:0.85rem;">
                         {% for s in ['pending', 'purchased', 'sent', 'done'] %}
                         <option value="{{ s }}" {{ 'selected' if item.status == s else '' }}>{{ {'pending':'待處理','purchased':'已購買','sent':'已送出','done':'完成'}[s] }}</option>
@@ -131,11 +116,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 {% if item.gift_tier %}<span class="badge gift-{{ item.gift_tier|lower }}">{{ item.gift_tier }}</span>{% endif %}
-                <a href="/persons/{{ item.person_id }}"><strong>{{ item.first_name }} {{ item.last_name }}</strong></a>
+                <a href="/persons/{{ item.person_id }}"><strong>{{ item.first_name }}</strong></a>
             </div>
             <span class="badge">{{ {'pending':'待處理','purchased':'已購買','sent':'已送出','done':'完成'}.get(item.status, item.status) }}</span>
         </div>
-        {% if item.planned_item %}<div class="text-muted">{{ item.planned_item }} - ${{ "%.0f"|format(item.planned_amount or 0) }}</div>{% endif %}
     </div>
     {% endfor %}
 </div>

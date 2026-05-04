@@ -57,7 +57,7 @@
         {% if upcoming_bdays %}
         {% for p in upcoming_bdays %}
         <div class="activity-item">
-            <a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a>
+            <a href="/persons/{{ p.id }}">{{ p.first_name }}{% if p.last_name %} ({{ p.last_name }}){% endif %}</a>
             <span class="text-muted">{{ p.birthday }}</span>
             {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
         </div>
@@ -76,7 +76,7 @@
             {% if recent_persons %}
             {% for p in recent_persons %}
             <div class="contact-card-mobile">
-                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }} {{ p.last_name }}</strong></a>
+                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }}{% if p.last_name %} ({{ p.last_name }}){% endif %}</strong></a>
                 {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
                 <span class="text-muted">{{ p.email or '' }}</span>
                 <span class="text-muted">{{ p.updated_at[:16] if p.updated_at else '' }}</span>
@@ -114,7 +114,7 @@
         {% for p in dormant %}
         <div style="padding: 0.5rem 0.75rem; border: 1px solid #dee2e6; border-radius: 6px; background: #fff3cd;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }} {{ p.last_name }}</strong></a>
+                <a href="/persons/{{ p.id }}"><strong>{{ p.first_name }}{% if p.last_name %} ({{ p.last_name }}){% endif %}</strong></a>
                 {% if p.gift_tier %}<span class="badge gift-{{ p.gift_tier|lower }}">{{ p.gift_tier }}</span>{% endif %}
             </div>
             <div class="text-muted" style="font-size: 0.85rem;">

@@ -24,7 +24,6 @@ async def list_gift_lists(request: Request):
     lists = db.execute("""
         SELECT gl.*, u.username,
             COUNT(gli.id) as item_count,
-            COALESCE(SUM(gli.planned_amount), 0) as total_amount,
             SUM(CASE WHEN gli.status = 'done' THEN 1 ELSE 0 END) as done_count
         FROM gift_lists gl
         LEFT JOIN users u ON u.id = gl.created_by
@@ -50,9 +49,15 @@ async def create_gift_list(request: Request):
         return RedirectResponse("/gifts", status_code=302)
     form = await request.form()
     db = get_db()
-    db.execute("INSERT INTO gift_lists (name, occasion, notes, created_by) VALUES (?,?,?,?)",
+    budget = 0
+    try:
+        budget = float(form.get("budget_per_person", 0) or 0)
+    except (ValueError, TypeError):
+        pass
+    db.execute("INSERT INTO gift_lists (name, occasion, notes, gift_item, budget_per_person, created_by) VALUES (?,?,?,?,?,?)",
                (form.get("name", ""), form.get("occasion", ""),
-                form.get("notes", ""), request.state.user["id"]))
+                form.get("notes", ""), form.get("gift_item", ""),
+                budget, request.state.user["id"]))
     db.commit()
     list_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -114,8 +119,8 @@ async def add_to_list(request: Request, list_id: int):
     person_id = form.get("person_id")
     if person_id:
         db = get_db()
-        db.execute("INSERT OR IGNORE INTO gift_list_items (list_id, person_id, planned_item, planned_amount) VALUES (?,?,?,?)",
-                   (list_id, int(person_id), form.get("planned_item", ""), float(form.get("planned_amount", 0) or 0)))
+        db.execute("INSERT OR IGNORE INTO gift_list_items (list_id, person_id) VALUES (?,?)",
+                   (list_id, int(person_id)))
         db.commit()
         db.close()
     return RedirectResponse(f"/gifts/{list_id}", status_code=302)

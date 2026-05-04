@@ -45,13 +45,23 @@ def _save_roles(db, person_id: int, form_data):
     db.execute("DELETE FROM roles WHERE person_id = ?", (person_id,))
 
     titles = form_data.getlist("role_title[]")
-    company_ids = form_data.getlist("role_company_id[]")
+    company_names = form_data.getlist("role_company_name[]")
     work_emails = form_data.getlist("role_work_email[]")
     work_phones = form_data.getlist("role_work_phone[]")
     current_checks = form_data.getlist("role_is_current[]")
 
     for i in range(len(titles)):
-        company_id = company_ids[i] if i < len(company_ids) and company_ids[i] else None
+        company_name = company_names[i].strip() if i < len(company_names) else ""
+        company_id = None
+        if company_name:
+            existing = db.execute("SELECT id FROM companies WHERE name = ?", (company_name,)).fetchone()
+            if existing:
+                company_id = existing["id"]
+            else:
+                db.execute("INSERT INTO companies (name) VALUES (?)", (company_name,))
+                db.commit()
+                company_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
         title = titles[i] if i < len(titles) else ""
         work_email = work_emails[i] if i < len(work_emails) else ""
         work_phone = work_phones[i] if i < len(work_phones) else ""
@@ -150,6 +160,37 @@ async def new_person(request: Request):
         person=None, roles=[], tags=[], companies=[dict(c) for c in companies], custom_fields=custom_fields)
 
 
+def _find_duplicates(db, name: str, email: str, phone: str) -> list:
+    """Check for existing contacts that may be duplicates."""
+    dupes = []
+    seen_ids = set()
+    if name:
+        rows = db.execute(
+            "SELECT id, first_name, email, phone FROM persons WHERE first_name = ?", (name,)
+        ).fetchall()
+        for r in rows:
+            if r["id"] not in seen_ids:
+                dupes.append({"person": dict(r), "match": "姓名"})
+                seen_ids.add(r["id"])
+    if email:
+        rows = db.execute(
+            "SELECT id, first_name, email, phone FROM persons WHERE email = ?", (email,)
+        ).fetchall()
+        for r in rows:
+            if r["id"] not in seen_ids:
+                dupes.append({"person": dict(r), "match": "Email"})
+                seen_ids.add(r["id"])
+    if phone:
+        rows = db.execute(
+            "SELECT id, first_name, email, phone FROM persons WHERE phone = ?", (phone,)
+        ).fetchall()
+        for r in rows:
+            if r["id"] not in seen_ids:
+                dupes.append({"person": dict(r), "match": "電話"})
+                seen_ids.add(r["id"])
+    return dupes
+
+
 @router.post("/new")
 @login_required
 async def create_person(request: Request):
@@ -157,12 +198,26 @@ async def create_person(request: Request):
         return RedirectResponse("/persons", status_code=302)
     form = await request.form()
     db = get_db()
+
+    name = form.get("first_name", "").strip()
+    email = form.get("email", "").strip()
+    phone = form.get("phone", "").strip()
+    force = form.get("force_create", "")
+
+    if not force:
+        dupes = _find_duplicates(db, name, email, phone)
+        if dupes:
+            db.close()
+            return _render(request, "persons/duplicate_warning.html",
+                duplicates=dupes, form_data=dict(form))
+
     db.execute(
-        "INSERT INTO persons (first_name, last_name, email, phone, notes, gift_tier, birthday, preferences, gift_notes, created_by, updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO persons (first_name, last_name, email, phone, notes, gift_tier, birthday, preferences, gift_notes, industry, created_by, updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
         (form.get("first_name", ""), form.get("last_name", ""), form.get("email", ""),
          form.get("phone", ""), form.get("notes", ""),
          form.get("gift_tier", ""), form.get("birthday", ""),
          form.get("preferences", ""), form.get("gift_notes", ""),
+         form.get("industry", ""),
          request.state.user["id"], request.state.user["id"]),
     )
     db.commit()
@@ -174,7 +229,6 @@ async def create_person(request: Request):
     from app.routes.custom_field_routes import save_custom_fields_for_person
     save_custom_fields_for_person(db, person_id, form)
 
-    name = f"{form.get('first_name', '')} {form.get('last_name', '')}"
     db.execute(
         "INSERT INTO edit_log (user_id, entity_type, entity_id, action, changes) VALUES (?,?,?,?,?)",
         (request.state.user["id"], "person", person_id, "create", f"建立聯絡人: {name}"),
@@ -204,8 +258,8 @@ async def view_person(request: Request, person_id: int):
 
     relationships = db.execute("""
         SELECT rel.*,
-            pa.first_name || ' ' || pa.last_name as person_a_name, pa.id as person_a_id,
-            pb.first_name || ' ' || pb.last_name as person_b_name, pb.id as person_b_id
+            pa.first_name as person_a_name, pa.id as person_a_id,
+            pb.first_name as person_b_name, pb.id as person_b_id
         FROM relationships rel
         JOIN persons pa ON pa.id = rel.person_a_id
         JOIN persons pb ON pb.id = rel.person_b_id
@@ -288,12 +342,13 @@ async def update_person(request: Request, person_id: int):
 
     db.execute(
         """UPDATE persons SET first_name=?, last_name=?, email=?, phone=?, notes=?,
-           gift_tier=?, birthday=?, preferences=?, gift_notes=?,
+           gift_tier=?, birthday=?, preferences=?, gift_notes=?, industry=?,
            updated_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
         (form.get("first_name", ""), form.get("last_name", ""), form.get("email", ""),
          form.get("phone", ""), form.get("notes", ""),
          form.get("gift_tier", ""), form.get("birthday", ""),
          form.get("preferences", ""), form.get("gift_notes", ""),
+         form.get("industry", ""),
          request.state.user["id"], person_id),
     )
     db.commit()
@@ -307,7 +362,7 @@ async def update_person(request: Request, person_id: int):
     from app.routes.custom_field_routes import save_custom_fields_for_person
     save_custom_fields_for_person(db, person_id, form)
 
-    name = f"{form.get('first_name', '')} {form.get('last_name', '')}"
+    name = form.get('first_name', '')
     db.execute(
         "INSERT INTO edit_log (user_id, entity_type, entity_id, action, changes, diff_json) VALUES (?,?,?,?,?,?)",
         (request.state.user["id"], "person", person_id, "update", f"更新聯絡人: {name}", diff),
@@ -326,7 +381,7 @@ async def delete_person(request: Request, person_id: int):
         return RedirectResponse(f"/persons/{person_id}", status_code=302)
     db = get_db()
     person = db.execute("SELECT first_name, last_name FROM persons WHERE id = ?", (person_id,)).fetchone()
-    name = f"{person['first_name']} {person['last_name']}" if person else ""
+    name = person['first_name'] if person else ""
     db.execute("DELETE FROM persons WHERE id = ?", (person_id,))
     db.execute(
         "INSERT INTO edit_log (user_id, entity_type, entity_id, action, changes) VALUES (?,?,?,?,?)",
@@ -475,6 +530,20 @@ async def batch_action(request: Request):
         return RedirectResponse("/persons", status_code=302)
 
     db = get_db()
+
+    if action == "export_selected":
+        from app.services.import_service import export_persons_csv_selected
+        from fastapi.responses import StreamingResponse
+        csv_content = export_persons_csv_selected(db, [int(pid) for pid in person_ids])
+        db.close()
+        def generate():
+            yield b'\xef\xbb\xbf'
+            yield csv_content.encode("utf-8")
+        return StreamingResponse(
+            generate(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=contacts_selected.csv"},
+        )
 
     if action == "delete":
         for pid in person_ids:

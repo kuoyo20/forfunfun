@@ -7,12 +7,36 @@
     <div class="card">
         <h3>基本資料</h3>
         <div class="grid-2">
-            <label>姓 *
+            <label>姓名 *
                 <input type="text" name="first_name" value="{{ person.first_name if person else '' }}" required>
             </label>
-            <label>名
-                <input type="text" name="last_name" value="{{ person.last_name if person else '' }}">
+            <label>英文名
+                <input type="text" name="last_name" value="{{ person.last_name if person else '' }}" placeholder="選填，ex. Kuoyo">
             </label>
+        </div>
+        <div class="grid-2">
+            <label>產業別
+                <input type="text" name="industry" value="{{ person.industry if person and person.industry else '' }}" list="industry-list" placeholder="選填">
+                <datalist id="industry-list">
+                    <option value="科技業">
+                    <option value="金融業">
+                    <option value="製造業">
+                    <option value="醫療業">
+                    <option value="教育業">
+                    <option value="零售業">
+                    <option value="餐飲業">
+                    <option value="媒體業">
+                    <option value="法律業">
+                    <option value="建築業">
+                    <option value="農業">
+                    <option value="物流業">
+                    <option value="顧問業">
+                    <option value="設計業">
+                    <option value="公部門">
+                    <option value="非營利組織">
+                </datalist>
+            </label>
+            <div></div>
         </div>
         <div class="grid-2">
             <label>個人 Email
@@ -42,12 +66,12 @@
                     </div>
                     <div class="grid-2">
                         <label>公司
-                            <select name="role_company_id[]">
-                                <option value="">-- 選擇公司 --</option>
+                            <input type="text" name="role_company_name[]" value="{{ r.company_name or '' }}" list="company-list-{{ loop.index0 }}" placeholder="輸入公司名稱">
+                            <datalist id="company-list-{{ loop.index0 }}">
                                 {% for c in companies %}
-                                <option value="{{ c.id }}" {% if r.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                                <option value="{{ c.name }}">
                                 {% endfor %}
-                            </select>
+                            </datalist>
                         </label>
                         <label>職稱
                             <input type="text" name="role_title[]" value="{{ r.title or '' }}">

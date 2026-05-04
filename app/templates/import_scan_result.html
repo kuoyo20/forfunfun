@@ -13,11 +13,11 @@
         <h3>請確認並修正資料</h3>
         <form method="post" action="/persons/new">
             <div class="grid-2">
-                <label>姓
+                <label>姓名 *
                     <input type="text" name="first_name" value="{{ card_info.first_name }}" required>
                 </label>
-                <label>名
-                    <input type="text" name="last_name" value="{{ card_info.last_name }}">
+                <label>英文名
+                    <input type="text" name="last_name" value="{{ card_info.last_name }}" placeholder="選填，ex. Kuoyo">
                 </label>
             </div>
             <div class="grid-2">
@@ -32,12 +32,12 @@
             <h4>身分</h4>
             <div class="grid-2">
                 <label>公司
-                    <select name="role_company_id[]">
-                        <option value="">-- 選擇或之後新增 --</option>
+                    <input type="text" name="role_company_name[]" value="{{ card_info.company }}" list="company-list-0" placeholder="輸入公司名稱">
+                    <datalist id="company-list-0">
                         {% for c in companies %}
-                        <option value="{{ c.id }}" {% if c.name == card_info.company %}selected{% endif %}>{{ c.name }}</option>
+                        <option value="{{ c.name }}">
                         {% endfor %}
-                    </select>
+                    </datalist>
                 </label>
                 <label>職稱
                     <input type="text" name="role_title[]" value="{{ card_info.title }}">
@@ -68,7 +68,7 @@
 
 {% if card_info.company %}
 <p style="margin-top: 0.5rem; color: #6c757d;">
-    偵測到公司名稱「{{ card_info.company }}」。如果公司不在下拉選單中，請先<a href="/companies/new" target="_blank">新增公司</a>後重新掃描。
+    偵測到公司名稱「{{ card_info.company }}」。您可以直接輸入公司名稱，系統會自動建立新公司。
 </p>
 {% endif %}
 {% endblock %}

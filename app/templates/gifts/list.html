@@ -14,10 +14,11 @@
     <div class="card">
         <h3><a href="/gifts/{{ gl.id }}">{{ gl.name }}</a></h3>
         {% if gl.occasion %}<span class="badge">{{ gl.occasion }}</span>{% endif %}
+        {% if gl.gift_item %}<span class="badge" style="background:var(--primary);color:#fff;">{{ gl.gift_item }}</span>{% endif %}
         <p class="text-muted">建立者：{{ gl.username or '未知' }} | {{ gl.created_at[:10] if gl.created_at else '' }}</p>
         <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
             <div><strong>{{ gl.item_count }}</strong> 人</div>
-            <div>預算 <strong>${{ "%.0f"|format(gl.total_amount or 0) }}</strong></div>
+            {% if gl.budget_per_person %}<div>每人 <strong>${{ "%.0f"|format(gl.budget_per_person) }}</strong></div>{% endif %}
             <div>已完成 <strong>{{ gl.done_count or 0 }}</strong>/{{ gl.item_count }}</div>
         </div>
         {% if gl.item_count > 0 %}

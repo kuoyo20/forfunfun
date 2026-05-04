@@ -36,7 +36,6 @@ def find_duplicates(rows: list[dict], mapping: dict, db) -> list[dict]:
     for i, row in enumerate(rows):
         email = row.get(mapping.get("email", ""), "").strip()
         first_name = row.get(mapping.get("first_name", ""), "").strip()
-        last_name = row.get(mapping.get("last_name", ""), "").strip()
 
         if email:
             existing = db.execute(
@@ -44,17 +43,17 @@ def find_duplicates(rows: list[dict], mapping: dict, db) -> list[dict]:
             ).fetchone()
             if existing:
                 dupes.append({"row_index": i, "match_field": "email", "existing": dict(existing),
-                              "new_name": f"{first_name} {last_name}"})
+                              "new_name": first_name})
                 continue
 
-        if first_name and last_name:
+        if first_name:
             existing = db.execute(
-                "SELECT id, first_name, last_name, email FROM persons WHERE first_name = ? AND last_name = ?",
-                (first_name, last_name),
+                "SELECT id, first_name, last_name, email FROM persons WHERE first_name = ?",
+                (first_name,),
             ).fetchone()
             if existing:
                 dupes.append({"row_index": i, "match_field": "name", "existing": dict(existing),
-                              "new_name": f"{first_name} {last_name}"})
+                              "new_name": first_name})
 
     return dupes
 
@@ -85,6 +84,7 @@ def map_and_import(rows: list[dict], mapping: dict, db, user_id: int, skip_indic
         title = row.get(mapping.get("title", ""), "").strip()
         tags_str = row.get(mapping.get("tags", ""), "").strip()
 
+        # last_name is now english_name in the new model
         db.execute(
             "INSERT INTO persons (first_name, last_name, email, phone, notes, created_by, updated_by) VALUES (?,?,?,?,?,?,?)",
             (first_name, last_name, email, phone, notes, user_id, user_id),
@@ -125,7 +125,7 @@ def map_and_import(rows: list[dict], mapping: dict, db, user_id: int, skip_indic
 
         db.execute(
             "INSERT INTO edit_log (user_id, entity_type, entity_id, action, changes) VALUES (?,?,?,?,?)",
-            (user_id, "person", person_id, "create", f"匯入聯絡人: {first_name} {last_name}"),
+            (user_id, "person", person_id, "create", f"匯入聯絡人: {first_name}"),
         )
         db.commit()
         count += 1
@@ -133,12 +133,23 @@ def map_and_import(rows: list[dict], mapping: dict, db, user_id: int, skip_indic
     return count, skipped
 
 
+def export_persons_csv_selected(db, person_ids: list[int]) -> str:
+    """Export selected persons as CSV string."""
+    placeholders = ",".join(["?"] * len(person_ids))
+    persons = db.execute(f"SELECT * FROM persons WHERE id IN ({placeholders}) ORDER BY first_name", person_ids).fetchall()
+    return _export_persons_to_csv(db, persons)
+
+
 def export_persons_csv(db) -> str:
     """Export all persons with their roles and tags as CSV string."""
     persons = db.execute("SELECT * FROM persons ORDER BY first_name, last_name").fetchall()
+    return _export_persons_to_csv(db, persons)
+
+
+def _export_persons_to_csv(db, persons) -> str:
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["姓", "名", "Email", "電話", "公司", "職稱", "工作Email", "工作電話", "在職", "標籤", "備註"])
+    writer.writerow(["姓名", "英文名", "Email", "電話", "公司", "職稱", "工作Email", "工作電話", "在職", "標籤", "備註"])
 
     for p in persons:
         pid = p["id"]

@@ -213,7 +213,7 @@ async def relationship_graph(request: Request):
     edges = []
 
     for p in persons:
-        nodes.append({"id": f"p_{p['id']}", "label": f"{p['first_name']} {p['last_name']}", "type": "person"})
+        nodes.append({"id": f"p_{p['id']}", "label": p['first_name'], "type": "person"})
 
     company_ids_added = set()
     for r in roles:

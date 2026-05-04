@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% block title %}{{ person.first_name }} {{ person.last_name }} - 人脈管理系統{% endblock %}
+{% block title %}{{ person.first_name }}{% if person.last_name %} ({{ person.last_name }}){% endif %} - 人脈管理系統{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
     <div style="display: flex; align-items: center; gap: 1rem;">
         {% if person.photo_url %}
         <img src="{{ person.photo_url }}" class="avatar-lg">
         {% endif %}
-        <h2 style="margin:0;">{{ person.first_name }} {{ person.last_name }}</h2>
+        <h2 style="margin:0;">{{ person.first_name }}{% if person.last_name %} ({{ person.last_name }}){% endif %}</h2>
     </div>
     {% if can_edit %}
     <div class="btn-group">
         <a href="/persons/{{ person.id }}/edit" role="button" class="btn-sm">編輯</a>
         <form method="post" action="/persons/{{ person.id }}/delete" style="margin:0;">
-            <button type="button" class="btn-sm btn-danger" onclick="confirmDelete(this.closest('form'), '{{ person.first_name }} {{ person.last_name }}')">刪除</button>
+            <button type="button" class="btn-sm btn-danger" onclick="confirmDelete(this.closest('form'), '{{ person.first_name }}{% if person.last_name %} ({{ person.last_name }}){% endif %}')">刪除</button>
         </form>
     </div>
     {% endif %}
@@ -265,7 +265,7 @@
                     <select name="other_person_id" required>
                         <option value="">-- 選擇 --</option>
                         {% for p in all_persons %}
-                        <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</option>
+                        <option value="{{ p.id }}">{{ p.first_name }}{% if p.last_name %} ({{ p.last_name }}){% endif %}</option>
                         {% endfor %}
                     </select>
                 </label>

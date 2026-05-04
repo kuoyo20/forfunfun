@@ -110,26 +110,35 @@ def extract_card_info(text: str) -> dict:
         if result["address"]:
             break
 
-    # Name: first unused line that is short
+    # Name: first unused line that is short \u2014 put full name in first_name
     for i, line in enumerate(lines):
         if i in used_lines:
             continue
         if len(line) <= 20 and not re.search(r'[./@]', line):
-            parts = line.split()
-            if len(parts) >= 2:
-                result["last_name"] = parts[0]
-                result["first_name"] = " ".join(parts[1:])
-            else:
-                # CJK name: first char is last name
-                if re.match(r'[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7a3]', line) and len(line) >= 2:
-                    result["last_name"] = line[0]
-                    result["first_name"] = line[1:]
-                else:
-                    result["first_name"] = line
+            # Keep full name in first_name (merged name model)
+            result["first_name"] = line.strip()
+            result["last_name"] = ""
             used_lines.add(i)
             break
 
     return result
+
+
+def _detect_script(image_path: str) -> str:
+    """Detect dominant script in image using OSD to prioritize language."""
+    try:
+        import pytesseract
+        from PIL import Image
+        img = Image.open(image_path)
+        osd = pytesseract.image_to_osd(img)
+        # OSD returns script info; check for Korean/Hangul
+        if "Hangul" in osd or "Korean" in osd:
+            return "korean"
+        if "Han" in osd or "CJK" in osd:
+            return "cjk"
+    except Exception:
+        pass
+    return "unknown"
 
 
 def ocr_image(image_path: str) -> str:
@@ -139,14 +148,26 @@ def ocr_image(image_path: str) -> str:
         from PIL import Image
         img = Image.open(image_path)
 
-        # Try multiple language combinations
-        lang_attempts = [
-            "chi_tra+eng",   # Traditional Chinese + English
-            "chi_sim+eng",   # Simplified Chinese + English
-            "jpn+eng",       # Japanese + English
-            "kor+eng",       # Korean + English
-            "eng",           # English only (fallback)
-        ]
+        # Detect script to prioritize language order
+        script = _detect_script(image_path)
+
+        # Try multiple language combinations, prioritize based on detected script
+        if script == "korean":
+            lang_attempts = [
+                "kor+eng",       # Korean + English (prioritized)
+                "chi_tra+eng",
+                "chi_sim+eng",
+                "jpn+eng",
+                "eng",
+            ]
+        else:
+            lang_attempts = [
+                "chi_tra+eng",   # Traditional Chinese + English
+                "chi_sim+eng",   # Simplified Chinese + English
+                "jpn+eng",       # Japanese + English
+                "kor+eng",       # Korean + English
+                "eng",           # English only (fallback)
+            ]
 
         best_text = ""
         for lang in lang_attempts:

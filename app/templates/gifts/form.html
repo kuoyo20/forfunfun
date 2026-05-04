@@ -15,6 +15,12 @@
             {% endfor %}
         </select>
     </label>
+    <label>禮品名稱
+        <input type="text" name="gift_item" placeholder="例：股東禮盒、紅酒禮盒" value="{{ gift_list.gift_item if gift_list else '' }}">
+    </label>
+    <label>每人預算
+        <input type="number" name="budget_per_person" step="1" min="0" placeholder="0" value="{{ gift_list.budget_per_person|int if gift_list and gift_list.budget_per_person else '' }}">
+    </label>
     <label>備註
         <textarea name="notes" rows="2">{{ gift_list.notes if gift_list else '' }}</textarea>
     </label>

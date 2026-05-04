@@ -52,6 +52,7 @@
         <option value="">-- 批次操作 --</option>
         <option value="add_tag">加標籤</option>
         <option value="remove_tag">移除標籤</option>
+        <option value="export_selected">匯出已勾選</option>
         <option value="delete">刪除</option>
     </select>
     <input type="text" name="batch_tag" id="batch-tag" placeholder="標籤名稱" style="display:none; width: 150px; margin: 0;">
@@ -78,7 +79,7 @@
             {% if can_edit %}<td><input type="checkbox" name="selected[]" value="{{ item.person.id }}" class="row-select"></td>{% endif %}
             <td>
                 {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
-                <a href="/persons/{{ item.person.id }}">{{ item.person.first_name }} {{ item.person.last_name }}</a>
+                <a href="/persons/{{ item.person.id }}">{{ item.person.first_name }}{% if item.person.last_name %} ({{ item.person.last_name }}){% endif %}</a>
                 {% if item.person.gift_tier %}<span class="badge gift-{{ item.person.gift_tier|lower }}">{{ item.person.gift_tier }}</span>{% endif %}
             </td>
             <td>{{ item.person.email or '-' }}</td>
@@ -101,7 +102,7 @@
         <div class="contact-card-header">
             {% if can_edit %}<input type="checkbox" name="selected[]" value="{{ item.person.id }}" class="row-select">{% endif %}
             {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
-            <a href="/persons/{{ item.person.id }}"><strong>{{ item.person.first_name }} {{ item.person.last_name }}</strong></a>
+            <a href="/persons/{{ item.person.id }}"><strong>{{ item.person.first_name }}{% if item.person.last_name %} ({{ item.person.last_name }}){% endif %}</strong></a>
         </div>
         {% if item.person.email %}<div class="text-muted">{{ item.person.email }}</div>{% endif %}
         {% for r in item.roles %}
@@ -162,6 +163,7 @@ function confirmBatch() {
     const action = document.getElementById('batch-action').value;
     if (!action) { alert('請選擇操作'); return false; }
     if (action === 'delete') return confirm('確定要刪除所選聯絡人嗎？');
+    if (action === 'export_selected') return true;
     return true;
 }
 </script>

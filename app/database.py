@@ -104,3 +104,21 @@ def _migrate(conn):
         )
     """)
     conn.commit()
+
+    # Industry and english_name columns
+    cursor = conn.execute("PRAGMA table_info(persons)")
+    person_cols = [row[1] for row in cursor.fetchall()]
+    if "industry" not in person_cols:
+        conn.execute("ALTER TABLE persons ADD COLUMN industry TEXT DEFAULT ''")
+        conn.execute("ALTER TABLE persons ADD COLUMN english_name TEXT DEFAULT ''")
+        # Merge first_name + last_name into single field
+        conn.execute("UPDATE persons SET first_name = first_name || last_name, last_name = '' WHERE last_name != ''")
+        conn.commit()
+
+    # Gift list: unified gift_item and budget_per_person
+    cursor = conn.execute("PRAGMA table_info(gift_lists)")
+    gl_cols = [row[1] for row in cursor.fetchall()]
+    if "gift_item" not in gl_cols:
+        conn.execute("ALTER TABLE gift_lists ADD COLUMN gift_item TEXT DEFAULT ''")
+        conn.execute("ALTER TABLE gift_lists ADD COLUMN budget_per_person REAL DEFAULT 0")
+        conn.commit()

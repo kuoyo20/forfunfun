@@ -80,6 +80,10 @@ async def scan_auto_create(request: Request, file: UploadFile = File(...)):
     email = card_info.get("email", "")
     phone = card_info.get("phone", "")
     title = card_info.get("title", "")
+    # Merge into single name field
+    if last_name:
+        first_name = first_name + last_name if first_name else last_name
+        last_name = ""
     notes_parts = ["名片掃描自動建立"]
     if card_info.get("address"):
         notes_parts.append(f"地址：{card_info['address']}")
