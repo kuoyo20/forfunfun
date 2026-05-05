@@ -96,7 +96,7 @@ def _save_roles(db, person_id: int, form_data):
         title = titles[i] if i < len(titles) else ""
         work_email = work_emails[i] if i < len(work_emails) else ""
         work_phone = work_phones[i] if i < len(work_phones) else ""
-        is_current = str(i) in current_checks or str(i + 1) in current_checks
+        is_current = str(i) in current_checks
 
         if title or company_id:
             db.execute(
@@ -388,12 +388,13 @@ async def view_person(request: Request, person_id: int):
     ).fetchall()
 
     db.close()
+    from datetime import date
     return _render(request, "persons/detail.html",
         person=person, roles=roles, tags=[t["name"] for t in tags],
         relationships=relationships, interactions=interactions,
         gift_records=gift_records, gift_total=gift_total,
         logs=logs, all_persons=all_persons, custom_fields=custom_fields,
-        attachments=attachments)
+        attachments=attachments, now_date=date.today().isoformat())
 
 
 @router.get("/{person_id}/edit")

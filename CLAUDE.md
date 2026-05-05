@@ -11,7 +11,7 @@
 
 ### A級權限（editor）— 編輯權限
 - S級全部 + 以下：
-- 小美 melody.cheng@bettermilk.com.tw（鮮乳坊特助）
+- 小美 melody@bettermilk.com.tw（鮮乳坊特助）
 - Huda huda.huang@miraclex.com.tw（專案型特助）
 - Anna anna.chen@miaolin.com.tw（苗林行特助）
 
@@ -28,7 +28,7 @@
 |------|------|-------|------|------|
 | kuoyo | 老闆 | kuoyo@miraclex.com.tw | admin | - |
 | wendy | 溫蒂 | wendy.tseng@miraclex.com.tw | admin | MiracleX（總管） |
-| melody | 小美 | melody.cheng@bettermilk.com.tw | editor | 鮮乳坊 |
+| melody | 小美 | melody@bettermilk.com.tw | admin | 鮮乳坊 |
 | huda | Huda | huda.huang@miraclex.com.tw | editor | MiracleX |
 | anna | Anna | anna.chen@miaolin.com.tw | editor | 苗林行 |
 | lianlian | 連連 | booking@miraclex.com.tw | editor | MiracleX |

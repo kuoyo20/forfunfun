@@ -137,13 +137,14 @@
 
 <!-- Pagination -->
 {% if total_pages > 1 %}
+{% set _qs %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}{% if current_tier %}&tier={{ current_tier }}{% endif %}{% if current_fam_min %}&fam_min={{ current_fam_min }}{% endif %}{% if current_sort and current_sort != 'natural' %}&sort={{ current_sort }}{% endif %}{% endset %}
 <div class="pagination">
-    {% if page > 1 %}<a href="/persons?page={{ page-1 }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">&laquo; 上一頁</a>{% endif %}
+    {% if page > 1 %}<a href="/persons?page={{ page-1 }}{{ _qs }}">&laquo; 上一頁</a>{% endif %}
     {% for p in range(1, total_pages + 1) %}
         {% if p == page %}<span class="current">{{ p }}</span>
-        {% else %}<a href="/persons?page={{ p }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">{{ p }}</a>{% endif %}
+        {% else %}<a href="/persons?page={{ p }}{{ _qs }}">{{ p }}</a>{% endif %}
     {% endfor %}
-    {% if page < total_pages %}<a href="/persons?page={{ page+1 }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">下一頁 &raquo;</a>{% endif %}
+    {% if page < total_pages %}<a href="/persons?page={{ page+1 }}{{ _qs }}">下一頁 &raquo;</a>{% endif %}
 </div>
 {% endif %}
 
