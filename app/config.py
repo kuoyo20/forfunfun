@@ -10,6 +10,7 @@ DB_PATH = DATA_DIR / "contacts.db"
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production-please")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 PER_PAGE = 20
 

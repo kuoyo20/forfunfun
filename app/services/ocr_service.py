@@ -1,11 +1,67 @@
 import re
 import json
 import base64
-from app.config import ANTHROPIC_API_KEY
+from app.config import GEMINI_API_KEY, ANTHROPIC_API_KEY
+
+CARD_PROMPT = """這是一張名片照片。請提取以下資訊並以 JSON 格式回傳：
+{
+  "first_name": "完整姓名（中文優先，如有英文名也包含）",
+  "last_name": "",
+  "email": "電子郵件",
+  "phone": "電話號碼（保留原始格式）",
+  "company": "公司/組織名稱",
+  "title": "職稱",
+  "website": "網站",
+  "address": "地址"
+}
+
+規則：
+- first_name 放完整姓名，last_name 留空
+- 如果有中文名和英文名，格式為「中文名 English Name」
+- 找不到的欄位填空字串
+- 只回傳 JSON，不要其他文字"""
 
 
-def scan_card_vision(image_path: str) -> dict:
-    """Use Claude Vision to extract structured business card info directly from image."""
+def _parse_vision_response(text: str) -> dict:
+    """Parse JSON from AI vision response."""
+    text = text.strip()
+    if "```" in text:
+        text = text.split("```")[1]
+        if text.startswith("json"):
+            text = text[4:]
+        text = text.strip()
+
+    result = json.loads(text)
+    for key in ["first_name", "last_name", "email", "phone", "company", "title", "website", "address"]:
+        if key not in result:
+            result[key] = ""
+    return result
+
+
+def _scan_with_gemini(image_path: str) -> dict:
+    """Use Google Gemini (free) to extract business card info."""
+    if not GEMINI_API_KEY:
+        return None
+
+    try:
+        import google.generativeai as genai
+        from PIL import Image
+
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+
+        img = Image.open(image_path)
+        response = model.generate_content([CARD_PROMPT, img])
+
+        return _parse_vision_response(response.text)
+
+    except Exception as e:
+        print(f"[Gemini] Error: {e}")
+        return None
+
+
+def _scan_with_claude(image_path: str) -> dict:
+    """Use Claude Vision as fallback."""
     if not ANTHROPIC_API_KEY:
         return None
 
@@ -28,56 +84,28 @@ def scan_card_vision(image_path: str) -> dict:
             messages=[{
                 "role": "user",
                 "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": image_data,
-                        },
-                    },
-                    {
-                        "type": "text",
-                        "text": """這是一張名片照片。請提取以下資訊並以 JSON 格式回傳：
-{
-  "first_name": "完整姓名（中文優先，如有英文名也包含）",
-  "last_name": "",
-  "email": "電子郵件",
-  "phone": "電話號碼（保留原始格式）",
-  "company": "公司/組織名稱",
-  "title": "職稱",
-  "website": "網站",
-  "address": "地址"
-}
-
-規則：
-- first_name 放完整姓名，last_name 留空
-- 如果有中文名和英文名，格式為「中文名 English Name」
-- 找不到的欄位填空字串
-- 只回傳 JSON，不要其他文字"""
-                    }
+                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_data}},
+                    {"type": "text", "text": CARD_PROMPT},
                 ],
             }],
         )
 
-        text = response.content[0].text.strip()
-        # Extract JSON from response (handle markdown code blocks)
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
-
-        result = json.loads(text)
-        # Ensure all expected keys exist
-        for key in ["first_name", "last_name", "email", "phone", "company", "title", "website", "address"]:
-            if key not in result:
-                result[key] = ""
-        return result
+        return _parse_vision_response(response.content[0].text)
 
     except Exception as e:
         print(f"[Claude Vision] Error: {e}")
         return None
+
+
+def scan_card_vision(image_path: str) -> dict:
+    """Try Gemini first (free), then Claude, then return None for Tesseract fallback."""
+    result = _scan_with_gemini(image_path)
+    if result:
+        return result
+    result = _scan_with_claude(image_path)
+    if result:
+        return result
+    return None
 
 
 def extract_card_info(text: str) -> dict:
