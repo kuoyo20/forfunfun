@@ -122,3 +122,10 @@ def _migrate(conn):
         conn.execute("ALTER TABLE gift_lists ADD COLUMN gift_item TEXT DEFAULT ''")
         conn.execute("ALTER TABLE gift_lists ADD COLUMN budget_per_person REAL DEFAULT 0")
         conn.commit()
+
+    # Familiarity rating (1-5 stars)
+    cursor = conn.execute("PRAGMA table_info(persons)")
+    person_cols = [row[1] for row in cursor.fetchall()]
+    if "familiarity" not in person_cols:
+        conn.execute("ALTER TABLE persons ADD COLUMN familiarity INTEGER")
+        conn.commit()

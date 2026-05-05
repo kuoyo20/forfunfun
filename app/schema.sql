@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS persons (
     birthday TEXT DEFAULT '',            -- MM-DD or YYYY-MM-DD
     preferences TEXT DEFAULT '',         -- likes, hobbies, dietary
     gift_notes TEXT DEFAULT '',          -- gift taboos, special notes
+    familiarity INTEGER CHECK (familiarity IS NULL OR familiarity BETWEEN 1 AND 5),
     created_by INTEGER REFERENCES users(id),
     updated_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
