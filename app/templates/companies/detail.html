@@ -31,10 +31,10 @@
     {% for p in people %}
     <tr>
         <td><a href="/persons/{{ p.id }}">{{ p.first_name }} {{ p.last_name }}</a></td>
-        <td>{{ p.title or '-' }}</td>
+        <td>{{ p.title|tbc }}</td>
         <td><span class="badge {{ 'current' if p.is_current else 'past' }}">{{ '在職' if p.is_current else '已離職' }}</span></td>
-        <td>{{ p.work_email or '-' }}</td>
-        <td>{{ p.work_phone or '-' }}</td>
+        <td>{{ p.work_email|tbc }}</td>
+        <td>{{ p.work_phone|tbc }}</td>
     </tr>
     {% endfor %}
     </tbody>

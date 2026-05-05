@@ -14,8 +14,8 @@
     {% for c in companies %}
         <tr>
             <td><a href="/companies/{{ c.id }}">{{ c.name }}</a></td>
-            <td>{{ c.industry or '-' }}</td>
-            <td>{{ c.website or '-' }}</td>
+            <td>{{ c.industry|tbc }}</td>
+            <td>{{ c.website|tbc }}</td>
             <td>{{ c.person_count }}</td>
         </tr>
     {% endfor %}
