@@ -3,10 +3,17 @@
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <h2>聯絡人列表 ({{ total }}){% if current_tag %} <span class="tag">{{ current_tag }}</span>{% endif %}{% if current_company %} <span class="tag">{{ current_company }}</span>{% endif %}</h2>
+    <div style="font-size: 0.85rem; margin-top: 0.25rem;">
+        排序：
+        <a href="/persons?sort=natural{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}{% if current_tier %}&tier={{ current_tier }}{% endif %}{% if current_fam_min %}&fam_min={{ current_fam_min }}{% endif %}" style="{% if current_sort == 'natural' or not current_sort %}font-weight:bold;{% endif %}">智慧</a> |
+        <a href="/persons?sort=name{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}{% if current_tier %}&tier={{ current_tier }}{% endif %}{% if current_fam_min %}&fam_min={{ current_fam_min }}{% endif %}" style="{% if current_sort == 'name' %}font-weight:bold;{% endif %}">姓名</a> |
+        <a href="/persons?sort=updated{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}{% if current_tier %}&tier={{ current_tier }}{% endif %}{% if current_fam_min %}&fam_min={{ current_fam_min }}{% endif %}" style="{% if current_sort == 'updated' %}font-weight:bold;{% endif %}">更新</a>
+    </div>
     <div class="btn-group">
         {% if can_edit %}<a href="/scan" role="button" style="background:var(--success);border-color:var(--success);">📷 拍名片建檔</a>{% endif %}
         {% if can_edit %}<a href="/persons/new" role="button">新增聯絡人</a>{% endif %}
         <a href="/export/csv" role="button" class="btn-secondary btn-sm">匯出 CSV</a>
+        <a href="/persons/duplicates" role="button" class="btn-secondary btn-sm">🔍 偵測重複</a>
     </div>
 </div>
 
@@ -30,6 +37,17 @@
                 {% for t in ['VIP', 'A', 'B', 'C', 'D'] %}
                 <a href="/persons?tier={{ t }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}" class="badge gift-{{ t|lower }}" style="text-decoration:none; {% if t == current_tier %}outline: 2px solid #333;{% endif %}">{{ t }}</a>
                 {% endfor %}
+            </div>
+            <div style="margin-bottom: 0.5rem;">
+                <strong>熟識程度：</strong>
+                <select onchange="location.href='/persons?fam_min='+this.value+'{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}{% if current_tier %}&tier={{ current_tier }}{% endif %}'" style="display:inline; width:auto; margin:0; padding:0.2rem 0.5rem;">
+                    <option value="" {% if not current_fam_min %}selected{% endif %}>全部</option>
+                    <option value="5" {% if current_fam_min == '5' %}selected{% endif %}>★★★★★ 僅 5 星</option>
+                    <option value="4" {% if current_fam_min == '4' %}selected{% endif %}>★★★★ 以上</option>
+                    <option value="3" {% if current_fam_min == '3' %}selected{% endif %}>★★★ 以上</option>
+                    <option value="2" {% if current_fam_min == '2' %}selected{% endif %}>★★ 以上</option>
+                    <option value="1" {% if current_fam_min == '1' %}selected{% endif %}>★ 以上（有填）</option>
+                </select>
             </div>
             {% if all_companies %}
             <div>
@@ -71,6 +89,7 @@
             <th>Email</th>
             <th>公司 / 職稱</th>
             <th>標籤</th>
+            <th>熟識</th>
         </tr>
     </thead>
     <tbody>
@@ -79,17 +98,18 @@
             {% if can_edit %}<td><input type="checkbox" name="selected[]" value="{{ item.person.id }}" class="row-select"></td>{% endif %}
             <td>
                 {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
-                <a href="/persons/{{ item.person.id }}">{{ item.person.first_name }}{% if item.person.last_name %} ({{ item.person.last_name }}){% endif %}</a>
+                <a href="/persons/{{ item.person.id }}">{{ (item.person.first_name ~ ' ' ~ (item.person.last_name or ''))|format_name }}</a>
                 {% if item.person.gift_tier %}<span class="badge gift-{{ item.person.gift_tier|lower }}">{{ item.person.gift_tier }}</span>{% endif %}
             </td>
-            <td>{{ item.person.email or '-' }}</td>
+            <td>{{ item.person.email|tbc }}</td>
             <td>
                 {% for r in item.roles %}
                     <div>{% if r.company_name %}<a href="/companies/{{ r.company_id }}">{{ r.company_name }}</a>{% endif %}{% if r.title %} - {{ r.title }}{% endif %}{% if not r.is_current %} <span class="badge past">已離職</span>{% endif %}</div>
                 {% endfor %}
                 {% if not item.roles %}-{% endif %}
             </td>
-            <td>{% for t in item.tags %}<a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>{% endfor %}</td>
+            <td>{{ item.tags|tag_badges }}</td>
+            <td>{% if item.person.familiarity %}<span class="stars">{{ '★' * item.person.familiarity }}</span><span class="stars-empty">{{ '★' * (5 - item.person.familiarity) }}</span>{% endif %}</td>
         </tr>
     {% endfor %}
     </tbody>
@@ -102,13 +122,13 @@
         <div class="contact-card-header">
             {% if can_edit %}<input type="checkbox" name="selected[]" value="{{ item.person.id }}" class="row-select">{% endif %}
             {% if item.person.photo_url %}<img src="{{ item.person.photo_url }}" class="avatar-sm">{% endif %}
-            <a href="/persons/{{ item.person.id }}"><strong>{{ item.person.first_name }}{% if item.person.last_name %} ({{ item.person.last_name }}){% endif %}</strong></a>
+            <a href="/persons/{{ item.person.id }}"><strong>{{ (item.person.first_name ~ ' ' ~ (item.person.last_name or ''))|format_name }}</strong></a>
         </div>
         {% if item.person.email %}<div class="text-muted">{{ item.person.email }}</div>{% endif %}
         {% for r in item.roles %}
             <div class="text-muted">{% if r.company_name %}{{ r.company_name }}{% endif %}{% if r.title %} - {{ r.title }}{% endif %}</div>
         {% endfor %}
-        {% if item.tags %}<div>{% for t in item.tags %}<a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>{% endfor %}</div>{% endif %}
+        {% if item.tags %}<div>{{ item.tags|tag_badges }}</div>{% endif %}
     </div>
     {% endfor %}
 </div>
@@ -117,13 +137,14 @@
 
 <!-- Pagination -->
 {% if total_pages > 1 %}
+{% set _qs %}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}{% if current_tier %}&tier={{ current_tier }}{% endif %}{% if current_fam_min %}&fam_min={{ current_fam_min }}{% endif %}{% if current_sort and current_sort != 'natural' %}&sort={{ current_sort }}{% endif %}{% endset %}
 <div class="pagination">
-    {% if page > 1 %}<a href="/persons?page={{ page-1 }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">&laquo; 上一頁</a>{% endif %}
+    {% if page > 1 %}<a href="/persons?page={{ page-1 }}{{ _qs }}">&laquo; 上一頁</a>{% endif %}
     {% for p in range(1, total_pages + 1) %}
         {% if p == page %}<span class="current">{{ p }}</span>
-        {% else %}<a href="/persons?page={{ p }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">{{ p }}</a>{% endif %}
+        {% else %}<a href="/persons?page={{ p }}{{ _qs }}">{{ p }}</a>{% endif %}
     {% endfor %}
-    {% if page < total_pages %}<a href="/persons?page={{ page+1 }}{% if current_tag %}&tag={{ current_tag }}{% endif %}{% if current_company %}&company={{ current_company }}{% endif %}">下一頁 &raquo;</a>{% endif %}
+    {% if page < total_pages %}<a href="/persons?page={{ page+1 }}{{ _qs }}">下一頁 &raquo;</a>{% endif %}
 </div>
 {% endif %}
 

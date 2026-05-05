@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}重複偵測 - 人脈管理系統{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <h2>重複聯絡人偵測</h2>
+    <a href="/persons" role="button" class="btn-secondary btn-sm">返回列表</a>
+</div>
+
+{% if duplicate_groups %}
+<div class="card" style="background: var(--warning-light, #fffbeb); border-left: 4px solid var(--warning, #d97706); padding: 1rem; margin-bottom: 1rem;">
+    共發現 <strong>{{ group_count }}</strong> 組重複姓名，涉及 <strong>{{ total_records }}</strong> 筆資料
+</div>
+
+{% for key, group in duplicate_groups %}
+<div class="card" style="margin-bottom: 1rem;">
+    <h3 style="margin-bottom: 0.5rem;">{{ group[0].first_name }}{% if group[0].last_name %} ({{ group[0].last_name }}){% endif %} <span class="badge">{{ group|length }} 筆</span></h3>
+
+    <div class="desktop-only">
+    <table>
+        <thead>
+            <tr>
+                <th>公司</th>
+                <th>職稱</th>
+                <th>電話</th>
+                <th>Email</th>
+                <th>熟識</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in group %}
+            <tr>
+                <td>{{ p.company_names or '-' }}</td>
+                <td>{{ p.current_title or '-' }}</td>
+                <td>{{ p.phone or '-' }}</td>
+                <td>{{ p.email or '-' }}</td>
+                <td>{% if p.familiarity %}<span class="stars">{{ '★' * p.familiarity }}</span><span class="stars-empty">{{ '★' * (5 - p.familiarity) }}</span>{% else %}-{% endif %}</td>
+                <td>
+                    <div style="display:flex; gap:0.25rem;">
+                        <a href="/persons/{{ p.id }}/edit" class="btn-sm">編輯</a>
+                        <form method="post" action="/persons/{{ p.id }}/delete" style="margin:0;" onsubmit="return confirm('確定刪除此筆？')">
+                            <button type="submit" class="btn-sm btn-danger">刪除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    <div class="mobile-only">
+        {% for p in group %}
+        <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-light);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    {% if p.company_names %}<strong>{{ p.company_names }}</strong>{% endif %}
+                    {% if p.current_title %}<span class="text-muted"> - {{ p.current_title }}</span>{% endif %}
+                </div>
+                {% if p.familiarity %}<span class="stars">{{ '★' * p.familiarity }}</span>{% endif %}
+            </div>
+            {% if p.phone %}<div class="text-muted">{{ p.phone }}</div>{% endif %}
+            {% if p.email %}<div class="text-muted">{{ p.email }}</div>{% endif %}
+            <div style="margin-top: 0.5rem; display:flex; gap:0.25rem;">
+                <a href="/persons/{{ p.id }}/edit" class="btn-sm">編輯</a>
+                <form method="post" action="/persons/{{ p.id }}/delete" style="margin:0;" onsubmit="return confirm('確定刪除此筆？')">
+                    <button type="submit" class="btn-sm btn-danger">刪除</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem;">
+    <p style="font-size: 1.2rem; color: var(--text-secondary);">✓ 未發現重複聯絡人</p>
+    <p class="text-muted">所有聯絡人姓名都是唯一的。</p>
+</div>
+{% endif %}
+{% endblock %}

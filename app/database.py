@@ -36,7 +36,7 @@ def _seed_users(conn):
     team = [
         ("kuoyo", "kuoyo@miraclex.com.tw", "老闆", "admin"),
         ("wendy", "wendy.tseng@miraclex.com.tw", "溫蒂（大特助）", "admin"),
-        ("melody", "melody.cheng@bettermilk.com.tw", "小美（鮮乳坊特助）", "editor"),
+        ("melody", "melody@bettermilk.com.tw", "小美（鮮乳坊特助）", "admin"),
         ("huda", "huda.huang@miraclex.com.tw", "Huda（專案型特助）", "editor"),
         ("anna", "anna.chen@miaolin.com.tw", "Anna（苗林行特助）", "editor"),
         ("lianlian", "booking@miraclex.com.tw", "連連（私人秘書）", "editor"),
@@ -122,3 +122,14 @@ def _migrate(conn):
         conn.execute("ALTER TABLE gift_lists ADD COLUMN gift_item TEXT DEFAULT ''")
         conn.execute("ALTER TABLE gift_lists ADD COLUMN budget_per_person REAL DEFAULT 0")
         conn.commit()
+
+    # Familiarity rating (1-5 stars)
+    cursor = conn.execute("PRAGMA table_info(persons)")
+    person_cols = [row[1] for row in cursor.fetchall()]
+    if "familiarity" not in person_cols:
+        conn.execute("ALTER TABLE persons ADD COLUMN familiarity INTEGER")
+        conn.commit()
+
+    # Promote melody to admin for full testing + fix email
+    conn.execute("UPDATE users SET role = 'admin', email = 'melody@bettermilk.com.tw' WHERE username = 'melody'")
+    conn.commit()

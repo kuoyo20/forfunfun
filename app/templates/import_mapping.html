@@ -4,6 +4,12 @@
 <h2>欄位對應</h2>
 <p>共 {{ total }} 筆資料。請將檔案中的欄位對應到系統欄位：</p>
 
+    {% if name_warning %}
+    <div class="card" style="background: var(--warning-light, #fffbeb); border-left: 4px solid var(--warning, #d97706); padding: 1rem; margin-bottom: 1rem;">
+        ⚠️ {{ name_warning }}
+    </div>
+    {% endif %}
+
 <form method="post" action="/import/check-duplicates">
     <input type="hidden" name="tmp_file" value="{{ tmp_file }}">
 

@@ -1,8 +1,87 @@
 import re
+import json
+import base64
+from app.config import ANTHROPIC_API_KEY
+
+
+def scan_card_vision(image_path: str) -> dict:
+    """Use Claude Vision to extract structured business card info directly from image."""
+    if not ANTHROPIC_API_KEY:
+        return None
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+        with open(image_path, "rb") as f:
+            image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+        ext = image_path.rsplit(".", 1)[-1].lower()
+        media_type = {
+            "jpg": "image/jpeg", "jpeg": "image/jpeg",
+            "png": "image/png", "gif": "image/gif", "webp": "image/webp",
+        }.get(ext, "image/jpeg")
+
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": image_data,
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": """這是一張名片照片。請提取以下資訊並以 JSON 格式回傳：
+{
+  "first_name": "完整姓名（中文優先，如有英文名也包含）",
+  "last_name": "",
+  "email": "電子郵件",
+  "phone": "電話號碼（保留原始格式）",
+  "company": "公司/組織名稱",
+  "title": "職稱",
+  "website": "網站",
+  "address": "地址"
+}
+
+規則：
+- first_name 放完整姓名，last_name 留空
+- 如果有中文名和英文名，格式為「中文名 English Name」
+- 找不到的欄位填空字串
+- 只回傳 JSON，不要其他文字"""
+                    }
+                ],
+            }],
+        )
+
+        text = response.content[0].text.strip()
+        # Extract JSON from response (handle markdown code blocks)
+        if "```" in text:
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+
+        result = json.loads(text)
+        # Ensure all expected keys exist
+        for key in ["first_name", "last_name", "email", "phone", "company", "title", "website", "address"]:
+            if key not in result:
+                result[key] = ""
+        return result
+
+    except Exception as e:
+        print(f"[Claude Vision] Error: {e}")
+        return None
 
 
 def extract_card_info(text: str) -> dict:
-    """Extract structured info from OCR text of a business card."""
+    """Extract structured info from OCR text of a business card (fallback)."""
     lines = [line.strip() for line in text.split("\n") if line.strip()]
     result = {
         "first_name": "", "last_name": "", "email": "", "phone": "",
@@ -11,7 +90,6 @@ def extract_card_info(text: str) -> dict:
 
     used_lines = set()
 
-    # Extract email
     for i, line in enumerate(lines):
         emails = re.findall(r'[\w.+-]+@[\w-]+\.[\w.-]+', line)
         if emails:
@@ -19,7 +97,6 @@ def extract_card_info(text: str) -> dict:
             used_lines.add(i)
             break
 
-    # Extract phone (TW, JP, KR, international formats)
     phone_patterns = [
         r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}',
         r'\d{4}[-\s]?\d{3,4}[-\s]?\d{3,4}',
@@ -38,7 +115,6 @@ def extract_card_info(text: str) -> dict:
         if result["phone"]:
             break
 
-    # Extract website/URL
     for i, line in enumerate(lines):
         if i in used_lines:
             continue
@@ -48,15 +124,10 @@ def extract_card_info(text: str) -> dict:
             used_lines.add(i)
             break
 
-    # Extract company (multi-language keywords)
     company_keywords = [
-        # Chinese
         "公司", "股份", "有限", "企業", "集團", "科技", "銀行", "基金", "協會", "事務所", "工作室",
-        # English
         "Inc", "LLC", "Corp", "Ltd", "Co.", "Company", "Group", "Tech", "Solutions", "Partners",
-        # Japanese
         "株式会社", "有限会社", "合同会社", "社団法人",
-        # Korean
         "주식회사", "유한회사",
     ]
     for i, line in enumerate(lines):
@@ -70,18 +141,13 @@ def extract_card_info(text: str) -> dict:
         if result["company"]:
             break
 
-    # Extract title (multi-language)
     title_keywords = [
-        # Chinese
         "總經理", "經理", "主任", "總監", "董事", "執行長", "副總", "協理", "處長", "組長",
         "顧問", "工程師", "設計師", "教授", "醫師", "律師", "會計師", "秘書", "助理",
-        # English
         "CEO", "CTO", "CFO", "COO", "CIO", "VP", "Director", "Manager", "Engineer",
         "President", "Founder", "Partner", "Consultant", "Analyst", "Designer",
         "Professor", "Doctor", "Attorney",
-        # Japanese
         "社長", "部長", "課長", "係長", "取締役", "代表",
-        # Korean
         "대표", "이사", "부장", "과장", "차장",
     ]
     for i, line in enumerate(lines):
@@ -95,7 +161,6 @@ def extract_card_info(text: str) -> dict:
         if result["title"]:
             break
 
-    # Extract address (look for common address patterns)
     address_keywords = ["市", "區", "路", "街", "巷", "弄", "號", "樓",
                         "Road", "St.", "Ave", "Blvd", "Floor",
                         "丁目", "番地", "ビル"]
@@ -110,12 +175,10 @@ def extract_card_info(text: str) -> dict:
         if result["address"]:
             break
 
-    # Name: first unused line that is short \u2014 put full name in first_name
     for i, line in enumerate(lines):
         if i in used_lines:
             continue
         if len(line) <= 20 and not re.search(r'[./@]', line):
-            # Keep full name in first_name (merged name model)
             result["first_name"] = line.strip()
             result["last_name"] = ""
             used_lines.add(i)
@@ -124,50 +187,20 @@ def extract_card_info(text: str) -> dict:
     return result
 
 
-def _detect_script(image_path: str) -> str:
-    """Detect dominant script in image using OSD to prioritize language."""
-    try:
-        import pytesseract
-        from PIL import Image
-        img = Image.open(image_path)
-        osd = pytesseract.image_to_osd(img)
-        # OSD returns script info; check for Korean/Hangul
-        if "Hangul" in osd or "Korean" in osd:
-            return "korean"
-        if "Han" in osd or "CJK" in osd:
-            return "cjk"
-    except Exception:
-        pass
-    return "unknown"
-
-
 def ocr_image(image_path: str) -> str:
-    """Run OCR on an image file with multi-language support."""
+    """Run OCR on an image file with multi-language support (Tesseract fallback)."""
     try:
         import pytesseract
         from PIL import Image
         img = Image.open(image_path)
 
-        # Detect script to prioritize language order
-        script = _detect_script(image_path)
-
-        # Try multiple language combinations, prioritize based on detected script
-        if script == "korean":
-            lang_attempts = [
-                "kor+eng",       # Korean + English (prioritized)
-                "chi_tra+eng",
-                "chi_sim+eng",
-                "jpn+eng",
-                "eng",
-            ]
-        else:
-            lang_attempts = [
-                "chi_tra+eng",   # Traditional Chinese + English
-                "chi_sim+eng",   # Simplified Chinese + English
-                "jpn+eng",       # Japanese + English
-                "kor+eng",       # Korean + English
-                "eng",           # English only (fallback)
-            ]
+        lang_attempts = [
+            "chi_tra+eng",
+            "chi_sim+eng",
+            "jpn+eng",
+            "kor+eng",
+            "eng",
+        ]
 
         best_text = ""
         for lang in lang_attempts:
@@ -176,7 +209,7 @@ def ocr_image(image_path: str) -> str:
                 if len(text.strip()) > len(best_text.strip()):
                     best_text = text
                 if len(text.strip()) > 20:
-                    break  # Good enough result
+                    break
             except Exception:
                 continue
 

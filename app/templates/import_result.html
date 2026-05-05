@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}匯入完成 - 人脈管理系統{% endblock %}
+{% block content %}
+<h2>匯入完成</h2>
+
+<div class="stats-grid" style="margin: 1.5rem 0;">
+    <div class="stat-card">
+        <div class="stat-number">{{ new_count }}</div>
+        <div class="stat-label">新增</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ merged_count }}</div>
+        <div class="stat-label">重複合併</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total }}</div>
+        <div class="stat-label">共處理</div>
+    </div>
+</div>
+
+{% if merge_log %}
+<div class="card">
+    <h3>合併清單</h3>
+    <table>
+        <thead>
+            <tr><th>姓名</th><th>公司</th></tr>
+        </thead>
+        <tbody>
+            {% for item in merge_log %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.company or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="btn-group" style="margin-top: 1.5rem;">
+    <a href="/persons" role="button">查看聯絡人列表</a>
+    <a href="/import" role="button" class="btn-secondary">繼續匯入</a>
+</div>
+{% endblock %}

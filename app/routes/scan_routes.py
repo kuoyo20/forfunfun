@@ -1,4 +1,4 @@
-"""One-click business card scanner — camera → OCR → auto-create contact."""
+"""One-click business card scanner — camera → Claude Vision → auto-create contact."""
 import os
 from fastapi import APIRouter, Request, UploadFile, File
 from fastapi.responses import RedirectResponse
@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from app.auth import login_required, can_edit, notify_other_editors
 from app.database import get_db
 from app.config import UPLOAD_DIR
-from app.services.ocr_service import ocr_image, extract_card_info
+from app.services.ocr_service import ocr_image, extract_card_info, scan_card_vision
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -50,13 +50,14 @@ async def scan_auto_create(request: Request, file: UploadFile = File(...)):
     with open(save_path, "wb") as f:
         f.write(content)
 
-    ocr_text = ocr_image(str(save_path))
-
-    if ocr_text.startswith("[Error]"):
-        request.state.flash = [("error", f"OCR 辨識失敗：{ocr_text}")]
-        return RedirectResponse("/scan", status_code=303)
-
-    card_info = extract_card_info(ocr_text)
+    # Try Claude Vision first (high accuracy), fallback to Tesseract
+    card_info = scan_card_vision(str(save_path))
+    if not card_info:
+        ocr_text = ocr_image(str(save_path))
+        if ocr_text.startswith("[Error]"):
+            request.state.flash = [("error", f"OCR 辨識失敗：{ocr_text}")]
+            return RedirectResponse("/scan", status_code=303)
+        card_info = extract_card_info(ocr_text)
 
     if not card_info.get("first_name") and not card_info.get("last_name"):
         request.state.flash = [("error", "無法從名片辨識出姓名，請手動建立或重新拍攝更清晰的照片")]

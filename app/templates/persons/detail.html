@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ person.first_name }}{% if person.last_name %} ({{ person.last_name }}){% endif %} - 人脈管理系統{% endblock %}
+{% block title %}{{ (person.first_name ~ ' ' ~ (person.last_name or ''))|format_name }} - 人脈管理系統{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center;">
     <div style="display: flex; align-items: center; gap: 1rem;">
         {% if person.photo_url %}
         <img src="{{ person.photo_url }}" class="avatar-lg">
         {% endif %}
-        <h2 style="margin:0;">{{ person.first_name }}{% if person.last_name %} ({{ person.last_name }}){% endif %}</h2>
+        <h2 style="margin:0;">{{ (person.first_name ~ ' ' ~ (person.last_name or ''))|format_name }}</h2>
     </div>
     {% if can_edit %}
     <div class="btn-group">
@@ -32,16 +32,19 @@
 <div class="card">
     <h3>基本資料</h3>
     <div class="grid-2">
-        <div><strong>Email：</strong>{{ person.email or '-' }}</div>
-        <div><strong>電話：</strong>{{ person.phone or '-' }}</div>
+        <div><strong>Email：</strong>{{ person.email|tbc }}</div>
+        <div><strong>電話：</strong>{{ person.phone|tbc }}</div>
     </div>
+    {% if person.familiarity %}
+    <div style="margin-top: 0.5rem;"><strong>熟識程度：</strong><span class="stars">{{ '★' * person.familiarity }}</span><span class="stars-empty">{{ '★' * (5 - person.familiarity) }}</span></div>
+    {% endif %}
     {% if person.notes %}
     <div style="margin-top: 0.5rem;"><strong>備註：</strong>{{ person.notes }}</div>
     {% endif %}
     {% if tags %}
     <div style="margin-top: 0.75rem;">
         <strong>標籤：</strong>
-        {% for t in tags %}<a href="/persons?tag={{ t }}" class="tag">{{ t }}</a>{% endfor %}
+        {{ tags|tag_badges }}
     </div>
     {% endif %}
     <!-- Quick contact links -->

@@ -370,3 +370,19 @@ footer {
 .auth-card h2 { text-align: center; margin-bottom: 1.5rem; }
 .auth-card .auth-footer { text-align: center; margin-top: 1.25rem; color: var(--text-muted); font-size: 0.875rem; }
 .auth-card .auth-footer a { font-weight: 500; }
+
+/* Star rating */
+:root { --star: #C4A96A; }
+.stars { color: var(--star); letter-spacing:1px; font-size:.9rem; }
+.stars-empty { color:#CCC9C2; }
+.star-radio { display:none; }
+.star-label { font-size:1.5rem; color:#CCC9C2; cursor:pointer; transition:color .15s; padding:0 2px; }
+#star-group { display:flex; flex-direction:row-reverse; justify-content:flex-end; gap:2px; }
+#star-group input:checked ~ label, #star-group label:hover, #star-group label:hover ~ label { color: var(--star); }
+
+/* TBC placeholder */
+.tbc { color:#C4979A; font-size:.8em; font-style:italic; letter-spacing:.02em; }
+
+/* Tag badges */
+.tag-badge { font-size:.68rem; font-weight:500; padding:2px 8px; border-radius:20px; white-space:nowrap; display:inline-block; }
+.tag-wrap { display:flex; flex-wrap:wrap; gap:3px; }

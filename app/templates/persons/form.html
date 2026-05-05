@@ -14,6 +14,15 @@
                 <input type="text" name="last_name" value="{{ person.last_name if person else '' }}" placeholder="選填，ex. Kuoyo">
             </label>
         </div>
+        <div style="margin-bottom: 1rem;">
+            <label>熟識程度</label>
+            <div id="star-group">
+                {% for i in range(5, 0, -1) %}
+                <input type="radio" name="familiarity" value="{{ i }}" id="star{{ i }}" class="star-radio" {% if person and person.familiarity == i %}checked{% endif %}>
+                <label for="star{{ i }}" class="star-label">★</label>
+                {% endfor %}
+            </div>
+        </div>
         <div class="grid-2">
             <label>產業別
                 <input type="text" name="industry" value="{{ person.industry if person and person.industry else '' }}" list="industry-list" placeholder="選填">

@@ -10,6 +10,37 @@ from app.config import PER_PAGE, PHOTO_DIR
 router = APIRouter(prefix="/persons")
 templates = Jinja2Templates(directory="app/templates")
 
+INDUSTRY_ORDER = ['品牌', '餐飲', '銷售']
+
+def industry_priority(tag):
+    if not tag:
+        return 9999
+    for i, kw in enumerate(INDUSTRY_ORDER):
+        if kw in tag:
+            return i
+    return len(INDUSTRY_ORDER)
+
+TITLE_RANKS = [
+    (1, ['董事長','主席','創辦人','共同創辦人','執行長','總裁','founder','chairman','ceo','president']),
+    (2, ['coo','cfo','cto','cmo']),
+    (3, ['總經理','副總裁','evp','svp']),
+    (4, ['副總','執行副總','vp','副總經理']),
+    (5, ['協理','總監','director']),
+    (6, ['經理','manager']),
+    (7, ['副理','主任','supervisor']),
+    (8, ['組長','課長','leader']),
+    (9, ['專員','工程師','設計師','analyst','associate']),
+]
+
+def title_priority(title):
+    if not title:
+        return 999
+    t = title.lower()
+    for level, keys in TITLE_RANKS:
+        if any(k in t for k in keys):
+            return level
+    return 50
+
 
 def _render(request, template, **kwargs):
     ctx = {"request": request, "user": request.state.user,
@@ -65,7 +96,7 @@ def _save_roles(db, person_id: int, form_data):
         title = titles[i] if i < len(titles) else ""
         work_email = work_emails[i] if i < len(work_emails) else ""
         work_phone = work_phones[i] if i < len(work_phones) else ""
-        is_current = str(i) in current_checks or str(i + 1) in current_checks
+        is_current = str(i) in current_checks
 
         if title or company_id:
             db.execute(
@@ -100,6 +131,7 @@ async def list_persons(request: Request):
     tag_filter = request.query_params.get("tag", "")
     company_filter = request.query_params.get("company", "")
     tier_filter = request.query_params.get("tier", "")
+    fam_min = request.query_params.get("fam_min", "")
     page = int(request.query_params.get("page", 1))
     offset = (page - 1) * PER_PAGE
     db = get_db()
@@ -119,6 +151,10 @@ async def list_persons(request: Request):
         conditions.append("p.gift_tier = ?")
         params.append(tier_filter)
 
+    if fam_min:
+        conditions.append("p.familiarity >= ?")
+        params.append(int(fam_min))
+
     where = "WHERE " + " AND ".join(conditions) if conditions else ""
 
     total = db.execute(f"SELECT COUNT(DISTINCT p.id) FROM persons p {where}", params).fetchone()[0]
@@ -136,6 +172,28 @@ async def list_persons(request: Request):
         roles = db.execute("SELECT r.*, c.name as company_name FROM roles r LEFT JOIN companies c ON c.id = r.company_id WHERE r.person_id = ?", (pid,)).fetchall()
         person_list.append({"person": dict(p), "tags": [t["name"] for t in tags], "roles": [dict(r) for r in roles]})
 
+    sort_mode = request.query_params.get("sort", "natural")
+
+    if sort_mode == "natural":
+        def natural_key(item):
+            p = item["person"]
+            primary_tag = item["tags"][0] if item["tags"] else ""
+            main_role = item["roles"][0] if item["roles"] else {}
+            company_name = main_role.get("company_name", "") or ""
+            title = main_role.get("title", "") or ""
+            fam = p.get("familiarity") or 0
+            return (
+                industry_priority(primary_tag),
+                0 if primary_tag else 1,
+                primary_tag,
+                company_name,
+                title_priority(title),
+                -fam,
+            )
+        person_list.sort(key=natural_key)
+    elif sort_mode == "name":
+        person_list.sort(key=lambda x: x["person"].get("first_name", ""))
+
     all_tags = db.execute("SELECT DISTINCT t.name FROM tags t JOIN person_tags pt ON pt.tag_id = t.id ORDER BY t.name").fetchall()
     all_companies = db.execute("SELECT DISTINCT c.name FROM companies c ORDER BY c.name").fetchall()
     db.close()
@@ -143,7 +201,8 @@ async def list_persons(request: Request):
         person_list=person_list, all_tags=[t["name"] for t in all_tags],
         all_companies=[c["name"] for c in all_companies],
         current_tag=tag_filter, current_company=company_filter,
-        current_tier=tier_filter,
+        current_tier=tier_filter, current_fam_min=fam_min,
+        current_sort=sort_mode,
         page=page, total_pages=total_pages, total=total)
 
 
@@ -212,12 +271,13 @@ async def create_person(request: Request):
                 duplicates=dupes, form_data=dict(form))
 
     db.execute(
-        "INSERT INTO persons (first_name, last_name, email, phone, notes, gift_tier, birthday, preferences, gift_notes, industry, created_by, updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO persons (first_name, last_name, email, phone, notes, gift_tier, birthday, preferences, gift_notes, industry, familiarity, created_by, updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (form.get("first_name", ""), form.get("last_name", ""), form.get("email", ""),
          form.get("phone", ""), form.get("notes", ""),
          form.get("gift_tier", ""), form.get("birthday", ""),
          form.get("preferences", ""), form.get("gift_notes", ""),
          form.get("industry", ""),
+         int(form.get("familiarity")) if form.get("familiarity") else None,
          request.state.user["id"], request.state.user["id"]),
     )
     db.commit()
@@ -238,6 +298,33 @@ async def create_person(request: Request):
         f"{request.state.user['username']} 新增了聯絡人「{name}」", f"/persons/{person_id}")
     db.close()
     return RedirectResponse(f"/persons/{person_id}", status_code=302)
+
+
+@router.get("/duplicates")
+@login_required
+async def duplicates_scanner(request: Request):
+    db = get_db()
+    # Group by normalized name
+    persons = db.execute("""
+        SELECT p.*,
+            (SELECT GROUP_CONCAT(c.name, ', ') FROM roles r JOIN companies c ON c.id = r.company_id WHERE r.person_id = p.id AND r.is_current = 1) as company_names,
+            (SELECT r.title FROM roles r WHERE r.person_id = p.id AND r.is_current = 1 LIMIT 1) as current_title
+        FROM persons p ORDER BY p.first_name
+    """).fetchall()
+    db.close()
+
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for p in persons:
+        key = (p["first_name"] or "").strip().lower() + "|" + (p["last_name"] or "").strip().lower()
+        groups[key].append(dict(p))
+
+    duplicate_groups = [(k, v) for k, v in groups.items() if len(v) >= 2]
+    total_records = sum(len(v) for _, v in duplicate_groups)
+
+    return _render(request, "persons/duplicates.html",
+        duplicate_groups=duplicate_groups, group_count=len(duplicate_groups),
+        total_records=total_records)
 
 
 @router.get("/{person_id}")
@@ -301,12 +388,13 @@ async def view_person(request: Request, person_id: int):
     ).fetchall()
 
     db.close()
+    from datetime import date
     return _render(request, "persons/detail.html",
         person=person, roles=roles, tags=[t["name"] for t in tags],
         relationships=relationships, interactions=interactions,
         gift_records=gift_records, gift_total=gift_total,
         logs=logs, all_persons=all_persons, custom_fields=custom_fields,
-        attachments=attachments)
+        attachments=attachments, now_date=date.today().isoformat())
 
 
 @router.get("/{person_id}/edit")
@@ -342,13 +430,14 @@ async def update_person(request: Request, person_id: int):
 
     db.execute(
         """UPDATE persons SET first_name=?, last_name=?, email=?, phone=?, notes=?,
-           gift_tier=?, birthday=?, preferences=?, gift_notes=?, industry=?,
+           gift_tier=?, birthday=?, preferences=?, gift_notes=?, industry=?, familiarity=?,
            updated_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
         (form.get("first_name", ""), form.get("last_name", ""), form.get("email", ""),
          form.get("phone", ""), form.get("notes", ""),
          form.get("gift_tier", ""), form.get("birthday", ""),
          form.get("preferences", ""), form.get("gift_notes", ""),
          form.get("industry", ""),
+         int(form.get("familiarity")) if form.get("familiarity") else None,
          request.state.user["id"], person_id),
     )
     db.commit()
@@ -532,17 +621,51 @@ async def batch_action(request: Request):
     db = get_db()
 
     if action == "export_selected":
-        from app.services.import_service import export_persons_csv_selected
+        import io
+        import openpyxl
         from fastapi.responses import StreamingResponse
-        csv_content = export_persons_csv_selected(db, [int(pid) for pid in person_ids])
+
+        ids = [int(pid) for pid in person_ids]
+        placeholders = ",".join(["?"] * len(ids))
+        persons = db.execute(f"SELECT * FROM persons WHERE id IN ({placeholders}) ORDER BY first_name", ids).fetchall()
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "貴賓選取名單"
+        headers = ['姓名', '英文名', '公司', '職稱', '電話', 'Email', '地址', '產業', '熟識程度', '備註']
+        ws.append(headers)
+
+        for p in persons:
+            pid_val = p["id"]
+            role = db.execute("""
+                SELECT r.title, c.name as company_name, c.address
+                FROM roles r LEFT JOIN companies c ON c.id = r.company_id
+                WHERE r.person_id = ? AND r.is_current = 1 LIMIT 1
+            """, (pid_val,)).fetchone()
+            ws.append([
+                p["first_name"] or "",
+                p["last_name"] or "",
+                role["company_name"] if role else "",
+                role["title"] if role else "",
+                p["phone"] or "",
+                p["email"] or "",
+                role["address"] if role and role["address"] else "",
+                p.get("industry", "") or "",
+                f"{'★' * p['familiarity']}" if p.get("familiarity") else "",
+                p["notes"] or "",
+            ])
+
         db.close()
-        def generate():
-            yield b'\xef\xbb\xbf'
-            yield csv_content.encode("utf-8")
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        filename = f"貴賓選取名單（{len(persons)}位）.xlsx"
+
         return StreamingResponse(
-            generate(),
-            media_type="text/csv",
-            headers={"Content-Disposition": "attachment; filename=contacts_selected.csv"},
+            iter([output.getvalue()]),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
         )
 
     if action == "delete":

@@ -1,6 +1,12 @@
 import csv
 import io
 
+COMPANY_SIGNS = ['公司', '股份', '有限', '集團', '企業', '機構', '協會', '學院', '大學', '醫院', '研究院', '基金會', 'ltd', 'corp', 'inc', 'llc', 'co.']
+
+def looks_like_company(val):
+    v = (val or '').lower()
+    return any(k in v for k in COMPANY_SIGNS)
+
 
 def parse_csv(file_content: bytes, encoding: str = "utf-8") -> tuple[list[str], list[dict]]:
     try:
@@ -131,6 +137,114 @@ def map_and_import(rows: list[dict], mapping: dict, db, user_id: int, skip_indic
         count += 1
 
     return count, skipped
+
+
+def smart_import(rows: list[dict], mapping: dict, db, user_id: int) -> tuple[int, int, list]:
+    """
+    Import with auto-merge: same name + company → merge (keep longer/complete values).
+    Returns (new_count, merged_count, merge_log).
+    """
+    new_count = 0
+    merged_count = 0
+    merge_log = []
+
+    for row in rows:
+        first_name = row.get(mapping.get("first_name", ""), "").strip()
+        last_name = row.get(mapping.get("last_name", ""), "").strip()
+        if not first_name and not last_name:
+            continue
+
+        email = row.get(mapping.get("email", ""), "").strip()
+        phone = row.get(mapping.get("phone", ""), "").strip()
+        notes = row.get(mapping.get("notes", ""), "").strip()
+        company_name = row.get(mapping.get("company", ""), "").strip()
+        title = row.get(mapping.get("title", ""), "").strip()
+        tags_str = row.get(mapping.get("tags", ""), "").strip()
+
+        # Check for existing person with same name + company
+        existing = None
+        if first_name:
+            candidates = db.execute(
+                "SELECT p.* FROM persons p WHERE LOWER(TRIM(p.first_name)) = ?",
+                (first_name.lower(),)
+            ).fetchall()
+            for c in candidates:
+                if company_name:
+                    c_role = db.execute("""
+                        SELECT c.name FROM roles r JOIN companies c ON c.id = r.company_id
+                        WHERE r.person_id = ? AND LOWER(c.name) = ?
+                    """, (c["id"], company_name.lower())).fetchone()
+                    if c_role:
+                        existing = c
+                        break
+                elif not company_name and len(candidates) == 1:
+                    existing = candidates[0]
+                    break
+
+        if existing:
+            # Merge: update fields with longer/more complete values
+            updates = {}
+            for field, new_val in [("email", email), ("phone", phone), ("notes", notes)]:
+                old_val = existing[field] or ""
+                if new_val and len(new_val) > len(old_val):
+                    updates[field] = new_val
+
+            if updates:
+                set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
+                db.execute(
+                    f"UPDATE persons SET {set_clause}, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    list(updates.values()) + [user_id, existing["id"]]
+                )
+                db.commit()
+
+            merged_count += 1
+            merge_log.append({"name": first_name, "company": company_name})
+        else:
+            # New person
+            db.execute(
+                "INSERT INTO persons (first_name, last_name, email, phone, notes, created_by, updated_by) VALUES (?,?,?,?,?,?,?)",
+                (first_name, last_name, email, phone, notes, user_id, user_id),
+            )
+            db.commit()
+            person_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+            if company_name:
+                company = db.execute("SELECT id FROM companies WHERE name = ?", (company_name,)).fetchone()
+                if not company:
+                    db.execute("INSERT INTO companies (name, created_by) VALUES (?, ?)", (company_name, user_id))
+                    db.commit()
+                    company_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                else:
+                    company_id = company["id"]
+                db.execute(
+                    "INSERT INTO roles (person_id, company_id, title, is_current) VALUES (?,?,?,1)",
+                    (person_id, company_id, title),
+                )
+                db.commit()
+
+            if tags_str:
+                for tag_name in tags_str.replace(";", ",").split(","):
+                    tag_name = tag_name.strip().lower()
+                    if not tag_name:
+                        continue
+                    tag = db.execute("SELECT id FROM tags WHERE name = ?", (tag_name,)).fetchone()
+                    if not tag:
+                        db.execute("INSERT INTO tags (name) VALUES (?)", (tag_name,))
+                        db.commit()
+                        tag_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    else:
+                        tag_id = tag["id"]
+                    db.execute("INSERT OR IGNORE INTO person_tags (person_id, tag_id) VALUES (?,?)", (person_id, tag_id))
+
+            db.commit()
+            db.execute(
+                "INSERT INTO edit_log (user_id, entity_type, entity_id, action, changes) VALUES (?,?,?,?,?)",
+                (user_id, "person", person_id, "create", f"匯入聯絡人: {first_name}"),
+            )
+            db.commit()
+            new_count += 1
+
+    return new_count, merged_count, merge_log
 
 
 def export_persons_csv_selected(db, person_ids: list[int]) -> str:
