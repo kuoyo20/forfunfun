@@ -56,9 +56,18 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     preview = rows[:5]
     field_options = ["first_name", "last_name", "email", "phone", "company", "title", "tags", "notes"]
 
+    # Check if name column looks like company names
+    name_warning = ""
+    name_col = next((h for h in headers if 'name' in h.lower() or '姓' in h or '名' in h), None)
+    if name_col:
+        from app.services.import_service import looks_like_company
+        sample_names = [row.get(name_col, "") for row in rows[:5] if row.get(name_col)]
+        if any(looks_like_company(n) for n in sample_names):
+            name_warning = f"「{name_col}」欄位偵測到疑似公司名稱，請確認對應是否正確。"
+
     return _render(request, "import_mapping.html",
         headers=headers, preview=preview, total=len(rows),
-        tmp_file=tmp_name, field_options=field_options)
+        tmp_file=tmp_name, field_options=field_options, name_warning=name_warning)
 
 
 @router.post("/check-duplicates")
@@ -95,13 +104,15 @@ async def check_duplicates(request: Request):
             dupes=dupes, total=len(data["rows"]),
             tmp_file=tmp_file, mapping_json=mapping_json)
 
-    # No duplicates, proceed directly
+    # No duplicates found by old check, use smart import (handles same name+company merge)
+    from app.services.import_service import smart_import
     db = get_db()
-    count, skipped = map_and_import(data["rows"], mapping, db, request.state.user["id"])
+    new_count, merged_count, merge_log = smart_import(data["rows"], mapping, db, request.state.user["id"])
     db.close()
     os.unlink(tmp_path)
-    request.state.flash = [("success", f"成功匯入 {count} 筆聯絡人！")]
-    return _render(request, "import.html")
+    return _render(request, "import_result.html",
+        new_count=new_count, merged_count=merged_count,
+        total=new_count + merged_count, merge_log=merge_log)
 
 
 @router.post("/confirm")
@@ -131,16 +142,16 @@ async def confirm_import(request: Request):
             except ValueError:
                 pass
 
+    from app.services.import_service import smart_import
+    # Filter out skipped rows
+    filtered_rows = [row for i, row in enumerate(data["rows"]) if i not in skip_indices]
     db = get_db()
-    count, skipped = map_and_import(data["rows"], mapping, db, request.state.user["id"], skip_indices)
+    new_count, merged_count, merge_log = smart_import(filtered_rows, mapping, db, request.state.user["id"])
     db.close()
     os.unlink(tmp_path)
-
-    msg = f"成功匯入 {count} 筆聯絡人"
-    if skipped:
-        msg += f"，跳過 {skipped} 筆重複"
-    request.state.flash = [("success", msg + "！")]
-    return _render(request, "import.html")
+    return _render(request, "import_result.html",
+        new_count=new_count, merged_count=merged_count,
+        total=new_count + merged_count, merge_log=merge_log)
 
 
 @router.post("/scan")
