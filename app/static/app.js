@@ -103,10 +103,10 @@ function addRoleRow() {
         </div>
         <div class="grid-2">
             <label>公司
-                <select name="role_company_id[]">
-                    <option value="">-- 選擇公司 --</option>
-                    ${window.__companies ? window.__companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : ''}
-                </select>
+                <input type="text" name="role_company_name[]" list="company-list-new-${roleCounter}" placeholder="輸入公司名稱">
+                <datalist id="company-list-new-${roleCounter}">
+                    ${window.__companies ? window.__companies.map(c => `<option value="${c.name}">`).join('') : ''}
+                </datalist>
             </label>
             <label>職稱
                 <input type="text" name="role_title[]" placeholder="例：CEO、顧問">
