@@ -8,3 +8,4 @@ aiosqlite
 openpyxl
 pytesseract
 Pillow
+anthropic
