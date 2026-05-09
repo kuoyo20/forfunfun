@@ -24,6 +24,12 @@ interface FmPriceRow {
   spread: number;
 }
 
+interface FmIndexRow {
+  date: string;
+  stock_id: string;
+  price: number;
+}
+
 interface FmInfoRow {
   date: string;
   industry_category: string;
@@ -94,57 +100,93 @@ export interface MarketSnapshot {
   gainers: RankRow[];
   losers: RankRow[];
   volume: RankRow[];
+  warnings: string[];
+}
+
+async function fetchAllStocks(): Promise<FmPriceRow[]> {
+  return fm<FmPriceRow>("TaiwanStockPrice", { start_date: daysAgo(10) });
+}
+
+async function fetchTaiexIndex(days: number): Promise<TaiexPoint[]> {
+  const rows = await fm<FmIndexRow>("TaiwanStockTotalReturnIndex", {
+    data_id: "TAIEX",
+    start_date: daysAgo(days),
+  });
+  const sorted = rows
+    .filter((r) => r.price > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return sorted.map((r, i) => {
+    const prev = i > 0 ? sorted[i - 1].price : r.price;
+    const change = r.price - prev;
+    return {
+      date: r.date,
+      close: round(r.price),
+      change: round(change),
+      changePct: prev > 0 ? round((change / prev) * 100) : 0,
+    };
+  });
 }
 
 export async function fetchMarketSnapshot(): Promise<MarketSnapshot> {
-  const [allRows, taiex, names] = await Promise.all([
-    fm<FmPriceRow>("TaiwanStockPrice", { start_date: daysAgo(7) }),
-    fm<FmPriceRow>("TaiwanStockPrice", { data_id: "TAIEX", start_date: daysAgo(120) }),
+  const warnings: string[] = [];
+  const [allSettled, taiexSettled, namesSettled] = await Promise.allSettled([
+    fetchAllStocks(),
+    fetchTaiexIndex(120),
     fetchAllNames(),
-  ]);
+  ]).then((r) => r);
 
-  if (allRows.length === 0) throw new Error("無資料，可能 FinMind 暫時無法取得");
+  const allRows = allSettled.status === "fulfilled" ? allSettled.value : [];
+  const taiex = taiexSettled.status === "fulfilled" ? taiexSettled.value : [];
+  const names = namesSettled.status === "fulfilled" ? namesSettled.value : {};
 
-  const dates = [...new Set(allRows.map((r) => r.date))].sort();
-  const lastDate = dates[dates.length - 1];
-  const lastRows = allRows.filter((r) => r.date === lastDate);
+  if (allSettled.status === "rejected") {
+    warnings.push(`漲跌榜資料失敗：${(allSettled.reason as Error)?.message ?? "未知錯誤"}（FinMind 免費版可能限制全市場查詢，可註冊免費 token 解除）`);
+  }
+  if (taiexSettled.status === "rejected") {
+    warnings.push(`加權指數資料失敗：${(taiexSettled.reason as Error)?.message ?? "未知錯誤"}`);
+  }
 
-  const enriched: RankRow[] = lastRows
-    .filter((r) => r.close > 0 && /^\d{4}$/.test(r.stock_id))
-    .map((r) => {
-      const prevClose = r.close - r.spread;
-      const pct = prevClose > 0 ? round((r.spread / prevClose) * 100) : 0;
-      return {
-        symbol: r.stock_id,
-        name: names[r.stock_id] ?? r.stock_id,
-        close: r.close,
-        change: round(r.spread),
-        changePct: pct,
-        volume: Math.round(r.Trading_Volume / 1000),
-      };
-    });
+  let gainers: RankRow[] = [];
+  let losers: RankRow[] = [];
+  let volume: RankRow[] = [];
+  let lastDate = "—";
 
-  const gainers = [...enriched].sort((a, b) => b.changePct - a.changePct).slice(0, 20);
-  const losers = [...enriched].sort((a, b) => a.changePct - b.changePct).slice(0, 20);
-  const volume = [...enriched].sort((a, b) => b.volume - a.volume).slice(0, 20);
+  if (allRows.length > 0) {
+    const dates = [...new Set(allRows.map((r) => r.date))].sort();
+    lastDate = dates[dates.length - 1];
+    const lastRows = allRows.filter((r) => r.date === lastDate);
 
-  const taiexPoints: TaiexPoint[] = taiex
-    .filter((r) => r.close > 0)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((r) => {
-      const prev = r.close - r.spread;
-      return {
-        date: r.date,
-        close: round(r.close),
-        change: round(r.spread),
-        changePct: prev > 0 ? round((r.spread / prev) * 100) : 0,
-      };
-    });
+    const enriched: RankRow[] = lastRows
+      .filter((r) => r.close > 0 && /^[0-9A-Z]{4,6}$/.test(r.stock_id) && r.spread !== undefined)
+      .map((r) => {
+        const prevClose = r.close - r.spread;
+        const pct = prevClose > 0 ? round((r.spread / prevClose) * 100) : 0;
+        return {
+          symbol: r.stock_id,
+          name: names[r.stock_id] ?? r.stock_id,
+          close: r.close,
+          change: round(r.spread),
+          changePct: pct,
+          volume: Math.round(r.Trading_Volume / 1000),
+        };
+      });
 
-  return { asOf: lastDate, taiex: taiexPoints, gainers, losers, volume };
+    gainers = [...enriched].sort((a, b) => b.changePct - a.changePct).slice(0, 20);
+    losers = [...enriched].sort((a, b) => a.changePct - b.changePct).slice(0, 20);
+    volume = [...enriched].sort((a, b) => b.volume - a.volume).slice(0, 20);
+  }
+
+  return { asOf: lastDate, taiex, gainers, losers, volume, warnings };
 }
 
 export async function fetchSeries(symbol: string): Promise<{ date: string; close: number }[]> {
+  if (symbol === "TAIEX") {
+    const rows = await fm<FmIndexRow>("TaiwanStockTotalReturnIndex", {
+      data_id: "TAIEX",
+      start_date: daysAgo(90),
+    });
+    return rows.filter((r) => r.price > 0).map((r) => ({ date: r.date, close: r.price }));
+  }
   const rows = await fm<FmPriceRow>("TaiwanStockPrice", {
     data_id: symbol,
     start_date: daysAgo(90),

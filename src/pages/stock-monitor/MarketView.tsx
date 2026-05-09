@@ -30,6 +30,13 @@ export function MarketView({ onPick }: { onPick: (symbol: string) => void }) {
         </div>
       ) : (
         <>
+          {data.warnings.length > 0 && (
+            <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200 space-y-1">
+              {data.warnings.map((w, i) => (
+                <div key={i}>⚠ {w}</div>
+              ))}
+            </div>
+          )}
           <TaiexCard data={data.taiex} asOf={data.asOf} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3">
             <RankCard title="漲幅榜 Top 20" rows={data.gainers} kind="up" onPick={onPick} />
@@ -80,6 +87,15 @@ function TaiexCard({ data, asOf }: { data: { date: string; close: number; change
 }
 
 function RankCard({ title, rows, kind, onPick }: { title: string; rows: RankRow[]; kind: "up" | "down" | "vol"; onPick: (s: string) => void }) {
+  if (rows.length === 0) {
+    return (
+      <Panel title={title}>
+        <div className="text-center text-[11px] text-slate-500 py-8">
+          無資料 — 可能是非交易日，或 FinMind 免費版不允許全市場查詢。
+        </div>
+      </Panel>
+    );
+  }
   return (
     <Panel title={title}>
       <div className="space-y-0.5 max-h-[420px] overflow-y-auto">
