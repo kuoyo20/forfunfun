@@ -32,7 +32,15 @@ import { FinalDisclaimer } from "./components/FinalDisclaimer";
 import { SkeletonDashboard } from "./components/Skeleton";
 import { SectionNav } from "./components/SectionNav";
 import { Glossary } from "./components/Glossary";
-import { useWatchlist } from "./useWatchlist";
+import { AddWatchModal } from "./components/AddWatchModal";
+import { Walkthrough } from "./components/Walkthrough";
+import { RiskFlagsPanel } from "./components/RiskFlagsPanel";
+import { BacktestPanel } from "./components/BacktestPanel";
+import { WorstScenarioPanel } from "./components/WorstScenarioPanel";
+import { VsTaiexPanel } from "./components/VsTaiexPanel";
+import { IndustryPeerPanel } from "./components/IndustryPeerPanel";
+import { computeRiskFlags, computeBacktest, computeWorstScenarios } from "./decisionHelpers";
+import { useWatchlist, cooldownDaysLeft, watchedDays } from "./useWatchlist";
 
 function readSymbolFromUrl(): string {
   if (typeof window === "undefined") return "3583";
@@ -78,6 +86,7 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
   const [symbol, setSymbol] = useState(initial);
   const [input, setInput] = useState(initial);
   const [shareToast, setShareToast] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const watchlist = useWatchlist();
 
   useEffect(() => {
@@ -106,7 +115,10 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
     const alert = buildMainForceAlert(snap.chip);
     const conclusion = buildOverallConclusion({ tech, bars: snap.kbars, supportUpper: levels.supportUpper });
     const nextDate = nextWeekday();
-    return { snap, barsMA, tech, levels, patterns, wm, multi, playbook, alert, conclusion, nextDate };
+    const riskFlags = computeRiskFlags(snap.kbars);
+    const backtest = computeBacktest(snap.kbars);
+    const worstScenarios = computeWorstScenarios(snap.kbars);
+    return { snap, barsMA, tech, levels, patterns, wm, multi, playbook, alert, conclusion, nextDate, riskFlags, backtest, worstScenarios };
   }, [data]);
 
   const updatedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
@@ -144,11 +156,16 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
               <button
                 type="button"
                 onClick={() => {
-                  if (watchlist.has(symbol)) watchlist.remove(symbol);
-                  else watchlist.add({ symbol, name: data?.snapshot.quote.name });
+                  if (watchlist.has(symbol)) {
+                    if (confirm("從自選股移除？冷靜期紀錄會一併刪除。")) {
+                      watchlist.remove(symbol);
+                    }
+                  } else {
+                    setShowAddModal(true);
+                  }
                 }}
                 className={`rounded border px-2.5 py-1.5 text-xs ${watchlist.has(symbol) ? "border-yellow-400 bg-yellow-500/20 text-yellow-200" : "border-slate-500 text-slate-300 hover:bg-slate-700"}`}
-                title={watchlist.has(symbol) ? "從自選股移除" : "加入自選股"}
+                title={watchlist.has(symbol) ? "從自選股移除" : "加入自選股 (需寫 30 字理由)"}
               >
                 {watchlist.has(symbol) ? "★" : "☆"}
               </button>
@@ -184,25 +201,43 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
         {watchlist.list.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-2 py-1.5">
             <span className="text-[11px] font-bold text-yellow-300 mr-1">★ 我的自選</span>
-            {watchlist.list.map((w) => (
-              <span key={w.symbol} className={`group inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] ${symbol === w.symbol ? "border-yellow-400 bg-yellow-500/30 text-yellow-100" : "border-yellow-500/40 bg-slate-900/40 text-yellow-200"}`}>
-                <button
-                  type="button"
-                  onClick={() => { setInput(w.symbol); setSymbol(w.symbol); }}
-                  className="hover:text-yellow-100"
+            {watchlist.list.map((w) => {
+              const left = cooldownDaysLeft(w);
+              const days = watchedDays(w);
+              const cooldownTip = left > 0
+                ? `🔒 冷靜期還剩 ${left} 天`
+                : `✓ 冷靜期已過（已關注 ${days} 天）`;
+              const noteTip = w.note ? `\n📝 ${w.note}` : "";
+              return (
+                <span key={w.symbol} className={`group inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] ${symbol === w.symbol ? "border-yellow-400 bg-yellow-500/30 text-yellow-100" : "border-yellow-500/40 bg-slate-900/40 text-yellow-200"}`}
+                  title={`${cooldownTip}${noteTip}`}
                 >
-                  {w.symbol}{w.name ? ` ${w.name}` : ""}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => watchlist.remove(w.symbol)}
-                  className="opacity-50 hover:opacity-100 hover:text-red-300"
-                  title="移除"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+                  <button
+                    type="button"
+                    onClick={() => { setInput(w.symbol); setSymbol(w.symbol); }}
+                    className="hover:text-yellow-100"
+                  >
+                    {w.symbol}{w.name ? ` ${w.name}` : ""}
+                  </button>
+                  {left > 0 && (
+                    <span className="text-amber-400 text-[10px]" title={cooldownTip}>🔒{left}d</span>
+                  )}
+                  {w.note && (
+                    <span className="opacity-60 text-[10px]" title={w.note}>📝</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`確定移除 ${w.symbol}？`)) watchlist.remove(w.symbol);
+                    }}
+                    className="opacity-50 hover:opacity-100 hover:text-red-300"
+                    title="移除"
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
           </div>
         )}
 
@@ -219,8 +254,9 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
           <>
             <SectionNav />
             <SourceBadge source={data.source} time={updatedAt} warning={data.warning} />
-            <div id="sec-quote" className="scroll-mt-12">
+            <div id="sec-quote" className="scroll-mt-12 space-y-2 sm:space-y-3">
               <HeaderQuote quote={derived.snap.quote} />
+              {derived.riskFlags.length > 0 && <RiskFlagsPanel flags={derived.riskFlags} />}
             </div>
 
             <div id="sec-kline" className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 scroll-mt-12">
@@ -256,6 +292,17 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
               <PlaybookPanel scenarios={derived.playbook} date={derived.nextDate} />
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              <BacktestPanel rows={derived.backtest} currentPrice={derived.snap.quote.price} />
+              <WorstScenarioPanel scenarios={derived.worstScenarios} />
+              <VsTaiexPanel symbol={symbol} bars={derived.snap.kbars} />
+              <IndustryPeerPanel
+                industry={derived.snap.industry.industry[0]?.replace("產業類別：", "") ?? ""}
+                currentSymbol={symbol}
+                currentPer={derived.snap.valuation.current?.per ?? 0}
+              />
+            </div>
+
             <div id="sec-valuation" className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 scroll-mt-12">
               <div className="lg:col-span-5">
                 <ValuationPanel valuation={derived.snap.valuation} currentPrice={derived.snap.quote.price} />
@@ -287,6 +334,17 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
           {shareToast}
         </div>
       )}
+      <AddWatchModal
+        open={showAddModal}
+        symbol={symbol}
+        name={data?.snapshot.quote.name}
+        onClose={() => setShowAddModal(false)}
+        onConfirm={(note) => {
+          watchlist.add({ symbol, name: data?.snapshot.quote.name, note });
+          setShowAddModal(false);
+        }}
+      />
+      <Walkthrough />
     </div>
   );
 }
