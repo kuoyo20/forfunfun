@@ -35,7 +35,11 @@ import { Glossary } from "./components/Glossary";
 import { AddWatchModal } from "./components/AddWatchModal";
 import { Walkthrough } from "./components/Walkthrough";
 import { RiskFlagsPanel } from "./components/RiskFlagsPanel";
-import { computeRiskFlags } from "./decisionHelpers";
+import { BacktestPanel } from "./components/BacktestPanel";
+import { WorstScenarioPanel } from "./components/WorstScenarioPanel";
+import { VsTaiexPanel } from "./components/VsTaiexPanel";
+import { IndustryPeerPanel } from "./components/IndustryPeerPanel";
+import { computeRiskFlags, computeBacktest, computeWorstScenarios } from "./decisionHelpers";
 import { useWatchlist, cooldownDaysLeft, watchedDays } from "./useWatchlist";
 
 function readSymbolFromUrl(): string {
@@ -112,7 +116,9 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
     const conclusion = buildOverallConclusion({ tech, bars: snap.kbars, supportUpper: levels.supportUpper });
     const nextDate = nextWeekday();
     const riskFlags = computeRiskFlags(snap.kbars);
-    return { snap, barsMA, tech, levels, patterns, wm, multi, playbook, alert, conclusion, nextDate, riskFlags };
+    const backtest = computeBacktest(snap.kbars);
+    const worstScenarios = computeWorstScenarios(snap.kbars);
+    return { snap, barsMA, tech, levels, patterns, wm, multi, playbook, alert, conclusion, nextDate, riskFlags, backtest, worstScenarios };
   }, [data]);
 
   const updatedAt = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString("zh-TW", { hour12: false }) : "—";
@@ -284,6 +290,17 @@ export default function StockMonitor({ tutor = false }: { tutor?: boolean } = {}
               <PatternAnalysisPanel wm={derived.wm} />
               <MultiPeriodPanel rows={derived.multi} />
               <PlaybookPanel scenarios={derived.playbook} date={derived.nextDate} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              <BacktestPanel rows={derived.backtest} currentPrice={derived.snap.quote.price} />
+              <WorstScenarioPanel scenarios={derived.worstScenarios} />
+              <VsTaiexPanel symbol={symbol} bars={derived.snap.kbars} />
+              <IndustryPeerPanel
+                industry={derived.snap.industry.industry[0]?.replace("產業類別：", "") ?? ""}
+                currentSymbol={symbol}
+                currentPer={derived.snap.valuation.current?.per ?? 0}
+              />
             </div>
 
             <div id="sec-valuation" className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3 scroll-mt-12">
