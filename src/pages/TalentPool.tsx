@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Archive, Loader2, Mail, Calendar, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { API } from "@/lib/config";
+import { hrFetch } from "@/lib/config";
 
 interface Interview {
   id: string;
@@ -30,7 +30,7 @@ export default function TalentPool() {
   const [minScore, setMinScore] = useState(60);
 
   useEffect(() => {
-    fetch(`${API}/api/interviews`)
+    hrFetch("/api/interviews")
       .then((r) => r.json())
       .then(setInterviews)
       .catch(() => {})

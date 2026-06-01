@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { API } from "@/lib/config";
+import { hrFetch } from "@/lib/config";
 
 interface InterviewItem {
   id: string;
@@ -28,7 +28,7 @@ export default function Compare() {
   const [positionFilter, setPositionFilter] = useState<string>("");
 
   useEffect(() => {
-    fetch(`${API}/api/interviews`)
+    hrFetch("/api/interviews")
       .then((r) => r.json())
       .then(setAll)
       .catch(() => {})

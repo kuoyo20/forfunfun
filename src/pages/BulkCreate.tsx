@@ -4,7 +4,7 @@ import { ArrowLeft, Upload, Loader2, Copy, Check, FileText, X } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { loadTemplates, type InterviewTemplate } from "@/lib/templates";
 import { toast } from "sonner";
-import { API } from "@/lib/config";
+import { API, hrFetch, hrFetchUpload } from "@/lib/config";
 
 interface CandidateRow {
   file: File;
@@ -92,13 +92,13 @@ export default function BulkCreate() {
         // 先上傳履歷取得解析文字
         const fd = new FormData();
         fd.append("file", c.file);
-        const uploadRes = await fetch(`${API}/api/upload`, { method: "POST", body: fd });
+        const uploadRes = await hrFetchUpload("/api/upload", fd);
         const uploadData = await uploadRes.json();
 
         // 建立面試
-        const createRes = await fetch(`${API}/api/interviews`, {
+        const createRes = await hrFetch("/api/interviews", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          
           body: JSON.stringify({
             position: position.trim(),
             difficulty,
@@ -144,9 +144,9 @@ export default function BulkCreate() {
         const statusRes = await fetch(`${API}/api/interview/${c.token}`);
         if (!statusRes.ok) continue;
         const statusData = await statusRes.json();
-        await fetch(`${API}/api/email/send-invite`, {
+        await hrFetch("/api/email/send-invite", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          
           body: JSON.stringify({ interviewId: statusData.id }),
         });
         sent += 1;

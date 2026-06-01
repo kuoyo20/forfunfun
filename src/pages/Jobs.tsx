@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Briefcase, Users, TrendingUp, Clock, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { API } from "@/lib/config";
+import { hrFetch } from "@/lib/config";
 
 interface Interview {
   id: string;
@@ -29,7 +29,7 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/api/interviews`)
+    hrFetch("/api/interviews")
       .then((r) => r.json())
       .then(setInterviews)
       .catch(() => {})

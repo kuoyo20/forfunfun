@@ -8,7 +8,7 @@ interface FileUploadProps {
   onUploaded: (data: { fileName: string; text: string }) => void;
 }
 
-import { API } from "@/lib/config";
+import { hrFetchUpload } from "@/lib/config";
 
 export default function FileUpload({ label, accept = ".pdf,.doc,.docx,.txt", onUploaded }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
@@ -24,7 +24,7 @@ export default function FileUpload({ label, accept = ".pdf,.doc,.docx,.txt", onU
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${API}/api/upload`, { method: "POST", body: formData });
+      const res = await hrFetchUpload("/api/upload", formData);
       if (!res.ok) throw new Error("上傳失敗");
       const data = await res.json();
       setFileName(data.fileName);

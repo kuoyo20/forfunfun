@@ -1,16 +1,55 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
+import rateLimit from "express-rate-limit";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 import { extractText } from "./parse.js";
 import { sendInterviewInvite, sendHRNotification, sendPassNotification, sendFailNotification } from "./email.js";
 import { askInterviewer, generateAIReport, extractFromDocs, previewQuestions } from "./ai.js";
+import { hrAuth, candidateTokenAuth } from "./auth.js";
 
-const prisma = new PrismaClient();
+// Lazy-init PrismaClient so tests without a real DB can still load the module
+let _prisma: PrismaClient | null = null;
+function prisma(): PrismaClient {
+  if (!_prisma) _prisma = new PrismaClient();
+  return _prisma;
+}
 const app = express();
 
-app.use(cors());
+// ──────── CORS: production 限制 origin ────────
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : undefined; // undefined = allow all (dev)
+
+app.use(cors(allowedOrigins ? { origin: allowedOrigins } : undefined));
 app.use(express.json({ limit: "10mb" }));
+
+// ──────── Rate limiting ────────
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "請求過於頻繁，請稍後再試" },
+});
+app.use(globalLimiter);
+
+const aiLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 min
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "AI 請求過於頻繁，請 10 分鐘後再試" },
+});
+
+// ──────── AI kill-switch ────────
+function aiEnabled(_req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (process.env.AI_ENABLED === "false") {
+    res.status(503).json({ error: "AI 功能暫時停用" });
+    return;
+  }
+  next();
+}
 
 // 檔案上傳：使用 memory storage（serverless 友善）
 const upload = multer({
@@ -26,7 +65,7 @@ const upload = multer({
 
 // ──────────────── 檔案上傳 ────────────────
 
-app.post("/api/upload", upload.single("file"), async (req, res) => {
+app.post("/api/upload", hrAuth, upload.single("file"), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "未上傳檔案或格式不支援" });
     return;
@@ -40,7 +79,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
 // ──────────────── 建立面試 ────────────────
 
-app.post("/api/interviews", async (req, res) => {
+app.post("/api/interviews", hrAuth, async (req, res) => {
   const {
     position, difficulty, maxQuestions, timeLimitMin, perQuestionSec, linkValidDays, topics,
     resumeText, jdText, resumeFileName, jdFileName,
@@ -50,7 +89,7 @@ app.post("/api/interviews", async (req, res) => {
   const validDays = linkValidDays ?? 7;
   const expiresAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000);
 
-  const interview = await prisma.interview.create({
+  const interview = await prisma().interview.create({
     data: {
       position,
       difficulty,
@@ -74,8 +113,8 @@ app.post("/api/interviews", async (req, res) => {
 
 // ──────────────── HR：列出所有面試 ────────────────
 
-app.get("/api/interviews", async (_req, res) => {
-  const interviews = await prisma.interview.findMany({
+app.get("/api/interviews", hrAuth, async (_req, res) => {
+  const interviews = await prisma().interview.findMany({
     orderBy: { createdAt: "desc" },
   });
   res.json(
@@ -89,8 +128,8 @@ app.get("/api/interviews", async (_req, res) => {
 
 // ──────────────── HR：取得單一面試 ────────────────
 
-app.get("/api/interviews/:id", async (req, res) => {
-  const interview = await prisma.interview.findUnique({
+app.get("/api/interviews/:id", hrAuth, async (req, res) => {
+  const interview = await prisma().interview.findUnique({
     where: { id: req.params.id },
   });
   if (!interview) {
@@ -107,8 +146,8 @@ app.get("/api/interviews/:id", async (req, res) => {
 
 // ──────────────── 候選人：透過 token 取得面試 ────────────────
 
-app.get("/api/interview/:token", async (req, res) => {
-  const interview = await prisma.interview.findUnique({
+app.get("/api/interview/:token", candidateTokenAuth, async (req, res) => {
+  const interview = await prisma().interview.findUnique({
     where: { token: req.params.token },
   });
   if (!interview) {
@@ -120,7 +159,7 @@ app.get("/api/interview/:token", async (req, res) => {
   if (interview.expiresAt && interview.expiresAt.getTime() < Date.now()) {
     // 自動將狀態更新為 expired（如果尚未完成）
     if (interview.status !== "completed" && interview.status !== "expired") {
-      await prisma.interview.update({
+      await prisma().interview.update({
         where: { id: interview.id },
         data: { status: "expired" },
       });
@@ -146,7 +185,7 @@ app.get("/api/interview/:token", async (req, res) => {
 
 // ──────────────── 更新面試（存對話/報告） ────────────────
 
-app.put("/api/interviews/:id", async (req, res) => {
+app.put("/api/interviews/:id", hrAuth, async (req, res) => {
   const { status, messages, report, durationSec } = req.body;
 
   const data: Record<string, unknown> = {};
@@ -156,7 +195,7 @@ app.put("/api/interviews/:id", async (req, res) => {
   if (durationSec !== undefined) data.durationSec = durationSec;
   if (status === "completed") data.completedAt = new Date();
 
-  const interview = await prisma.interview.update({
+  const interview = await prisma().interview.update({
     where: { id: req.params.id },
     data,
   });
@@ -165,17 +204,17 @@ app.put("/api/interviews/:id", async (req, res) => {
 
 // ──────────────── 刪除面試 ────────────────
 
-app.delete("/api/interviews/:id", async (req, res) => {
-  await prisma.interview.delete({ where: { id: req.params.id } });
+app.delete("/api/interviews/:id", hrAuth, async (req, res) => {
+  await prisma().interview.delete({ where: { id: req.params.id } });
   res.json({ ok: true });
 });
 
 // ──────────────── 寄送邀請 Email ────────────────
 
-app.post("/api/email/send-invite", async (req, res) => {
+app.post("/api/email/send-invite", hrAuth, async (req, res) => {
   const { interviewId } = req.body;
 
-  const interview = await prisma.interview.findUnique({
+  const interview = await prisma().interview.findUnique({
     where: { id: interviewId },
   });
   if (!interview) {
@@ -198,7 +237,7 @@ app.post("/api/email/send-invite", async (req, res) => {
   });
 
   if (sent) {
-    await prisma.interview.update({
+    await prisma().interview.update({
       where: { id: interviewId },
       data: { emailSent: true },
     });
@@ -210,12 +249,16 @@ app.post("/api/email/send-invite", async (req, res) => {
 
 // ──────────────── AI：產生下一題 ────────────────
 
-app.post("/api/ai/chat", async (req, res) => {
+app.post("/api/ai/chat", aiLimiter, aiEnabled, async (req, res) => {
   const { interviewId, messages } = req.body;
+  if (!interviewId) {
+    res.status(400).json({ error: "Missing interviewId" });
+    return;
+  }
 
-  const interview = await prisma.interview.findUnique({ where: { id: interviewId } });
-  if (!interview) {
-    res.status(404).json({ error: "找不到面試" });
+  const interview = await prisma().interview.findUnique({ where: { id: interviewId } });
+  if (!interview || interview.status === "expired") {
+    res.status(404).json({ error: "面試不存在或已過期" });
     return;
   }
 
@@ -234,17 +277,17 @@ app.post("/api/ai/chat", async (req, res) => {
     });
     res.json({ reply });
   } catch (err) {
-    console.error("AI chat error:", err);
+    console.error("AI chat error:", (err as Error).message);
     res.status(500).json({ error: "AI 回應失敗" });
   }
 });
 
 // ──────────────── AI：產生面試報告 ────────────────
 
-app.post("/api/ai/report", async (req, res) => {
+app.post("/api/ai/report", aiLimiter, aiEnabled, async (req, res) => {
   const { interviewId, messages, durationSec } = req.body;
 
-  const interview = await prisma.interview.findUnique({ where: { id: interviewId } });
+  const interview = await prisma().interview.findUnique({ where: { id: interviewId } });
   if (!interview) {
     res.status(404).json({ error: "找不到面試" });
     return;
@@ -265,7 +308,7 @@ app.post("/api/ai/report", async (req, res) => {
       jdText: interview.jdText,
     });
 
-    await prisma.interview.update({
+    await prisma().interview.update({
       where: { id: interviewId },
       data: {
         status: "completed",
@@ -291,27 +334,27 @@ app.post("/api/ai/report", async (req, res) => {
 
     res.json(report);
   } catch (err) {
-    console.error("AI report error:", err);
+    console.error("AI report error:", (err as Error).message);
     res.status(500).json({ error: "報告產生失敗" });
   }
 });
 
 // ──────────────── HR 決策 ────────────────
 
-app.post("/api/interviews/:id/decision", async (req, res) => {
+app.post("/api/interviews/:id/decision", hrAuth, async (req, res) => {
   const { decision, sendEmail = true } = req.body; // "pass" | "fail" | "pending"
   if (!["pass", "fail", "pending"].includes(decision)) {
     res.status(400).json({ error: "無效的決策值" });
     return;
   }
 
-  const existing = await prisma.interview.findUnique({ where: { id: req.params.id } });
+  const existing = await prisma().interview.findUnique({ where: { id: req.params.id } });
   if (!existing) {
     res.status(404).json({ error: "找不到面試" });
     return;
   }
 
-  const interview = await prisma.interview.update({
+  const interview = await prisma().interview.update({
     where: { id: req.params.id },
     data: { decision },
   });
@@ -333,7 +376,7 @@ app.post("/api/interviews/:id/decision", async (req, res) => {
     });
 
     if (emailSent) {
-      await prisma.interview.update({
+      await prisma().interview.update({
         where: { id: req.params.id },
         data: {
           candidateNotifiedAt: new Date(),
@@ -353,8 +396,8 @@ app.post("/api/interviews/:id/decision", async (req, res) => {
 
 // ──────── 手動重新寄送結果通知 ────────
 
-app.post("/api/interviews/:id/resend-notification", async (req, res) => {
-  const interview = await prisma.interview.findUnique({ where: { id: req.params.id } });
+app.post("/api/interviews/:id/resend-notification", hrAuth, async (req, res) => {
+  const interview = await prisma().interview.findUnique({ where: { id: req.params.id } });
   if (!interview) {
     res.status(404).json({ error: "找不到面試" });
     return;
@@ -377,7 +420,7 @@ app.post("/api/interviews/:id/resend-notification", async (req, res) => {
   });
 
   if (sent) {
-    await prisma.interview.update({
+    await prisma().interview.update({
       where: { id: req.params.id },
       data: {
         candidateNotifiedAt: new Date(),
@@ -392,9 +435,9 @@ app.post("/api/interviews/:id/resend-notification", async (req, res) => {
 
 // ──────── HR 備註 ────────
 
-app.put("/api/interviews/:id/note", async (req, res) => {
+app.put("/api/interviews/:id/note", hrAuth, async (req, res) => {
   const { hrNote } = req.body;
-  await prisma.interview.update({
+  await prisma().interview.update({
     where: { id: req.params.id },
     data: { hrNote: hrNote ?? null },
   });
@@ -403,8 +446,8 @@ app.put("/api/interviews/:id/note", async (req, res) => {
 
 // ──────────────── 候選人補件上傳 ────────────────
 
-app.post("/api/interview/:token/supplement", upload.single("file"), async (req, res) => {
-  const interview = await prisma.interview.findUnique({
+app.post("/api/interview/:token/supplement", candidateTokenAuth, upload.single("file"), async (req, res) => {
+  const interview = await prisma().interview.findUnique({
     where: { token: req.params.token },
   });
   if (!interview) {
@@ -435,7 +478,7 @@ app.post("/api/interview/:token/supplement", upload.single("file"), async (req, 
   const existing = interview.resumeText ?? "";
   const supplementNote = `\n\n--- 補充資料：${req.file.originalname} ---\n${text}`;
 
-  await prisma.interview.update({
+  await prisma().interview.update({
     where: { id: interview.id },
     data: { resumeText: existing + supplementNote },
   });
@@ -449,8 +492,8 @@ app.post("/api/interview/:token/supplement", upload.single("file"), async (req, 
 
 // ──────────────── 候選人補件頁面資料 ────────────────
 
-app.get("/api/interview/:token/supplement-status", async (req, res) => {
-  const interview = await prisma.interview.findUnique({
+app.get("/api/interview/:token/supplement-status", candidateTokenAuth, async (req, res) => {
+  const interview = await prisma().interview.findUnique({
     where: { token: req.params.token },
   });
   if (!interview) {
@@ -474,20 +517,20 @@ app.get("/api/interview/:token/supplement-status", async (req, res) => {
 
 // ──────── AI 抽取履歷 / JD 關鍵資訊 ────────
 
-app.post("/api/ai/extract", async (req, res) => {
+app.post("/api/ai/extract", hrAuth, aiLimiter, aiEnabled, async (req, res) => {
   const { resumeText, jdText } = req.body;
   try {
     const result = await extractFromDocs({ resumeText, jdText });
     res.json(result);
   } catch (err) {
-    console.error("AI extract error:", err);
+    console.error("AI extract error:", (err as Error).message);
     res.status(500).json({ error: "抽取失敗" });
   }
 });
 
 // ──────── AI 預覽面試題目 ────────
 
-app.post("/api/ai/preview", async (req, res) => {
+app.post("/api/ai/preview", hrAuth, aiLimiter, aiEnabled, async (req, res) => {
   const { position, difficulty, topics, resumeText, jdText, count } = req.body;
   if (!position || !difficulty) {
     res.status(400).json({ error: "缺少必要欄位" });
@@ -504,7 +547,7 @@ app.post("/api/ai/preview", async (req, res) => {
     });
     res.json({ questions });
   } catch (err) {
-    console.error("AI preview error:", err);
+    console.error("AI preview error:", (err as Error).message);
     res.status(500).json({ error: "預覽失敗" });
   }
 });

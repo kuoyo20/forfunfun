@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2, CheckCircle, XCircle, Clock, Send, Mail, StickyNote
 import ReportView from "@/components/ReportView";
 import type { InterviewReport as Report, Message } from "@/types/interview";
 import { cn } from "@/lib/utils";
-import { API } from "@/lib/config";
+import { hrFetch } from "@/lib/config";
 import { toast } from "sonner";
 
 interface InterviewData {
@@ -48,7 +48,7 @@ export default function InterviewReportPage() {
   const [pendingDecision, setPendingDecision] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/api/interviews/${id}`)
+    hrFetch(`/api/interviews/${id}`)
       .then((r) => r.json())
       .then((d) => {
         setData(d);
@@ -63,9 +63,9 @@ export default function InterviewReportPage() {
     setSaving(true);
     setPendingDecision(null);
     try {
-      const res = await fetch(`${API}/api/interviews/${data.id}/decision`, {
+      const res = await hrFetch(`/api/interviews/${data.id}/decision`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({ decision, sendEmail }),
       });
       const result = await res.json();
@@ -103,7 +103,7 @@ export default function InterviewReportPage() {
     if (!data) return;
     setResending(true);
     try {
-      const res = await fetch(`${API}/api/interviews/${data.id}/resend-notification`, {
+      const res = await hrFetch(`/api/interviews/${data.id}/resend-notification`, {
         method: "POST",
       });
       if (res.ok) {
@@ -126,9 +126,9 @@ export default function InterviewReportPage() {
     if (!data) return;
     setNoteSaving(true);
     try {
-      await fetch(`${API}/api/interviews/${data.id}/note`, {
+      await hrFetch(`/api/interviews/${data.id}/note`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({ hrNote: note.trim() || null }),
       });
       setData({ ...data, hrNote: note.trim() || null });

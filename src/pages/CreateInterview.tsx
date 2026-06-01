@@ -6,7 +6,7 @@ import FileUpload from "@/components/FileUpload";
 import { loadTemplates, saveTemplate, deleteTemplate, type InterviewTemplate } from "@/lib/templates";
 import { TOPIC_PRESETS, findPreset } from "@/lib/topicPresets";
 import { toast } from "sonner";
-import { API } from "@/lib/config";
+import { hrFetch } from "@/lib/config";
 
 const DIFFICULTY_OPTIONS = [
   { value: "junior" as const, label: "初階", description: "0-2 年經驗" },
@@ -92,9 +92,9 @@ export default function CreateInterview() {
     setExtracting(true);
     setExtracted(false);
     try {
-      const res = await fetch(`${API}/api/ai/extract`, {
+      const res = await hrFetch("/api/ai/extract", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({ resumeText: resumeData?.text, jdText: jdData?.text }),
       });
       const data = await res.json();
@@ -132,9 +132,9 @@ export default function CreateInterview() {
     }
     setPreviewing(true);
     try {
-      const res = await fetch(`${API}/api/ai/preview`, {
+      const res = await hrFetch("/api/ai/preview", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({
           position: position.trim(),
           difficulty,
@@ -159,9 +159,9 @@ export default function CreateInterview() {
     setCreating(true);
 
     try {
-      const res = await fetch(`${API}/api/interviews`, {
+      const res = await hrFetch("/api/interviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({
           position: position.trim(),
           difficulty,
@@ -199,9 +199,9 @@ export default function CreateInterview() {
     if (!created) return;
     setSendingEmail(true);
     try {
-      const res = await fetch(`${API}/api/email/send-invite`, {
+      const res = await hrFetch("/api/email/send-invite", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({ interviewId: created.id }),
       });
       const data = await res.json();

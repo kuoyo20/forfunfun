@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Plus, Eye, Send, Trash2, Copy, Check, Loader2, Search, BarChart3, Users } from "lucide-react";
 import { toast } from "sonner";
-import { API } from "@/lib/config";
+import { hrFetch } from "@/lib/config";
 
 interface Interview {
   id: string;
@@ -47,7 +47,7 @@ export default function HRDashboard() {
   const [decisionFilter, setDecisionFilter] = useState<DecisionFilter>("all");
 
   useEffect(() => {
-    fetch(`${API}/api/interviews`)
+    hrFetch("/api/interviews")
       .then((r) => r.json())
       .then(setInterviews)
       .catch(() => {})
@@ -56,7 +56,7 @@ export default function HRDashboard() {
 
   const deleteInterview = async (id: string) => {
     if (!confirm("確定刪除這場面試？此操作無法復原。")) return;
-    await fetch(`${API}/api/interviews/${id}`, { method: "DELETE" });
+    await hrFetch(`/api/interviews/${id}`, { method: "DELETE" });
     setInterviews((prev) => prev.filter((i) => i.id !== id));
   };
 
@@ -70,9 +70,9 @@ export default function HRDashboard() {
   const sendEmail = async (id: string) => {
     setSendingId(id);
     try {
-      const res = await fetch(`${API}/api/email/send-invite`, {
+      const res = await hrFetch("/api/email/send-invite", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({ interviewId: id }),
       });
       const data = await res.json();
@@ -136,9 +136,9 @@ export default function HRDashboard() {
   const sendReminder = async (id: string) => {
     setSendingId(id);
     try {
-      const res = await fetch(`${API}/api/email/send-invite`, {
+      const res = await hrFetch("/api/email/send-invite", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify({ interviewId: id }),
       });
       const data = await res.json();

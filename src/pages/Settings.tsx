@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Save, Check, Mail, Building2, Bell } from "lucide-react";
+import { Save, Check, Mail, Building2, Bell, Key } from "lucide-react";
 import { toast } from "sonner";
 
 interface AppSettings {
@@ -60,6 +60,27 @@ export default function Settings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">設定</h1>
         <p className="text-sm text-muted-foreground mt-1">管理公司資訊與 email 寄送行為</p>
+      </div>
+
+      {/* HR 認證 Token */}
+      <div className="rounded-xl border-2 border-primary/30 bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Key className="h-5 w-5 text-primary" />
+          <h2 className="font-semibold">HR 認證 Token</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          此 token 用來驗證你的 HR 身份。系統管理員會提供給你，填入後才能存取面試資料。
+        </p>
+        <input
+          type="password"
+          value={localStorage.getItem("hr-auth-token") ?? ""}
+          onChange={(e) => {
+            localStorage.setItem("hr-auth-token", e.target.value);
+            toast.success("Token 已儲存");
+          }}
+          placeholder="貼上你的 HR auth token"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono"
+        />
       </div>
 
       {/* 公司資訊 */}
