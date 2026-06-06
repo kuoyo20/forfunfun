@@ -202,6 +202,43 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .template-icon{font-size:18px}
 .template-name{font-size:12px;font-weight:600;color:var(--text)}
 .template-desc{font-size:10px;color:var(--text3);margin-top:1px}
+.fbook-chapter{border:1px solid var(--border);border-radius:var(--rl);margin-bottom:12px;background:var(--surface);overflow:hidden;transition:all .2s}
+.fbook-chapter:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.fbook-ch-hd{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.fbook-ch-hd:hover{background:var(--surface2)}
+.fbook-ch-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fbook-ch-info{flex:1}
+.fbook-ch-title{font-size:14px;font-weight:700;color:var(--text)}
+.fbook-ch-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.fbook-ch-status{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600}
+.fbook-ch-status.pending{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.fbook-ch-status.generating{background:rgba(22,163,74,.08);color:#16a34a;border:1px solid rgba(22,163,74,.2)}
+.fbook-ch-status.done{background:var(--gold-l);color:var(--gold-d);border:1px solid var(--gold-b)}
+.fbook-ch-body{padding:16px;border-top:1px solid var(--border);font-size:14px;color:var(--text);line-height:2.0;font-family:var(--serif);white-space:pre-wrap;max-height:400px;overflow-y:auto}
+.fbook-ch-actions{display:flex;gap:6px;padding:10px 16px;border-top:1px solid var(--border);background:var(--bg2)}
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;min-height:auto}
+  .sidebar{position:relative;height:auto;max-height:none;border-right:none;border-bottom:1px solid var(--border2)}
+  .sb-body{max-height:60vh;overflow-y:auto}
+  .main{padding:20px 16px 40px}
+  .pgrid{grid-template-columns:1fr}
+  .pinfo-row{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(3,1fr)}
+  .mtabs{grid-template-columns:repeat(2,1fr)}
+  .mh h1{font-size:17px}
+  .welcome{padding:40px 20px}
+  .welcome h2{font-size:20px}
+  .ocard-hd{flex-direction:column;gap:8px;align-items:flex-start}
+  .oacts{width:100%}
+  .main-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .modal{margin:10px;max-width:calc(100vw - 20px)}
+}
+@media(max-width:480px){
+  .g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .sidebar{font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -232,11 +269,12 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   <div class="sb-body">
     <div class="sec">
       <div class="slbl">選擇模式</div>
-      <div class="mtabs" id="modeG" style="grid-template-columns:repeat(4,1fr)">
+      <div class="mtabs" id="modeG" style="grid-template-columns:repeat(5,1fr)">
         <button class="mtab on" data-v="personal"><span class="ti">✍</span><span class="tl">個人寫作</span><div class="ts">FB·IG·Threads</div></button>
         <button class="mtab" data-v="column"><span class="ti">📰</span><span class="tl">專欄代筆</span><div class="ts">天下·品牌</div></button>
         <button class="mtab" data-v="book"><span class="ti">📚</span><span class="tl">寫書架構</span><div class="ts">章節規劃</div></button>
         <button class="mtab" data-v="url"><span class="ti">🔗</span><span class="tl">讀網址</span><div class="ts">轉郭佑觀點</div></button>
+        <button class="mtab" data-v="fullbook"><span class="ti">📖</span><span class="tl">寫整本書</span><div class="ts">完整書稿</div></button>
       </div>
     </div>
 
@@ -286,6 +324,11 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         <input id="custT" placeholder="或輸入具體題目...">
       </div>
       <div class="sec">
+        <div class="slbl">本篇素材（真實場景/數字/人名）</div>
+        <textarea id="materialIn" rows="3" placeholder="例：上週跟農友阿明聊到，他今年產量提升30%；在NUS課堂上一位印度同學的觀點讓我反思..."></textarea>
+        <p style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.4">提供真實素材，AI 只負責聲音和結構，不會編造事實</p>
+      </div>
+      <div class="sec">
         <div class="slbl">讀者對象</div>
         <div class="g3" id="audG">
           <button class="ob on" data-v="founder"><span class="ol">創業者</span></button>
@@ -332,6 +375,11 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
           <button class="ob" data-v="大師型"><span class="ol">大師型</span><span class="od">架構清晰</span></button>
           <button class="ob" data-v="批判型"><span class="ol">批判反思型</span><span class="od">挑戰認知</span></button>
         </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">本篇素材（真實場景/數字/人名）</div>
+        <textarea id="colMaterialIn" rows="3" placeholder="例：上週跟農友阿明聊到，他今年產量提升30%；在NUS課堂上一位印度同學的觀點讓我反思..."></textarea>
+        <p style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.4">提供真實素材，AI 只負責聲音和結構，不會編造事實</p>
       </div>
     </div>
 
@@ -396,7 +444,58 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         <textarea id="urlNote" rows="2" placeholder="例：我對這件事有不同看法，想強調..."></textarea>
       </div>
       <div class="sec">
+        <div class="slbl">本篇素材（真實場景/數字/人名）</div>
+        <textarea id="urlMaterialIn" rows="3" placeholder="例：上週跟農友阿明聊到，他今年產量提升30%；在NUS課堂上一位印度同學的觀點讓我反思..."></textarea>
+        <p style="font-size:10px;color:var(--text3);margin-top:4px;line-height:1.4">提供真實素材，AI 只負責聲音和結構，不會編造事實</p>
+      </div>
+      <div class="sec">
         <div class="togrow"><div class="tog on" id="togUrlMulti"><div class="tth"></div></div><span class="tlb">同時生成 FB + IG + Threads 三個版本</span></div>
+      </div>
+    </div>
+
+    <!-- FULL BOOK -->
+    <div id="fullbookCfg" style="display:none">
+      <div class="sec">
+        <div class="slbl">書名</div>
+        <input id="fbookTitle" placeholder="例：創業前五年，我學到的事">
+      </div>
+      <div class="sec">
+        <div class="slbl">對標書籍風格</div>
+        <div class="g2" id="fbookStyleG">
+          <button class="ob on" data-v="thinking"><span class="ol">思考快與慢</span><span class="od">認知框架・心理學</span></button>
+          <button class="ob" data-v="coaching"><span class="ol">教練</span><span class="od">真實故事・人性洞察</span></button>
+          <button class="ob" data-v="mindset"><span class="ol">底層思維</span><span class="od">第一性原理・思維模型</span></button>
+          <button class="ob" data-v="zero2one"><span class="ol">從0到1</span><span class="od">創新觀點・反直覺</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">書的主題方向</div>
+        <textarea id="fbookTheme" rows="2" placeholder="這本書要回答什麼核心問題？"></textarea>
+      </div>
+      <div class="sec">
+        <div class="slbl">目標讀者</div>
+        <div class="g3" id="fbookAudG">
+          <button class="ob on" data-v="entrepreneur"><span class="ol">創業者</span></button>
+          <button class="ob" data-v="career"><span class="ol">職場工作者</span></button>
+          <button class="ob" data-v="general"><span class="ol">一般大眾</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">預計章數</div>
+        <div class="g4" id="fbookChapG">
+          <button class="ob" data-v="8"><span class="ol">8章</span></button>
+          <button class="ob on" data-v="10"><span class="ol">10章</span></button>
+          <button class="ob" data-v="12"><span class="ol">12章</span></button>
+          <button class="ob" data-v="15"><span class="ol">15章</span></button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="slbl">必須包含的素材/故事</div>
+        <textarea id="fbookMaterial" rows="3" placeholder="例：鮮乳坊從0到10億的過程、被前輩奚落的經歷、在NUS的跨國視野..."></textarea>
+      </div>
+      <div class="sec">
+        <div class="slbl">補充想法</div>
+        <textarea id="fbookIdeas" rows="2" placeholder="其他想放進書裡的觀點或結構想法..."></textarea>
       </div>
     </div>
 
@@ -457,7 +556,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   <div class="welcome" id="welcomeState">
     <div class="wi">✍</div>
     <h2>選擇左側模式，開始生成</h2>
-    <p>整合你的完整背景——鮮乳坊創業史、MiracleX 生態系、AppWorks Fellow——自動生成符合你聲音的文章。</p>
+    <p>整合你的完整背景——鮮乳坊創業史、MiracleX 品牌群、AppWorks Fellow——自動生成符合你聲音的文章。</p>
     <div class="qblock"><p>「流淚撒種的，必歡呼收割。」<br>— 詩篇 126:5 · 郭佑的信仰底蘊</p></div>
   </div>
 
@@ -527,6 +626,31 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
           </div>
         </div>
         <div class="ocard-body"><div id="bookTree"></div></div>
+      </div>
+    </div>
+    <div id="fullbookSection" style="display:none">
+      <div class="ocard">
+        <div class="ocard-hd">
+          <div class="ocard-title" id="fbookSectionTitle">完整書稿</div>
+          <div class="oacts">
+            <button class="abtn" onclick="copyFullBook()">複製完整書稿</button>
+            <button class="abtn" onclick="downloadFullBook()">下載 .md</button>
+            <button class="abtn p" onclick="generateAllChapters()">一鍵生成全書 →</button>
+          </div>
+        </div>
+        <div class="ocard-body">
+          <div id="fbookProgress" style="display:none;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <div class="pulse"></div>
+              <span style="font-size:12px;color:#16a34a" id="fbookProgressText">生成中...</span>
+            </div>
+            <div style="width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+              <div id="fbookProgressBar" style="height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-d));border-radius:3px;transition:width .3s;width:0%"></div>
+            </div>
+          </div>
+          <div id="fbookOutlineArea"></div>
+          <div id="fbookChaptersArea"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -651,7 +775,10 @@ var S = {
   chaps:'10', bookIdeas:'',
   urlInput:'', urlType:'response', urlPlat:'fb', urlNote:'', urlMulti:true,
   bookChapters:[], lastMainText:'',
-  autoSubmit:true
+  autoSubmit:true,
+  material:'', colMaterial:'', urlMaterial:'',
+  fbookTitle:'', fbookStyle:'thinking', fbookTheme:'', fbookAud:'entrepreneur',
+  fbookChaps:'10', fbookMaterial:'', fbookIdeas:'', fbookOutline:[], fbookChapterContents:{}
 };
 
 function selOne(gid, val) {
@@ -674,6 +801,7 @@ document.getElementById('modeG').onclick = function(e){
   document.getElementById('colCfg').style.display  = b.dataset.v==='column'   ? 'block' : 'none';
   document.getElementById('bookCfg').style.display = b.dataset.v==='book'     ? 'block' : 'none';
   document.getElementById('urlCfg').style.display  = b.dataset.v==='url'      ? 'block' : 'none';
+  document.getElementById('fullbookCfg').style.display = b.dataset.v==='fullbook' ? 'block' : 'none';
 };
 document.getElementById('typeG').onclick    = function(e){var b=e.target.closest('.ob');if(b){S.type=b.dataset.v;selOne('typeG',b.dataset.v);}};
 document.getElementById('toneG').onclick    = function(e){var b=e.target.closest('.ob');if(b){S.tone=b.dataset.v;selOne('toneG',b.dataset.v);}};
@@ -700,6 +828,16 @@ document.getElementById('urlTypeG').onclick = function(e){var b=e.target.closest
 document.getElementById('urlPlatG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.urlPlat=b.dataset.v;selOne('urlPlatG',b.dataset.v);}};
 document.getElementById('togUrlMulti').onclick = function(){S.urlMulti=!S.urlMulti;this.classList.toggle('on',S.urlMulti);};
 document.getElementById('togAutoSubmit').onclick = function(){S.autoSubmit=!S.autoSubmit;this.classList.toggle('on',S.autoSubmit);};
+document.getElementById('materialIn').oninput = function(){S.material=this.value;};
+document.getElementById('colMaterialIn').oninput = function(){S.colMaterial=this.value;};
+document.getElementById('urlMaterialIn').oninput = function(){S.urlMaterial=this.value;};
+document.getElementById('fbookTitle').oninput = function(){S.fbookTitle=this.value;};
+document.getElementById('fbookTheme').oninput = function(){S.fbookTheme=this.value;};
+document.getElementById('fbookMaterial').oninput = function(){S.fbookMaterial=this.value;};
+document.getElementById('fbookIdeas').oninput = function(){S.fbookIdeas=this.value;};
+document.getElementById('fbookStyleG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.fbookStyle=b.dataset.v;selOne('fbookStyleG',b.dataset.v);}};
+document.getElementById('fbookAudG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.fbookAud=b.dataset.v;selOne('fbookAudG',b.dataset.v);}};
+document.getElementById('fbookChapG').onclick = function(e){var b=e.target.closest('.ob');if(b){S.fbookChaps=b.dataset.v;selOne('fbookChapG',b.dataset.v);}};
 var BASE = '你是郭哲佑（郭佑，Yo）的寫作模擬器。以下是從2022-2026年91篇長文淬煉出的「聲音指南」，你必須嚴格遵守。\n\n' +
 '【人生素材庫——可調用的真實場景】\n' +
 '大學時期：成績不好、學生會、棒球校隊、打工。「不是你學不會，是你還沒找到你的方式。」\n' +
@@ -805,12 +943,13 @@ function buildPersonalPrompt() {
   if (S.aud === 'founder') audNote = '\n語域提示：冷靜、用數字說話、強調責任感和長期主義。不帶信仰元素。';
   else if (S.aud === 'pro') audNote = '\n語域提示：結構化框架、引用名言搭配----分隔，可用雙語點綴（克制）。不帶信仰元素。';
   else if (S.aud === 'young') audNote = '\n語域提示：最口語、零術語、像在跟朋友聊天、結論先行。不帶信仰元素。';
+  var materialNote = S.material.trim() ? '\n本篇專屬素材（必須使用，不可編造額外事實）：\n' + S.material : '';
   return BASE + masters +
     '\n\n---\n【本次生成任務】\n文章類型：'+TYPES[S.type]+
     '\n語氣風格：'+TONES[S.tone]+
     '\n目標讀者：'+AUDS[S.aud]+ audNote +
     '\n'+topic+'\n字數目標：'+len+
-    '\n'+perNote+jinNote+
+    '\n'+perNote+jinNote+ materialNote +
     '\n\n'+STRUCTS[S.type]+
     '\n\n速查提醒：先問這是寫給誰→選語域和長度。用真實場景或引言開場，不要只有抽象推理。用真實數字/人名/地名當證據，砍掉所有空洞形容詞。把洞見濃縮成可記住的框架。禁用：賦能、共創、生態系、閉環、賽道、乾貨、落地、串聯、鏈結、孵化。先自嘲開場，感恩收尾，不說教不嘲諷不犧牲真誠。絕不捏造事實，缺資料就標【待補】。' +
     SELF_REVIEW +
@@ -822,7 +961,8 @@ function buildMultiPrompt(mainText) {
     '\n\n嚴格按照以下格式輸出：\n\n===FB===\n（Facebook版本）\n\n===IG===\n（Instagram版本）\n\n===THREADS===\n（Threads版本）\n\n繁體中文，保留郭佑的語氣。';
 }
 function buildColumnPrompt() {
-  return BASE+'\n\n---\n【專欄任務】\n品牌：'+S.brand+'\n討論區塊：'+S.area+'\n溝通切角：'+S.angle+'\n風格：'+S.colStyle+'\n字數：1000-2000字\n\n' +
+  var colMaterialNote = S.colMaterial.trim() ? '\n本篇專屬素材（必須使用，不可編造額外事實）：\n' + S.colMaterial + '\n' : '';
+  return BASE+'\n\n---\n【專欄任務】\n品牌：'+S.brand+'\n討論區塊：'+S.area+'\n溝通切角：'+S.angle+'\n風格：'+S.colStyle+'\n字數：1000-2000字\n' + colMaterialNote + '\n' +
     '語域提示：策略/思想型——結構化、框架化、引用名言、----分隔段落，不帶信仰元素。\n\n' +
     '文章結構（用[]標記）：\n[標題]有力的專欄標題（15字以內）\n[金句破題]一句點題金句（可用大膽斷言或借他人之口）\n[主文]真實場景切入→張力（敢寫脆弱/問題）→轉折→品牌做法→產業洞見→提煉一句可記住的框架→推及讀者\n[郭佑視角]300字深度解析，用真實數字和具體案例當證據\n\n' +
     '速查提醒：禁用賦能、共創、生態系、閉環、賽道、乾貨、落地、串聯、鏈結、孵化。用白話替代。所有形容詞換成具體事實/數字。絕不捏造事實，缺資料標【待補】。' +
@@ -885,6 +1025,7 @@ function buildUrlPrompt(articleText, url) {
     '任務指引：' + typeMap[S.urlType] + '\n\n' +
     '輸出格式：' + platMap[S.urlPlat] + '\n\n' +
     (S.urlNote.trim() ? '郭佑的補充想法：' + S.urlNote + '\n\n' : '') +
+    (S.urlMaterial.trim() ? '本篇專屬素材（必須使用，不可編造額外事實）：\n' + S.urlMaterial + '\n\n' : '') +
     '速查提醒：用真實場景或引言開場。禁用：賦能、共創、生態系、閉環、賽道、乾貨、落地、串聯、鏈結、孵化。先自嘲開場，感恩收尾，不說教不嘲諷。絕不捏造事實，缺資料標【待補】。' +
     SELF_REVIEW +
     '\n\n繁體中文，直接輸出文章，不要前言或說明。保持郭佑的語氣：直白、有力、有自己的立場。';
@@ -896,6 +1037,7 @@ function buildUrlMultiPrompt(articleText, url) {
     '原文來源：' + url + '\n\n原文內容（摘錄）：\n' + articleText + '\n\n' +
     '任務類型：' + S.urlType + '\n' +
     (S.urlNote.trim() ? '郭佑補充：' + S.urlNote + '\n' : '') +
+    (S.urlMaterial.trim() ? '本篇專屬素材（必須使用，不可編造額外事實）：\n' + S.urlMaterial + '\n' : '') +
     '\n速查提醒：每個版本都要用真實場景或引言開場。遵循敘事骨架：場景→張力→轉折→金句→推及讀者。禁用：賦能、共創、生態系、閉環、賽道、乾貨、落地、串聯、鏈結、孵化。先自嘲開場，感恩收尾。絕不捏造事實，缺資料標【待補】。' +
     SELF_REVIEW +
     '\n\n嚴格按照以下格式輸出：\n\n===FB===\n（Facebook版本）\n\n===IG===\n（Instagram版本）\n\n===THREADS===\n（Threads版本）\n\n繁體中文，保持郭佑語氣。';
@@ -1037,6 +1179,7 @@ async function generate() {
   document.getElementById('mainCard').style.display     = 'block';
   document.getElementById('platSection').style.display  = 'none';
   document.getElementById('bookSection').style.display  = 'none';
+  document.getElementById('fullbookSection').style.display = 'none';
   document.getElementById('errBox').style.display       = 'none';
   document.getElementById('genBtn').disabled            = true;
   document.getElementById('streamInd').classList.add('show');
@@ -1088,6 +1231,20 @@ async function generate() {
           document.getElementById('mta').value = '【Facebook 版本】\n' + pp.fb + '\n\n【Instagram 版本】\n' + pp.ig + '\n\n【Threads 版本】\n' + pp.th;
         }
       } else { S.lastMainText = await streamToTA(buildUrlPrompt(articleText, url), 'mta'); }
+    } else if (S.mode === 'fullbook') {
+      document.getElementById('mainCard').style.display = 'none';
+      document.getElementById('fullbookSection').style.display = 'block';
+      document.getElementById('fbookSectionTitle').textContent = S.fbookTitle || '完整書稿';
+      var outlineRaw = await fetchComplete(buildFullBookOutlinePrompt());
+      var chapters = parseFullBookOutline(outlineRaw);
+      if (chapters.length === 0) {
+        document.getElementById('mainCard').style.display = 'block';
+        document.getElementById('fullbookSection').style.display = 'none';
+        document.getElementById('cardTitle').textContent = '書籍大綱（原始輸出）';
+        document.getElementById('mta').value = outlineRaw;
+      } else {
+        renderFullBookOutline(chapters);
+      }
     }
     // Auto-save to history
     if (S.lastMainText && S.lastMainText.trim().length > 0) {
@@ -1658,6 +1815,7 @@ function applyTemplate(id) {
   document.getElementById('colCfg').style.display = S.mode==='column' ? 'block' : 'none';
   document.getElementById('bookCfg').style.display = S.mode==='book' ? 'block' : 'none';
   document.getElementById('urlCfg').style.display = S.mode==='url' ? 'block' : 'none';
+  document.getElementById('fullbookCfg').style.display = S.mode==='fullbook' ? 'block' : 'none';
 }
 
 /* ===== STATS ===== */
@@ -1689,6 +1847,223 @@ function batchApprove() {
   localStorage.setItem('kuo_history', JSON.stringify(history));
   renderReview();
   updateReviewCount();
+}
+
+/* ===== FULL BOOK ===== */
+var BOOK_STYLES = {
+  thinking: '對標《思考，快與慢》：用認知心理學框架拆解主題，每章圍繞一個核心認知偏誤或思維模型，用大量實驗和案例佐證，語氣像學者對聰明讀者說話，嚴謹但不枯燥。',
+  coaching: '對標《教練》：用一個核心人物或一段師徒關係貫穿全書，每章用真實場景和對話推進，結論藏在故事裡讓讀者自己領悟，溫暖但不雞湯。',
+  mindset: '對標《底層邏輯》：每章拆解一個底層思維模型，先用反直覺的觀察破題，再用第一性原理推導，語氣乾脆直接，結論可操作。',
+  zero2one: '對標《從0到1》：每章提出一個反主流觀點，用創業實戰經驗佐證，挑戰讀者既有認知，語氣自信但不傲慢，觀點尖銳但有數據支撐。'
+};
+
+function buildFullBookOutlinePrompt() {
+  var auds = {entrepreneur:'正在創業或考慮創業的人',career:'職場工作者',general:'一般大眾'};
+  return BASE +
+    '\n\n---\n【完整書稿——第一步：大綱規劃】\n' +
+    '書名：' + S.fbookTitle + '\n' +
+    '風格對標：' + BOOK_STYLES[S.fbookStyle] + '\n' +
+    '核心主題：' + (S.fbookTheme || '由你根據素材決定') + '\n' +
+    '目標讀者：' + auds[S.fbookAud] + '\n' +
+    '章數：' + S.fbookChaps + ' 章\n' +
+    '必含素材：' + (S.fbookMaterial || '從素材庫自由選用') + '\n' +
+    '補充想法：' + (S.fbookIdeas || '無') + '\n\n' +
+    '請規劃完整的書籍大綱。每章用以下格式（一章一行，用|分隔）：\n' +
+    'CHAPTER_N: 章節標題（10字以內） | 核心論點（30字以內） | 要用的場景/素材（20字以內） | 讀者收穫（20字以內） | 預估字數\n\n' +
+    '規劃原則：\n' +
+    '1. 第一章必須用一個強烈的場景或故事開場，讓讀者立刻被吸住\n' +
+    '2. 章與章之間要有邏輯遞進，不是並列關係\n' +
+    '3. 每章要有一個可被記住的框架或金句\n' +
+    '4. 最後一章要回到起點，形成敘事閉環（注意：這裡的閉環指的是敘事結構）\n' +
+    '5. 穿插個人故事（鮮乳坊、MiracleX、NUS）和外部案例\n\n' +
+    '繁體中文，直接輸出，不要前言。';
+}
+
+function buildFullChapterPrompt(ch, chapterIndex, totalChapters, prevChapterEnding) {
+  var context = prevChapterEnding ? '\n\n上一章結尾：\n' + prevChapterEnding + '\n（請自然銜接）' : '';
+  return BASE +
+    '\n\n---\n【完整書稿——展開第 ' + (chapterIndex+1) + '/' + totalChapters + ' 章】\n' +
+    '書名：' + S.fbookTitle + '\n' +
+    '風格對標：' + BOOK_STYLES[S.fbookStyle] + '\n\n' +
+    '本章資訊：\n' +
+    '標題：' + ch.title + '\n' +
+    '核心論點：' + ch.point + '\n' +
+    '要用的素材：' + ch.material + '\n' +
+    '讀者收穫：' + ch.takeaway + '\n' +
+    '預估字數：' + (ch.wordCount || '2000-3000字') + context + '\n\n' +
+    '寫作要求：\n' +
+    '1. 用郭佑的聲音和敘事方法：場景→張力→轉折→提煉→推及讀者\n' +
+    '2. 必須有至少一個真實場景當錨點（從素材庫或本章指定素材中選）\n' +
+    '3. 把核心洞見收斂成一個有記憶點的框架或金句\n' +
+    '4. 用真實數字和具體事實，不用空泛形容詞\n' +
+    '5. 保持對標書籍的風格水準\n' +
+    '6. 自嘲開路、不說教、敢寫脆弱但收尾溫暖\n' +
+    '7. 結尾要有餘韻，能自然接到下一章\n\n' +
+    '繁體中文，直接輸出完整章節內容（含章節標題），不要任何前言或說明。' +
+    SELF_REVIEW;
+}
+
+function parseFullBookOutline(text) {
+  var chapters = [];
+  var re = /CHAPTER_\d+:\s*([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|([^|\n]+)\|?([^\n]*)/g;
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    chapters.push({
+      title: m[1].trim(),
+      point: m[2].trim(),
+      material: m[3].trim(),
+      takeaway: m[4].trim(),
+      wordCount: m[5] ? m[5].trim() : '2000-3000字'
+    });
+  }
+  return chapters;
+}
+
+function renderFullBookOutline(chapters) {
+  S.fbookOutline = chapters;
+  S.fbookChapterContents = {};
+  var area = document.getElementById('fbookOutlineArea');
+  area.innerHTML = '<div style="margin-bottom:16px"><div class="slbl">書籍大綱 — ' + chapters.length + ' 章</div></div>';
+
+  var chapArea = document.getElementById('fbookChaptersArea');
+  chapArea.innerHTML = '';
+
+  chapters.forEach(function(ch, i) {
+    var d = document.createElement('div');
+    d.className = 'fbook-chapter';
+    d.id = 'fbookCh_' + i;
+    d.innerHTML =
+      '<div class="fbook-ch-hd" onclick="toggleFbookChapter(' + i + ')">' +
+        '<div class="fbook-ch-num">' + (i+1) + '</div>' +
+        '<div class="fbook-ch-info">' +
+          '<div class="fbook-ch-title">' + esc(ch.title) + '</div>' +
+          '<div class="fbook-ch-sub">' + esc(ch.point) + '</div>' +
+        '</div>' +
+        '<span class="fbook-ch-status pending" id="fbookStatus_' + i + '">待生成</span>' +
+      '</div>' +
+      '<div class="bbody" style="display:none;padding:10px 16px 10px 60px">' +
+        '<div class="mitem"><div class="mlbl">素材</div><div class="mval">' + esc(ch.material) + '</div></div>' +
+        '<div class="mitem"><div class="mlbl">讀者收穫</div><div class="mval">' + esc(ch.takeaway) + '</div></div>' +
+        '<div class="mitem"><div class="mlbl">預估字數</div><div class="mval">' + esc(ch.wordCount || '2000-3000字') + '</div></div>' +
+      '</div>' +
+      '<div class="fbook-ch-body" id="fbookContent_' + i + '" style="display:none"></div>' +
+      '<div class="fbook-ch-actions" id="fbookActions_' + i + '" style="display:none">' +
+        '<button class="abtn" onclick="generateSingleChapter(' + i + ')">生成本章</button>' +
+        '<button class="abtn" onclick="regenerateSingleChapter(' + i + ')">重新生成</button>' +
+        '<button class="abtn" onclick="copyChapterContent(' + i + ')">複製本章</button>' +
+      '</div>';
+    chapArea.appendChild(d);
+  });
+}
+
+function toggleFbookChapter(i) {
+  var ch = document.getElementById('fbookCh_' + i);
+  var body = ch.querySelector('.bbody');
+  var content = document.getElementById('fbookContent_' + i);
+  var actions = document.getElementById('fbookActions_' + i);
+  var isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  actions.style.display = isOpen ? 'none' : 'flex';
+  if (S.fbookChapterContents[i]) {
+    content.style.display = isOpen ? 'none' : 'block';
+  }
+}
+
+async function generateSingleChapter(i) {
+  var ch = S.fbookOutline[i];
+  if (!ch) return;
+  var statusEl = document.getElementById('fbookStatus_' + i);
+  var contentEl = document.getElementById('fbookContent_' + i);
+  statusEl.textContent = '生成中...';
+  statusEl.className = 'fbook-ch-status generating';
+  contentEl.style.display = 'block';
+  contentEl.textContent = '正在生成第 ' + (i+1) + ' 章...';
+
+  var prevEnding = '';
+  if (i > 0 && S.fbookChapterContents[i-1]) {
+    var prev = S.fbookChapterContents[i-1];
+    prevEnding = prev.substring(prev.length - 200);
+  }
+
+  try {
+    var text = await fetchComplete(buildFullChapterPrompt(ch, i, S.fbookOutline.length, prevEnding));
+    S.fbookChapterContents[i] = text;
+    contentEl.textContent = text;
+    statusEl.textContent = '已完成 (' + text.length + '字)';
+    statusEl.className = 'fbook-ch-status done';
+  } catch(e) {
+    contentEl.textContent = '生成失敗：' + e.message;
+    statusEl.textContent = '失敗';
+    statusEl.className = 'fbook-ch-status pending';
+  }
+}
+
+function regenerateSingleChapter(i) {
+  delete S.fbookChapterContents[i];
+  generateSingleChapter(i);
+}
+
+async function generateAllChapters() {
+  if (!S.fbookOutline.length) {
+    alert('請先生成書籍大綱');
+    return;
+  }
+  if (!confirm('即將逐章生成全書（共 ' + S.fbookOutline.length + ' 章），每章約需 30-60 秒。確定開始？')) return;
+
+  var progress = document.getElementById('fbookProgress');
+  var progressText = document.getElementById('fbookProgressText');
+  var progressBar = document.getElementById('fbookProgressBar');
+  progress.style.display = 'block';
+
+  for (var i = 0; i < S.fbookOutline.length; i++) {
+    progressText.textContent = '正在生成第 ' + (i+1) + '/' + S.fbookOutline.length + ' 章：' + S.fbookOutline[i].title;
+    progressBar.style.width = Math.round((i / S.fbookOutline.length) * 100) + '%';
+    await generateSingleChapter(i);
+  }
+
+  progressText.textContent = '全書生成完成！共 ' + S.fbookOutline.length + ' 章';
+  progressBar.style.width = '100%';
+  setTimeout(function(){ progress.style.display = 'none'; }, 5000);
+}
+
+function copyFullBook() {
+  if (!S.fbookOutline.length) { alert('尚無書稿內容'); return; }
+  var text = '# ' + (S.fbookTitle || '未命名書籍') + '\n\n';
+  S.fbookOutline.forEach(function(ch, i) {
+    text += '## 第' + (i+1) + '章：' + ch.title + '\n\n';
+    if (S.fbookChapterContents[i]) {
+      text += S.fbookChapterContents[i] + '\n\n';
+    } else {
+      text += '（尚未生成）\n\n';
+    }
+    text += '---\n\n';
+  });
+  navigator.clipboard.writeText(text).then(function(){ alert('完整書稿已複製！'); });
+}
+
+function downloadFullBook() {
+  if (!S.fbookOutline.length) { alert('尚無書稿內容'); return; }
+  var text = '# ' + (S.fbookTitle || '未命名書籍') + '\n\n';
+  S.fbookOutline.forEach(function(ch, i) {
+    text += '## 第' + (i+1) + '章：' + ch.title + '\n\n';
+    if (S.fbookChapterContents[i]) {
+      text += S.fbookChapterContents[i] + '\n\n';
+    } else {
+      text += '（尚未生成）\n\n';
+    }
+    text += '---\n\n';
+  });
+  var blob = new Blob([text], {type:'text/markdown'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  var date = new Date().toISOString().slice(0,10);
+  a.download = (S.fbookTitle || '郭佑書稿') + '_' + date + '.md';
+  a.click();
+}
+
+function copyChapterContent(i) {
+  if (!S.fbookChapterContents[i]) { alert('本章尚未生成'); return; }
+  navigator.clipboard.writeText(S.fbookChapterContents[i]).then(function(){ alert('第' + (i+1) + '章已複製！'); });
 }
 
 /* ===== INIT ===== */
